@@ -128,7 +128,12 @@ function(cls, fields, methods) {
   }
 
   String toNativeName(ClassElement cls) {
-    String quotedName = cls.nativeName.slowToString();
+    String quotedName;
+    if (!cls.isNative()) {
+      quotedName = '"*${cls.name.slowToString()}"';
+    } else {
+      quotedName = cls.nativeName.slowToString();
+    }
     if (isNativeGlobal(quotedName)) {
       // Global object, just be like the other types for now.
       return quotedName.substring(3, quotedName.length - 1);

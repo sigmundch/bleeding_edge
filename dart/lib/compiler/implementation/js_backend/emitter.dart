@@ -183,23 +183,26 @@ function(collectedClasses) {
     finishClass(superclass);
     var constructor = $isolatePropertiesName[cls];
     var superConstructor = $isolatePropertiesName[superclass];
-    var prototype = constructor.prototype;
-    if ($supportsProtoName) {
-      prototype.__proto__ = superConstructor.prototype;
-      prototype.constructor = constructor;
-    } else {
-      function tmp() {};
-      tmp.prototype = superConstructor.prototype;
-      var newPrototype = new tmp();
-      constructor.prototype = newPrototype;
-      newPrototype.constructor = constructor;
-'''/* Opera does not support 'getOwnPropertyNames'. Therefore we use
-      hosOwnProperty instead. */'''
-      var hasOwnProperty = Object.prototype.hasOwnProperty;
-      for (var member in prototype) {
-        if (member == '' || member == 'super') continue;
-        if (hasOwnProperty.call(prototype, member)) {
-          newPrototype[member] = prototype[member];
+'''/* superConstructor is undefined if the superclass is native. */'''
+    if (!(typeof(superConstructor) == "undefined")) {
+      var prototype = constructor.prototype;
+      if ($supportsProtoName) {
+        prototype.__proto__ = superConstructor.prototype;
+        prototype.constructor = constructor;
+      } else {
+        function tmp() {};
+        tmp.prototype = superConstructor.prototype;
+        var newPrototype = new tmp();
+        constructor.prototype = newPrototype;
+        newPrototype.constructor = constructor;
+  '''/* Opera does not support 'getOwnPropertyNames'. Therefore we use
+        hosOwnProperty instead. */'''
+        var hasOwnProperty = Object.prototype.hasOwnProperty;
+        for (var member in prototype) {
+          if (member == '' || member == 'super') continue;
+          if (hasOwnProperty.call(prototype, member)) {
+            newPrototype[member] = prototype[member];
+          }
         }
       }
     }
@@ -544,6 +547,8 @@ function(collectedClasses) {
     if (classElement.isNative()) {
       nativeEmitter.generateNativeClass(classElement);
       return;
+    } else if (classElement.inheritsFromNative) {
+      nativeEmitter.classesWithDynamicDispatch.add(classElement);
     } else {
       // TODO(ngeoffray): Instead of switching between buffer, we
       // should create code sections, and decide where to emit them at

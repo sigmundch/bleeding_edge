@@ -45,7 +45,9 @@ void processNativeClassesInLibrary(Enqueuer world,
     Element element = link.head;
     if (element.kind == ElementKind.CLASS) {
       ClassElement classElement = element;
-      if (classElement.isNative()) {
+      // TODO(samhop): should we handle inheritsFromNative any differently
+      // from isNative?
+      if (classElement.isNative() || classElement.inheritsFromNative) {
         hasNativeClass = true;
         world.registerInstantiatedClass(classElement);
         // Also parse the node to know all its methods because

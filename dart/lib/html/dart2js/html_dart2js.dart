@@ -16,18 +16,18 @@
 
 
 Window get window() native "return window;";
-_WindowImpl get _window() native "return window;";
+WindowImpl get _window() native "return window;";
 
 Document get document() native "return document;";
 
-_DocumentImpl get _document() native "return document;";
+DocumentImpl get _document() native "return document;";
 
 Element query(String selector) => _document.query(selector);
 ElementList queryAll(String selector) => _document.queryAll(selector);
 
 // Workaround for tags like <cite> that lack their own Element subclass --
 // Dart issue 1990.
-class _HTMLElementImpl extends _ElementImpl native "*HTMLElement" {
+class HTMLElementImpl extends ElementImpl native "*HTMLElement" {
 }
 
 // Support for Send/ReceivePortSync.
@@ -46,25 +46,25 @@ _callPortSync(int id, message) {
 // TODO(vsm): Plumb this properly.
 spawnDomFunction(f) => spawnFunction(f);
 
-class _AbstractWorkerImpl extends _EventTargetImpl implements AbstractWorker native "*AbstractWorker" {
+class AbstractWorkerImpl extends EventTargetImpl implements AbstractWorker native "*AbstractWorker" {
 
-  _AbstractWorkerEventsImpl get on() =>
-    new _AbstractWorkerEventsImpl(this);
+  AbstractWorkerEventsImpl get on() =>
+    new AbstractWorkerEventsImpl(this);
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _AbstractWorkerEventsImpl extends _EventsImpl implements AbstractWorkerEvents {
-  _AbstractWorkerEventsImpl(_ptr) : super(_ptr);
+class AbstractWorkerEventsImpl extends EventsImpl implements AbstractWorkerEvents {
+  AbstractWorkerEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get error() => this['error'];
 }
 
-class _AnchorElementImpl extends _ElementImpl implements AnchorElement native "*HTMLAnchorElement" {
+class AnchorElementImpl extends ElementImpl implements AnchorElement native "*HTMLAnchorElement" {
 
   String charset;
 
@@ -109,7 +109,7 @@ class _AnchorElementImpl extends _ElementImpl implements AnchorElement native "*
   String toString() native;
 }
 
-class _AnimationImpl implements Animation native "*WebKitAnimation" {
+class AnimationImpl implements Animation native "*WebKitAnimation" {
 
   static final int DIRECTION_ALTERNATE = 1;
 
@@ -146,21 +146,21 @@ class _AnimationImpl implements Animation native "*WebKitAnimation" {
   void play() native;
 }
 
-class _AnimationEventImpl extends _EventImpl implements AnimationEvent native "*WebKitAnimationEvent" {
+class AnimationEventImpl extends EventImpl implements AnimationEvent native "*WebKitAnimationEvent" {
 
   final String animationName;
 
   final num elapsedTime;
 }
 
-class _AnimationListImpl implements AnimationList native "*WebKitAnimationList" {
+class AnimationListImpl implements AnimationList native "*WebKitAnimationList" {
 
   final int length;
 
-  _AnimationImpl item(int index) native;
+  AnimationImpl item(int index) native;
 }
 
-class _AppletElementImpl extends _ElementImpl implements AppletElement native "*HTMLAppletElement" {
+class AppletElementImpl extends ElementImpl implements AppletElement native "*HTMLAppletElement" {
 
   String align;
 
@@ -185,7 +185,7 @@ class _AppletElementImpl extends _ElementImpl implements AppletElement native "*
   String width;
 }
 
-class _AreaElementImpl extends _ElementImpl implements AreaElement native "*HTMLAreaElement" {
+class AreaElementImpl extends ElementImpl implements AreaElement native "*HTMLAreaElement" {
 
   String alt;
 
@@ -216,36 +216,36 @@ class _AreaElementImpl extends _ElementImpl implements AreaElement native "*HTML
   String target;
 }
 
-class _ArrayBufferImpl implements ArrayBuffer native "*ArrayBuffer" {
+class ArrayBufferImpl implements ArrayBuffer native "*ArrayBuffer" {
 
   final int byteLength;
 
-  _ArrayBufferImpl slice(int begin, [int end]) native;
+  ArrayBufferImpl slice(int begin, [int end]) native;
 }
 
-class _ArrayBufferViewImpl implements ArrayBufferView native "*ArrayBufferView" {
+class ArrayBufferViewImpl implements ArrayBufferView native "*ArrayBufferView" {
 
-  final _ArrayBufferImpl buffer;
+  final ArrayBufferImpl buffer;
 
   final int byteLength;
 
   final int byteOffset;
 }
 
-class _AttrImpl extends _NodeImpl implements Attr native "*Attr" {
+class AttrImpl extends NodeImpl implements Attr native "*Attr" {
 
   final bool isId;
 
   final String name;
 
-  final _ElementImpl ownerElement;
+  final ElementImpl ownerElement;
 
   final bool specified;
 
   String value;
 }
 
-class _AudioBufferImpl implements AudioBuffer native "*AudioBuffer" {
+class AudioBufferImpl implements AudioBuffer native "*AudioBuffer" {
 
   final num duration;
 
@@ -257,10 +257,10 @@ class _AudioBufferImpl implements AudioBuffer native "*AudioBuffer" {
 
   final num sampleRate;
 
-  _Float32ArrayImpl getChannelData(int channelIndex) native;
+  Float32ArrayImpl getChannelData(int channelIndex) native;
 }
 
-class _AudioBufferSourceNodeImpl extends _AudioSourceNodeImpl implements AudioBufferSourceNode native "*AudioBufferSourceNode" {
+class AudioBufferSourceNodeImpl extends AudioSourceNodeImpl implements AudioBufferSourceNode native "*AudioBufferSourceNode" {
 
   static final int FINISHED_STATE = 3;
 
@@ -270,15 +270,15 @@ class _AudioBufferSourceNodeImpl extends _AudioSourceNodeImpl implements AudioBu
 
   static final int UNSCHEDULED_STATE = 0;
 
-  _AudioBufferImpl buffer;
+  AudioBufferImpl buffer;
 
-  final _AudioGainImpl gain;
+  final AudioGainImpl gain;
 
   bool loop;
 
   bool looping;
 
-  final _AudioParamImpl playbackRate;
+  final AudioParamImpl playbackRate;
 
   final int playbackState;
 
@@ -289,89 +289,89 @@ class _AudioBufferSourceNodeImpl extends _AudioSourceNodeImpl implements AudioBu
   void noteOn(num when) native;
 }
 
-class _AudioChannelMergerImpl extends _AudioNodeImpl implements AudioChannelMerger native "*AudioChannelMerger" {
+class AudioChannelMergerImpl extends AudioNodeImpl implements AudioChannelMerger native "*AudioChannelMerger" {
 }
 
-class _AudioChannelSplitterImpl extends _AudioNodeImpl implements AudioChannelSplitter native "*AudioChannelSplitter" {
+class AudioChannelSplitterImpl extends AudioNodeImpl implements AudioChannelSplitter native "*AudioChannelSplitter" {
 }
 
-class _AudioContextImpl extends _EventTargetImpl implements AudioContext native "*AudioContext" {
+class AudioContextImpl extends EventTargetImpl implements AudioContext native "*AudioContext" {
 
-  _AudioContextEventsImpl get on() =>
-    new _AudioContextEventsImpl(this);
+  AudioContextEventsImpl get on() =>
+    new AudioContextEventsImpl(this);
 
   final int activeSourceCount;
 
   final num currentTime;
 
-  final _AudioDestinationNodeImpl destination;
+  final AudioDestinationNodeImpl destination;
 
-  final _AudioListenerImpl listener;
+  final AudioListenerImpl listener;
 
   final num sampleRate;
 
-  _RealtimeAnalyserNodeImpl createAnalyser() native;
+  RealtimeAnalyserNodeImpl createAnalyser() native;
 
-  _BiquadFilterNodeImpl createBiquadFilter() native;
+  BiquadFilterNodeImpl createBiquadFilter() native;
 
-  _AudioBufferImpl createBuffer(buffer_OR_numberOfChannels, mixToMono_OR_numberOfFrames, [num sampleRate]) native;
+  AudioBufferImpl createBuffer(buffer_OR_numberOfChannels, mixToMono_OR_numberOfFrames, [num sampleRate]) native;
 
-  _AudioBufferSourceNodeImpl createBufferSource() native;
+  AudioBufferSourceNodeImpl createBufferSource() native;
 
-  _AudioChannelMergerImpl createChannelMerger([int numberOfInputs]) native;
+  AudioChannelMergerImpl createChannelMerger([int numberOfInputs]) native;
 
-  _AudioChannelSplitterImpl createChannelSplitter([int numberOfOutputs]) native;
+  AudioChannelSplitterImpl createChannelSplitter([int numberOfOutputs]) native;
 
-  _ConvolverNodeImpl createConvolver() native;
+  ConvolverNodeImpl createConvolver() native;
 
-  _DelayNodeImpl createDelayNode([num maxDelayTime]) native;
+  DelayNodeImpl createDelayNode([num maxDelayTime]) native;
 
-  _DynamicsCompressorNodeImpl createDynamicsCompressor() native;
+  DynamicsCompressorNodeImpl createDynamicsCompressor() native;
 
-  _AudioGainNodeImpl createGainNode() native;
+  AudioGainNodeImpl createGainNode() native;
 
-  _JavaScriptAudioNodeImpl createJavaScriptNode(int bufferSize, [int numberOfInputChannels, int numberOfOutputChannels]) native;
+  JavaScriptAudioNodeImpl createJavaScriptNode(int bufferSize, [int numberOfInputChannels, int numberOfOutputChannels]) native;
 
-  _MediaElementAudioSourceNodeImpl createMediaElementSource(_MediaElementImpl mediaElement) native;
+  MediaElementAudioSourceNodeImpl createMediaElementSource(MediaElementImpl mediaElement) native;
 
-  _MediaStreamAudioSourceNodeImpl createMediaStreamSource(_MediaStreamImpl mediaStream) native;
+  MediaStreamAudioSourceNodeImpl createMediaStreamSource(MediaStreamImpl mediaStream) native;
 
-  _OscillatorImpl createOscillator() native;
+  OscillatorImpl createOscillator() native;
 
-  _AudioPannerNodeImpl createPanner() native;
+  AudioPannerNodeImpl createPanner() native;
 
-  _WaveShaperNodeImpl createWaveShaper() native;
+  WaveShaperNodeImpl createWaveShaper() native;
 
-  _WaveTableImpl createWaveTable(_Float32ArrayImpl real, _Float32ArrayImpl imag) native;
+  WaveTableImpl createWaveTable(Float32ArrayImpl real, Float32ArrayImpl imag) native;
 
-  void decodeAudioData(_ArrayBufferImpl audioData, AudioBufferCallback successCallback, [AudioBufferCallback errorCallback]) native;
+  void decodeAudioData(ArrayBufferImpl audioData, AudioBufferCallback successCallback, [AudioBufferCallback errorCallback]) native;
 
   void startRendering() native;
 }
 
-class _AudioContextEventsImpl extends _EventsImpl implements AudioContextEvents {
-  _AudioContextEventsImpl(_ptr) : super(_ptr);
+class AudioContextEventsImpl extends EventsImpl implements AudioContextEvents {
+  AudioContextEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get complete() => this['complete'];
 }
 
-class _AudioDestinationNodeImpl extends _AudioNodeImpl implements AudioDestinationNode native "*AudioDestinationNode" {
+class AudioDestinationNodeImpl extends AudioNodeImpl implements AudioDestinationNode native "*AudioDestinationNode" {
 
   final int numberOfChannels;
 }
 
-class _AudioElementImpl extends _MediaElementImpl implements AudioElement native "*HTMLAudioElement" {
+class AudioElementImpl extends MediaElementImpl implements AudioElement native "*HTMLAudioElement" {
 }
 
-class _AudioGainImpl extends _AudioParamImpl implements AudioGain native "*AudioGain" {
+class AudioGainImpl extends AudioParamImpl implements AudioGain native "*AudioGain" {
 }
 
-class _AudioGainNodeImpl extends _AudioNodeImpl implements AudioGainNode native "*AudioGainNode" {
+class AudioGainNodeImpl extends AudioNodeImpl implements AudioGainNode native "*AudioGainNode" {
 
-  final _AudioGainImpl gain;
+  final AudioGainImpl gain;
 }
 
-class _AudioListenerImpl implements AudioListener native "*AudioListener" {
+class AudioListenerImpl implements AudioListener native "*AudioListener" {
 
   num dopplerFactor;
 
@@ -384,9 +384,9 @@ class _AudioListenerImpl implements AudioListener native "*AudioListener" {
   void setVelocity(num x, num y, num z) native;
 }
 
-class _AudioNodeImpl implements AudioNode native "*AudioNode" {
+class AudioNodeImpl implements AudioNode native "*AudioNode" {
 
-  final _AudioContextImpl context;
+  final AudioContextImpl context;
 
   final int numberOfInputs;
 
@@ -397,7 +397,7 @@ class _AudioNodeImpl implements AudioNode native "*AudioNode" {
   void disconnect(int output) native;
 }
 
-class _AudioPannerNodeImpl extends _AudioNodeImpl implements AudioPannerNode native "*AudioPannerNode" {
+class AudioPannerNodeImpl extends AudioNodeImpl implements AudioPannerNode native "*AudioPannerNode" {
 
   static final int EQUALPOWER = 0;
 
@@ -411,7 +411,7 @@ class _AudioPannerNodeImpl extends _AudioNodeImpl implements AudioPannerNode nat
 
   static final int SOUNDFIELD = 2;
 
-  final _AudioGainImpl coneGain;
+  final AudioGainImpl coneGain;
 
   num coneInnerAngle;
 
@@ -419,7 +419,7 @@ class _AudioPannerNodeImpl extends _AudioNodeImpl implements AudioPannerNode nat
 
   num coneOuterGain;
 
-  final _AudioGainImpl distanceGain;
+  final AudioGainImpl distanceGain;
 
   int distanceModel;
 
@@ -438,7 +438,7 @@ class _AudioPannerNodeImpl extends _AudioNodeImpl implements AudioPannerNode nat
   void setVelocity(num x, num y, num z) native;
 }
 
-class _AudioParamImpl implements AudioParam native "*AudioParam" {
+class AudioParamImpl implements AudioParam native "*AudioParam" {
 
   final num defaultValue;
 
@@ -462,37 +462,37 @@ class _AudioParamImpl implements AudioParam native "*AudioParam" {
 
   void setValueAtTime(num value, num time) native;
 
-  void setValueCurveAtTime(_Float32ArrayImpl values, num time, num duration) native;
+  void setValueCurveAtTime(Float32ArrayImpl values, num time, num duration) native;
 }
 
-class _AudioProcessingEventImpl extends _EventImpl implements AudioProcessingEvent native "*AudioProcessingEvent" {
+class AudioProcessingEventImpl extends EventImpl implements AudioProcessingEvent native "*AudioProcessingEvent" {
 
-  final _AudioBufferImpl inputBuffer;
+  final AudioBufferImpl inputBuffer;
 
-  final _AudioBufferImpl outputBuffer;
+  final AudioBufferImpl outputBuffer;
 }
 
-class _AudioSourceNodeImpl extends _AudioNodeImpl implements AudioSourceNode native "*AudioSourceNode" {
+class AudioSourceNodeImpl extends AudioNodeImpl implements AudioSourceNode native "*AudioSourceNode" {
 }
 
-class _BRElementImpl extends _ElementImpl implements BRElement native "*HTMLBRElement" {
+class BRElementImpl extends ElementImpl implements BRElement native "*HTMLBRElement" {
 
   String clear;
 }
 
-class _BarInfoImpl implements BarInfo native "*BarInfo" {
+class BarInfoImpl implements BarInfo native "*BarInfo" {
 
   final bool visible;
 }
 
-class _BaseElementImpl extends _ElementImpl implements BaseElement native "*HTMLBaseElement" {
+class BaseElementImpl extends ElementImpl implements BaseElement native "*HTMLBaseElement" {
 
   String href;
 
   String target;
 }
 
-class _BaseFontElementImpl extends _ElementImpl implements BaseFontElement native "*HTMLBaseFontElement" {
+class BaseFontElementImpl extends ElementImpl implements BaseFontElement native "*HTMLBaseFontElement" {
 
   String color;
 
@@ -501,10 +501,10 @@ class _BaseFontElementImpl extends _ElementImpl implements BaseFontElement nativ
   int size;
 }
 
-class _BatteryManagerImpl extends _EventTargetImpl implements BatteryManager native "*BatteryManager" {
+class BatteryManagerImpl extends EventTargetImpl implements BatteryManager native "*BatteryManager" {
 
-  _BatteryManagerEventsImpl get on() =>
-    new _BatteryManagerEventsImpl(this);
+  BatteryManagerEventsImpl get on() =>
+    new BatteryManagerEventsImpl(this);
 
   final bool charging;
 
@@ -516,13 +516,13 @@ class _BatteryManagerImpl extends _EventTargetImpl implements BatteryManager nat
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _BatteryManagerEventsImpl extends _EventsImpl implements BatteryManagerEvents {
-  _BatteryManagerEventsImpl(_ptr) : super(_ptr);
+class BatteryManagerEventsImpl extends EventsImpl implements BatteryManagerEvents {
+  BatteryManagerEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get chargingChange() => this['chargingchange'];
 
@@ -533,12 +533,12 @@ class _BatteryManagerEventsImpl extends _EventsImpl implements BatteryManagerEve
   EventListenerList get levelChange() => this['levelchange'];
 }
 
-class _BeforeLoadEventImpl extends _EventImpl implements BeforeLoadEvent native "*BeforeLoadEvent" {
+class BeforeLoadEventImpl extends EventImpl implements BeforeLoadEvent native "*BeforeLoadEvent" {
 
   final String url;
 }
 
-class _BiquadFilterNodeImpl extends _AudioNodeImpl implements BiquadFilterNode native "*BiquadFilterNode" {
+class BiquadFilterNodeImpl extends AudioNodeImpl implements BiquadFilterNode native "*BiquadFilterNode" {
 
   static final int ALLPASS = 7;
 
@@ -556,32 +556,32 @@ class _BiquadFilterNodeImpl extends _AudioNodeImpl implements BiquadFilterNode n
 
   static final int PEAKING = 5;
 
-  final _AudioParamImpl Q;
+  final AudioParamImpl Q;
 
-  final _AudioParamImpl frequency;
+  final AudioParamImpl frequency;
 
-  final _AudioParamImpl gain;
+  final AudioParamImpl gain;
 
   int type;
 
-  void getFrequencyResponse(_Float32ArrayImpl frequencyHz, _Float32ArrayImpl magResponse, _Float32ArrayImpl phaseResponse) native;
+  void getFrequencyResponse(Float32ArrayImpl frequencyHz, Float32ArrayImpl magResponse, Float32ArrayImpl phaseResponse) native;
 }
 
-class _BlobImpl implements Blob native "*Blob" {
+class BlobImpl implements Blob native "*Blob" {
 
   final int size;
 
   final String type;
 
-  _BlobImpl slice([int start, int end, String contentType]) native;
+  BlobImpl slice([int start, int end, String contentType]) native;
 
-  _BlobImpl webkitSlice([int start, int end, String contentType]) native;
+  BlobImpl webkitSlice([int start, int end, String contentType]) native;
 }
 
-class _BodyElementImpl extends _ElementImpl implements BodyElement native "*HTMLBodyElement" {
+class BodyElementImpl extends ElementImpl implements BodyElement native "*HTMLBodyElement" {
 
-  _BodyElementEventsImpl get on() =>
-    new _BodyElementEventsImpl(this);
+  BodyElementEventsImpl get on() =>
+    new BodyElementEventsImpl(this);
 
   String aLink;
 
@@ -594,8 +594,8 @@ class _BodyElementImpl extends _ElementImpl implements BodyElement native "*HTML
   String vLink;
 }
 
-class _BodyElementEventsImpl extends _ElementEventsImpl implements BodyElementEvents {
-  _BodyElementEventsImpl(_ptr) : super(_ptr);
+class BodyElementEventsImpl extends ElementEventsImpl implements BodyElementEvents {
+  BodyElementEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get beforeUnload() => this['beforeunload'];
 
@@ -624,13 +624,13 @@ class _BodyElementEventsImpl extends _ElementEventsImpl implements BodyElementEv
   EventListenerList get unload() => this['unload'];
 }
 
-class _ButtonElementImpl extends _ElementImpl implements ButtonElement native "*HTMLButtonElement" {
+class ButtonElementImpl extends ElementImpl implements ButtonElement native "*HTMLButtonElement" {
 
   bool autofocus;
 
   bool disabled;
 
-  final _FormElementImpl form;
+  final FormElementImpl form;
 
   String formAction;
 
@@ -642,7 +642,7 @@ class _ButtonElementImpl extends _ElementImpl implements ButtonElement native "*
 
   String formTarget;
 
-  final _NodeListImpl labels;
+  final NodeListImpl labels;
 
   String name;
 
@@ -650,7 +650,7 @@ class _ButtonElementImpl extends _ElementImpl implements ButtonElement native "*
 
   final String validationMessage;
 
-  final _ValidityStateImpl validity;
+  final ValidityStateImpl validity;
 
   String value;
 
@@ -661,49 +661,49 @@ class _ButtonElementImpl extends _ElementImpl implements ButtonElement native "*
   void setCustomValidity(String error) native;
 }
 
-class _CDATASectionImpl extends _TextImpl implements CDATASection native "*CDATASection" {
+class CDATASectionImpl extends TextImpl implements CDATASection native "*CDATASection" {
 }
 
-class _CSSCharsetRuleImpl extends _CSSRuleImpl implements CSSCharsetRule native "*CSSCharsetRule" {
+class CSSCharsetRuleImpl extends CSSRuleImpl implements CSSCharsetRule native "*CSSCharsetRule" {
 
   String encoding;
 }
 
-class _CSSFontFaceRuleImpl extends _CSSRuleImpl implements CSSFontFaceRule native "*CSSFontFaceRule" {
+class CSSFontFaceRuleImpl extends CSSRuleImpl implements CSSFontFaceRule native "*CSSFontFaceRule" {
 
-  final _CSSStyleDeclarationImpl style;
+  final CSSStyleDeclarationImpl style;
 }
 
-class _CSSImportRuleImpl extends _CSSRuleImpl implements CSSImportRule native "*CSSImportRule" {
+class CSSImportRuleImpl extends CSSRuleImpl implements CSSImportRule native "*CSSImportRule" {
 
   final String href;
 
-  final _MediaListImpl media;
+  final MediaListImpl media;
 
-  final _CSSStyleSheetImpl styleSheet;
+  final CSSStyleSheetImpl styleSheet;
 }
 
-class _CSSKeyframeRuleImpl extends _CSSRuleImpl implements CSSKeyframeRule native "*WebKitCSSKeyframeRule" {
+class CSSKeyframeRuleImpl extends CSSRuleImpl implements CSSKeyframeRule native "*WebKitCSSKeyframeRule" {
 
   String keyText;
 
-  final _CSSStyleDeclarationImpl style;
+  final CSSStyleDeclarationImpl style;
 }
 
-class _CSSKeyframesRuleImpl extends _CSSRuleImpl implements CSSKeyframesRule native "*WebKitCSSKeyframesRule" {
+class CSSKeyframesRuleImpl extends CSSRuleImpl implements CSSKeyframesRule native "*WebKitCSSKeyframesRule" {
 
-  final _CSSRuleListImpl cssRules;
+  final CSSRuleListImpl cssRules;
 
   String name;
 
   void deleteRule(String key) native;
 
-  _CSSKeyframeRuleImpl findRule(String key) native;
+  CSSKeyframeRuleImpl findRule(String key) native;
 
   void insertRule(String rule) native;
 }
 
-class _CSSMatrixImpl implements CSSMatrix native "*WebKitCSSMatrix" {
+class CSSMatrixImpl implements CSSMatrix native "*WebKitCSSMatrix" {
 
   num a;
 
@@ -749,46 +749,46 @@ class _CSSMatrixImpl implements CSSMatrix native "*WebKitCSSMatrix" {
 
   num m44;
 
-  _CSSMatrixImpl inverse() native;
+  CSSMatrixImpl inverse() native;
 
-  _CSSMatrixImpl multiply(_CSSMatrixImpl secondMatrix) native;
+  CSSMatrixImpl multiply(CSSMatrixImpl secondMatrix) native;
 
-  _CSSMatrixImpl rotate(num rotX, num rotY, num rotZ) native;
+  CSSMatrixImpl rotate(num rotX, num rotY, num rotZ) native;
 
-  _CSSMatrixImpl rotateAxisAngle(num x, num y, num z, num angle) native;
+  CSSMatrixImpl rotateAxisAngle(num x, num y, num z, num angle) native;
 
-  _CSSMatrixImpl scale(num scaleX, num scaleY, num scaleZ) native;
+  CSSMatrixImpl scale(num scaleX, num scaleY, num scaleZ) native;
 
   void setMatrixValue(String string) native;
 
-  _CSSMatrixImpl skewX(num angle) native;
+  CSSMatrixImpl skewX(num angle) native;
 
-  _CSSMatrixImpl skewY(num angle) native;
+  CSSMatrixImpl skewY(num angle) native;
 
   String toString() native;
 
-  _CSSMatrixImpl translate(num x, num y, num z) native;
+  CSSMatrixImpl translate(num x, num y, num z) native;
 }
 
-class _CSSMediaRuleImpl extends _CSSRuleImpl implements CSSMediaRule native "*CSSMediaRule" {
+class CSSMediaRuleImpl extends CSSRuleImpl implements CSSMediaRule native "*CSSMediaRule" {
 
-  final _CSSRuleListImpl cssRules;
+  final CSSRuleListImpl cssRules;
 
-  final _MediaListImpl media;
+  final MediaListImpl media;
 
   void deleteRule(int index) native;
 
   int insertRule(String rule, int index) native;
 }
 
-class _CSSPageRuleImpl extends _CSSRuleImpl implements CSSPageRule native "*CSSPageRule" {
+class CSSPageRuleImpl extends CSSRuleImpl implements CSSPageRule native "*CSSPageRule" {
 
   String selectorText;
 
-  final _CSSStyleDeclarationImpl style;
+  final CSSStyleDeclarationImpl style;
 }
 
-class _CSSPrimitiveValueImpl extends _CSSValueImpl implements CSSPrimitiveValue native "*CSSPrimitiveValue" {
+class CSSPrimitiveValueImpl extends CSSValueImpl implements CSSPrimitiveValue native "*CSSPrimitiveValue" {
 
   static final int CSS_ATTR = 22;
 
@@ -850,13 +850,13 @@ class _CSSPrimitiveValueImpl extends _CSSValueImpl implements CSSPrimitiveValue 
 
   final int primitiveType;
 
-  _CounterImpl getCounterValue() native;
+  CounterImpl getCounterValue() native;
 
   num getFloatValue(int unitType) native;
 
-  _RGBColorImpl getRGBColorValue() native;
+  RGBColorImpl getRGBColorValue() native;
 
-  _RectImpl getRectValue() native;
+  RectImpl getRectValue() native;
 
   String getStringValue() native;
 
@@ -865,7 +865,7 @@ class _CSSPrimitiveValueImpl extends _CSSValueImpl implements CSSPrimitiveValue 
   void setStringValue(int stringType, String stringValue) native;
 }
 
-class _CSSRuleImpl implements CSSRule native "*CSSRule" {
+class CSSRuleImpl implements CSSRule native "*CSSRule" {
 
   static final int CHARSET_RULE = 2;
 
@@ -887,18 +887,18 @@ class _CSSRuleImpl implements CSSRule native "*CSSRule" {
 
   String cssText;
 
-  final _CSSRuleImpl parentRule;
+  final CSSRuleImpl parentRule;
 
-  final _CSSStyleSheetImpl parentStyleSheet;
+  final CSSStyleSheetImpl parentStyleSheet;
 
   final int type;
 }
 
-class _CSSRuleListImpl implements CSSRuleList native "*CSSRuleList" {
+class CSSRuleListImpl implements CSSRuleList native "*CSSRuleList" {
 
   final int length;
 
-  _CSSRuleImpl item(int index) native;
+  CSSRuleImpl item(int index) native;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -918,16 +918,16 @@ String get _browserPrefix() {
   return _cachedBrowserPrefix;
 }
 
-class _CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDeclaration" {
+class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDeclaration" {
 
 
   String cssText;
 
   final int length;
 
-  final _CSSRuleImpl parentRule;
+  final CSSRuleImpl parentRule;
 
-  _CSSValueImpl getPropertyCSSValue(String propertyName) native;
+  CSSValueImpl getPropertyCSSValue(String propertyName) native;
 
   String getPropertyPriority(String propertyName) native;
 
@@ -3709,20 +3709,20 @@ class _CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleD
   }
 }
 
-class _CSSStyleRuleImpl extends _CSSRuleImpl implements CSSStyleRule native "*CSSStyleRule" {
+class CSSStyleRuleImpl extends CSSRuleImpl implements CSSStyleRule native "*CSSStyleRule" {
 
   String selectorText;
 
-  final _CSSStyleDeclarationImpl style;
+  final CSSStyleDeclarationImpl style;
 }
 
-class _CSSStyleSheetImpl extends _StyleSheetImpl implements CSSStyleSheet native "*CSSStyleSheet" {
+class CSSStyleSheetImpl extends StyleSheetImpl implements CSSStyleSheet native "*CSSStyleSheet" {
 
-  final _CSSRuleListImpl cssRules;
+  final CSSRuleListImpl cssRules;
 
-  final _CSSRuleImpl ownerRule;
+  final CSSRuleImpl ownerRule;
 
-  final _CSSRuleListImpl rules;
+  final CSSRuleListImpl rules;
 
   int addRule(String selector, String style, [int index]) native;
 
@@ -3733,7 +3733,7 @@ class _CSSStyleSheetImpl extends _StyleSheetImpl implements CSSStyleSheet native
   void removeRule(int index) native;
 }
 
-class _CSSTransformValueImpl extends _CSSValueListImpl implements CSSTransformValue native "*WebKitCSSTransformValue" {
+class CSSTransformValueImpl extends CSSValueListImpl implements CSSTransformValue native "*WebKitCSSTransformValue" {
 
   static final int CSS_MATRIX = 11;
 
@@ -3780,10 +3780,10 @@ class _CSSTransformValueImpl extends _CSSValueListImpl implements CSSTransformVa
   final int operationType;
 }
 
-class _CSSUnknownRuleImpl extends _CSSRuleImpl implements CSSUnknownRule native "*CSSUnknownRule" {
+class CSSUnknownRuleImpl extends CSSRuleImpl implements CSSUnknownRule native "*CSSUnknownRule" {
 }
 
-class _CSSValueImpl implements CSSValue native "*CSSValue" {
+class CSSValueImpl implements CSSValue native "*CSSValue" {
 
   static final int CSS_CUSTOM = 3;
 
@@ -3798,17 +3798,17 @@ class _CSSValueImpl implements CSSValue native "*CSSValue" {
   final int cssValueType;
 }
 
-class _CSSValueListImpl extends _CSSValueImpl implements CSSValueList native "*CSSValueList" {
+class CSSValueListImpl extends CSSValueImpl implements CSSValueList native "*CSSValueList" {
 
   final int length;
 
-  _CSSValueImpl item(int index) native;
+  CSSValueImpl item(int index) native;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-class _CanvasElementImpl extends _ElementImpl implements CanvasElement native "*HTMLCanvasElement" {
+class CanvasElementImpl extends ElementImpl implements CanvasElement native "*HTMLCanvasElement" {
 
   int height;
 
@@ -3819,23 +3819,23 @@ class _CanvasElementImpl extends _ElementImpl implements CanvasElement native "*
   String toDataURL(String type) native;
 
 
-  _CanvasRenderingContext2DImpl get context2d() => getContext('2d');
+  CanvasRenderingContext2DImpl get context2d() => getContext('2d');
 }
 
-class _CanvasGradientImpl implements CanvasGradient native "*CanvasGradient" {
+class CanvasGradientImpl implements CanvasGradient native "*CanvasGradient" {
 
   void addColorStop(num offset, String color) native;
 }
 
-class _CanvasPatternImpl implements CanvasPattern native "*CanvasPattern" {
+class CanvasPatternImpl implements CanvasPattern native "*CanvasPattern" {
 }
 
-class _CanvasRenderingContextImpl implements CanvasRenderingContext native "*CanvasRenderingContext" {
+class CanvasRenderingContextImpl implements CanvasRenderingContext native "*CanvasRenderingContext" {
 
-  final _CanvasElementImpl canvas;
+  final CanvasElementImpl canvas;
 }
 
-class _CanvasRenderingContext2DImpl extends _CanvasRenderingContextImpl implements CanvasRenderingContext2D native "*CanvasRenderingContext2D" {
+class CanvasRenderingContext2DImpl extends CanvasRenderingContextImpl implements CanvasRenderingContext2D native "*CanvasRenderingContext2D" {
 
   Dynamic fillStyle;
 
@@ -3891,17 +3891,17 @@ class _CanvasRenderingContext2DImpl extends _CanvasRenderingContextImpl implemen
 
   void closePath() native;
 
-  _ImageDataImpl createImageData(imagedata_OR_sw, [num sh]) native;
+  ImageDataImpl createImageData(imagedata_OR_sw, [num sh]) native;
 
-  _CanvasGradientImpl createLinearGradient(num x0, num y0, num x1, num y1) native;
+  CanvasGradientImpl createLinearGradient(num x0, num y0, num x1, num y1) native;
 
-  _CanvasPatternImpl createPattern(canvas_OR_image, String repetitionType) native;
+  CanvasPatternImpl createPattern(canvas_OR_image, String repetitionType) native;
 
-  _CanvasGradientImpl createRadialGradient(num x0, num y0, num r0, num x1, num y1, num r1) native;
+  CanvasGradientImpl createRadialGradient(num x0, num y0, num r0, num x1, num y1, num r1) native;
 
   void drawImage(canvas_OR_image_OR_video, num sx_OR_x, num sy_OR_y, [num sw_OR_width, num height_OR_sh, num dx, num dy, num dw, num dh]) native;
 
-  void drawImageFromRect(_ImageElementImpl image, [num sx, num sy, num sw, num sh, num dx, num dy, num dw, num dh, String compositeOperation]) native;
+  void drawImageFromRect(ImageElementImpl image, [num sx, num sy, num sw, num sh, num dx, num dy, num dw, num dh, String compositeOperation]) native;
 
   void fill() native;
 
@@ -3909,17 +3909,17 @@ class _CanvasRenderingContext2DImpl extends _CanvasRenderingContextImpl implemen
 
   void fillText(String text, num x, num y, [num maxWidth]) native;
 
-  _ImageDataImpl getImageData(num sx, num sy, num sw, num sh) native;
+  ImageDataImpl getImageData(num sx, num sy, num sw, num sh) native;
 
   bool isPointInPath(num x, num y) native;
 
   void lineTo(num x, num y) native;
 
-  _TextMetricsImpl measureText(String text) native;
+  TextMetricsImpl measureText(String text) native;
 
   void moveTo(num x, num y) native;
 
-  void putImageData(_ImageDataImpl imagedata, num dx, num dy, [num dirtyX, num dirtyY, num dirtyWidth, num dirtyHeight]) native;
+  void putImageData(ImageDataImpl imagedata, num dx, num dy, [num dirtyX, num dirtyY, num dirtyWidth, num dirtyHeight]) native;
 
   void quadraticCurveTo(num cpx, num cpy, num x, num y) native;
 
@@ -3963,12 +3963,12 @@ class _CanvasRenderingContext2DImpl extends _CanvasRenderingContextImpl implemen
 
   void translate(num tx, num ty) native;
 
-  _ImageDataImpl webkitGetImageDataHD(num sx, num sy, num sw, num sh) native;
+  ImageDataImpl webkitGetImageDataHD(num sx, num sy, num sw, num sh) native;
 
-  void webkitPutImageDataHD(_ImageDataImpl imagedata, num dx, num dy, [num dirtyX, num dirtyY, num dirtyWidth, num dirtyHeight]) native;
+  void webkitPutImageDataHD(ImageDataImpl imagedata, num dx, num dy, [num dirtyX, num dirtyY, num dirtyWidth, num dirtyHeight]) native;
 }
 
-class _CharacterDataImpl extends _NodeImpl implements CharacterData native "*CharacterData" {
+class CharacterDataImpl extends NodeImpl implements CharacterData native "*CharacterData" {
 
   String data;
 
@@ -3985,7 +3985,7 @@ class _CharacterDataImpl extends _NodeImpl implements CharacterData native "*Cha
   String substringData(int offset, int length) native;
 }
 
-class _ClientRectImpl implements ClientRect native "*ClientRect" {
+class ClientRectImpl implements ClientRect native "*ClientRect" {
 
   final num bottom;
 
@@ -4000,22 +4000,22 @@ class _ClientRectImpl implements ClientRect native "*ClientRect" {
   final num width;
 }
 
-class _ClientRectListImpl implements ClientRectList native "*ClientRectList" {
+class ClientRectListImpl implements ClientRectList native "*ClientRectList" {
 
   final int length;
 
-  _ClientRectImpl item(int index) native;
+  ClientRectImpl item(int index) native;
 }
 
-class _ClipboardImpl implements Clipboard native "*Clipboard" {
+class ClipboardImpl implements Clipboard native "*Clipboard" {
 
   String dropEffect;
 
   String effectAllowed;
 
-  final _FileListImpl files;
+  final FileListImpl files;
 
-  final _DataTransferItemListImpl items;
+  final DataTransferItemListImpl items;
 
   final List types;
 
@@ -4025,10 +4025,10 @@ class _ClipboardImpl implements Clipboard native "*Clipboard" {
 
   bool setData(String type, String data) native;
 
-  void setDragImage(_ImageElementImpl image, int x, int y) native;
+  void setDragImage(ImageElementImpl image, int x, int y) native;
 }
 
-class _CloseEventImpl extends _EventImpl implements CloseEvent native "*CloseEvent" {
+class CloseEventImpl extends EventImpl implements CloseEvent native "*CloseEvent" {
 
   final int code;
 
@@ -4037,25 +4037,25 @@ class _CloseEventImpl extends _EventImpl implements CloseEvent native "*CloseEve
   final bool wasClean;
 }
 
-class _CommentImpl extends _CharacterDataImpl implements Comment native "*Comment" {
+class CommentImpl extends CharacterDataImpl implements Comment native "*Comment" {
 }
 
-class _CompositionEventImpl extends _UIEventImpl implements CompositionEvent native "*CompositionEvent" {
+class CompositionEventImpl extends UIEventImpl implements CompositionEvent native "*CompositionEvent" {
 
   final String data;
 
-  void initCompositionEvent(String typeArg, bool canBubbleArg, bool cancelableArg, _WindowImpl viewArg, String dataArg) native;
+  void initCompositionEvent(String typeArg, bool canBubbleArg, bool cancelableArg, WindowImpl viewArg, String dataArg) native;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-class _ConsoleImpl
+class ConsoleImpl
     // Console is sometimes a singleton bag-of-properties without a prototype.
     implements Console 
     native "=(typeof console == 'undefined' ? {} : console)" {
 
-  final _MemoryInfoImpl memory;
+  final MemoryInfoImpl memory;
 
   final List<ScriptProfile> profiles;
 
@@ -4099,19 +4099,19 @@ class _ConsoleImpl
 
 }
 
-class _ContentElementImpl extends _ElementImpl implements ContentElement native "*HTMLContentElement" {
+class ContentElementImpl extends ElementImpl implements ContentElement native "*HTMLContentElement" {
 
   String select;
 }
 
-class _ConvolverNodeImpl extends _AudioNodeImpl implements ConvolverNode native "*ConvolverNode" {
+class ConvolverNodeImpl extends AudioNodeImpl implements ConvolverNode native "*ConvolverNode" {
 
-  _AudioBufferImpl buffer;
+  AudioBufferImpl buffer;
 
   bool normalize;
 }
 
-class _CoordinatesImpl implements Coordinates native "*Coordinates" {
+class CoordinatesImpl implements Coordinates native "*Coordinates" {
 
   final num accuracy;
 
@@ -4128,7 +4128,7 @@ class _CoordinatesImpl implements Coordinates native "*Coordinates" {
   final num speed;
 }
 
-class _CounterImpl implements Counter native "*Counter" {
+class CounterImpl implements Counter native "*Counter" {
 
   final String identifier;
 
@@ -4137,27 +4137,27 @@ class _CounterImpl implements Counter native "*Counter" {
   final String separator;
 }
 
-class _CryptoImpl implements Crypto native "*Crypto" {
+class CryptoImpl implements Crypto native "*Crypto" {
 
-  void getRandomValues(_ArrayBufferViewImpl array) native;
+  void getRandomValues(ArrayBufferViewImpl array) native;
 }
 
-class _CustomEventImpl extends _EventImpl implements CustomEvent native "*CustomEvent" {
+class CustomEventImpl extends EventImpl implements CustomEvent native "*CustomEvent" {
 
   final Object detail;
 
   void initCustomEvent(String typeArg, bool canBubbleArg, bool cancelableArg, Object detailArg) native;
 }
 
-class _DListElementImpl extends _ElementImpl implements DListElement native "*HTMLDListElement" {
+class DListElementImpl extends ElementImpl implements DListElement native "*HTMLDListElement" {
 
   bool compact;
 }
 
-class _DOMApplicationCacheImpl extends _EventTargetImpl implements DOMApplicationCache native "*DOMApplicationCache" {
+class DOMApplicationCacheImpl extends EventTargetImpl implements DOMApplicationCache native "*DOMApplicationCache" {
 
-  _DOMApplicationCacheEventsImpl get on() =>
-    new _DOMApplicationCacheEventsImpl(this);
+  DOMApplicationCacheEventsImpl get on() =>
+    new DOMApplicationCacheEventsImpl(this);
 
   static final int CHECKING = 2;
 
@@ -4177,7 +4177,7 @@ class _DOMApplicationCacheImpl extends _EventTargetImpl implements DOMApplicatio
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
@@ -4186,8 +4186,8 @@ class _DOMApplicationCacheImpl extends _EventTargetImpl implements DOMApplicatio
   void update() native;
 }
 
-class _DOMApplicationCacheEventsImpl extends _EventsImpl implements DOMApplicationCacheEvents {
-  _DOMApplicationCacheEventsImpl(_ptr) : super(_ptr);
+class DOMApplicationCacheEventsImpl extends EventsImpl implements DOMApplicationCacheEvents {
+  DOMApplicationCacheEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get cached() => this['cached'];
 
@@ -4206,12 +4206,12 @@ class _DOMApplicationCacheEventsImpl extends _EventsImpl implements DOMApplicati
   EventListenerList get updateReady() => this['updateready'];
 }
 
-class _DOMErrorImpl implements DOMError native "*DOMError" {
+class DOMErrorImpl implements DOMError native "*DOMError" {
 
   final String name;
 }
 
-class _DOMExceptionImpl implements DOMException native "*DOMException" {
+class DOMExceptionImpl implements DOMException native "*DOMException" {
 
   static final int ABORT_ERR = 20;
 
@@ -4272,64 +4272,64 @@ class _DOMExceptionImpl implements DOMException native "*DOMException" {
   String toString() native;
 }
 
-class _DOMFileSystemImpl implements DOMFileSystem native "*DOMFileSystem" {
+class DOMFileSystemImpl implements DOMFileSystem native "*DOMFileSystem" {
 
   final String name;
 
-  final _DirectoryEntryImpl root;
+  final DirectoryEntryImpl root;
 }
 
-class _DOMFileSystemSyncImpl implements DOMFileSystemSync native "*DOMFileSystemSync" {
+class DOMFileSystemSyncImpl implements DOMFileSystemSync native "*DOMFileSystemSync" {
 
   final String name;
 
-  final _DirectoryEntrySyncImpl root;
+  final DirectoryEntrySyncImpl root;
 }
 
-class _DOMFormDataImpl implements DOMFormData native "*DOMFormData" {
+class DOMFormDataImpl implements DOMFormData native "*DOMFormData" {
 
   void append(String name, String value, String filename) native;
 }
 
-class _DOMImplementationImpl implements DOMImplementation native "*DOMImplementation" {
+class DOMImplementationImpl implements DOMImplementation native "*DOMImplementation" {
 
-  _CSSStyleSheetImpl createCSSStyleSheet(String title, String media) native;
+  CSSStyleSheetImpl createCSSStyleSheet(String title, String media) native;
 
-  _DocumentImpl createDocument(String namespaceURI, String qualifiedName, _DocumentTypeImpl doctype) native;
+  DocumentImpl createDocument(String namespaceURI, String qualifiedName, DocumentTypeImpl doctype) native;
 
-  _DocumentTypeImpl createDocumentType(String qualifiedName, String publicId, String systemId) native;
+  DocumentTypeImpl createDocumentType(String qualifiedName, String publicId, String systemId) native;
 
-  _DocumentImpl createHTMLDocument(String title) native;
+  DocumentImpl createHTMLDocument(String title) native;
 
   bool hasFeature(String feature, String version) native;
 }
 
-class _DOMMimeTypeImpl implements DOMMimeType native "*DOMMimeType" {
+class DOMMimeTypeImpl implements DOMMimeType native "*DOMMimeType" {
 
   final String description;
 
-  final _DOMPluginImpl enabledPlugin;
+  final DOMPluginImpl enabledPlugin;
 
   final String suffixes;
 
   final String type;
 }
 
-class _DOMMimeTypeArrayImpl implements DOMMimeTypeArray native "*DOMMimeTypeArray" {
+class DOMMimeTypeArrayImpl implements DOMMimeTypeArray native "*DOMMimeTypeArray" {
 
   final int length;
 
-  _DOMMimeTypeImpl item(int index) native;
+  DOMMimeTypeImpl item(int index) native;
 
-  _DOMMimeTypeImpl namedItem(String name) native;
+  DOMMimeTypeImpl namedItem(String name) native;
 }
 
-class _DOMParserImpl implements DOMParser native "*DOMParser" {
+class DOMParserImpl implements DOMParser native "*DOMParser" {
 
-  _DocumentImpl parseFromString(String str, String contentType) native;
+  DocumentImpl parseFromString(String str, String contentType) native;
 }
 
-class _DOMPluginImpl implements DOMPlugin native "*DOMPlugin" {
+class DOMPluginImpl implements DOMPlugin native "*DOMPlugin" {
 
   final String description;
 
@@ -4339,37 +4339,37 @@ class _DOMPluginImpl implements DOMPlugin native "*DOMPlugin" {
 
   final String name;
 
-  _DOMMimeTypeImpl item(int index) native;
+  DOMMimeTypeImpl item(int index) native;
 
-  _DOMMimeTypeImpl namedItem(String name) native;
+  DOMMimeTypeImpl namedItem(String name) native;
 }
 
-class _DOMPluginArrayImpl implements DOMPluginArray native "*DOMPluginArray" {
+class DOMPluginArrayImpl implements DOMPluginArray native "*DOMPluginArray" {
 
   final int length;
 
-  _DOMPluginImpl item(int index) native;
+  DOMPluginImpl item(int index) native;
 
-  _DOMPluginImpl namedItem(String name) native;
+  DOMPluginImpl namedItem(String name) native;
 
   void refresh(bool reload) native;
 }
 
-class _DOMSelectionImpl implements DOMSelection native "*DOMSelection" {
+class DOMSelectionImpl implements DOMSelection native "*DOMSelection" {
 
-  final _NodeImpl anchorNode;
+  final NodeImpl anchorNode;
 
   final int anchorOffset;
 
-  final _NodeImpl baseNode;
+  final NodeImpl baseNode;
 
   final int baseOffset;
 
-  final _NodeImpl extentNode;
+  final NodeImpl extentNode;
 
   final int extentOffset;
 
-  final _NodeImpl focusNode;
+  final NodeImpl focusNode;
 
   final int focusOffset;
 
@@ -4379,43 +4379,43 @@ class _DOMSelectionImpl implements DOMSelection native "*DOMSelection" {
 
   final String type;
 
-  void addRange(_RangeImpl range) native;
+  void addRange(RangeImpl range) native;
 
-  void collapse(_NodeImpl node, int index) native;
+  void collapse(NodeImpl node, int index) native;
 
   void collapseToEnd() native;
 
   void collapseToStart() native;
 
-  bool containsNode(_NodeImpl node, bool allowPartial) native;
+  bool containsNode(NodeImpl node, bool allowPartial) native;
 
   void deleteFromDocument() native;
 
   void empty() native;
 
-  void extend(_NodeImpl node, int offset) native;
+  void extend(NodeImpl node, int offset) native;
 
-  _RangeImpl getRangeAt(int index) native;
+  RangeImpl getRangeAt(int index) native;
 
   void modify(String alter, String direction, String granularity) native;
 
   void removeAllRanges() native;
 
-  void selectAllChildren(_NodeImpl node) native;
+  void selectAllChildren(NodeImpl node) native;
 
-  void setBaseAndExtent(_NodeImpl baseNode, int baseOffset, _NodeImpl extentNode, int extentOffset) native;
+  void setBaseAndExtent(NodeImpl baseNode, int baseOffset, NodeImpl extentNode, int extentOffset) native;
 
-  void setPosition(_NodeImpl node, int offset) native;
+  void setPosition(NodeImpl node, int offset) native;
 
   String toString() native;
 }
 
-class _DOMSettableTokenListImpl extends _DOMTokenListImpl implements DOMSettableTokenList native "*DOMSettableTokenList" {
+class DOMSettableTokenListImpl extends DOMTokenListImpl implements DOMSettableTokenList native "*DOMSettableTokenList" {
 
   String value;
 }
 
-class _DOMStringListImpl implements DOMStringList, JavaScriptIndexingBehavior native "*DOMStringList" {
+class DOMStringListImpl implements DOMStringList, JavaScriptIndexingBehavior native "*DOMStringList" {
 
   final int length;
 
@@ -4506,7 +4506,7 @@ class _DOMStringListImpl implements DOMStringList, JavaScriptIndexingBehavior na
   String item(int index) native;
 }
 
-class _DOMTokenListImpl implements DOMTokenList native "*DOMTokenList" {
+class DOMTokenListImpl implements DOMTokenList native "*DOMTokenList" {
 
   final int length;
 
@@ -4523,23 +4523,23 @@ class _DOMTokenListImpl implements DOMTokenList native "*DOMTokenList" {
   bool toggle(String token) native;
 }
 
-class _DOMURLImpl implements DOMURL native "*DOMURL" {
+class DOMURLImpl implements DOMURL native "*DOMURL" {
 }
 
-class _DataTransferItemImpl implements DataTransferItem native "*DataTransferItem" {
+class DataTransferItemImpl implements DataTransferItem native "*DataTransferItem" {
 
   final String kind;
 
   final String type;
 
-  _BlobImpl getAsFile() native;
+  BlobImpl getAsFile() native;
 
   void getAsString([StringCallback callback]) native;
 
-  _EntryImpl webkitGetAsEntry() native;
+  EntryImpl webkitGetAsEntry() native;
 }
 
-class _DataTransferItemListImpl implements DataTransferItemList native "*DataTransferItemList" {
+class DataTransferItemListImpl implements DataTransferItemList native "*DataTransferItemList" {
 
   final int length;
 
@@ -4547,10 +4547,10 @@ class _DataTransferItemListImpl implements DataTransferItemList native "*DataTra
 
   void clear() native;
 
-  _DataTransferItemImpl item(int index) native;
+  DataTransferItemImpl item(int index) native;
 }
 
-class _DataViewImpl extends _ArrayBufferViewImpl implements DataView native "*DataView" {
+class DataViewImpl extends ArrayBufferViewImpl implements DataView native "*DataView" {
 
   num getFloat32(int byteOffset, [bool littleEndian]) native;
 
@@ -4585,7 +4585,7 @@ class _DataViewImpl extends _ArrayBufferViewImpl implements DataView native "*Da
   void setUint8(int byteOffset, int value) native;
 }
 
-class _DatabaseImpl implements Database native "*Database" {
+class DatabaseImpl implements Database native "*Database" {
 
   final String version;
 
@@ -4596,7 +4596,7 @@ class _DatabaseImpl implements Database native "*Database" {
   void transaction(SQLTransactionCallback callback, [SQLTransactionErrorCallback errorCallback, VoidCallback successCallback]) native;
 }
 
-class _DatabaseSyncImpl implements DatabaseSync native "*DatabaseSync" {
+class DatabaseSyncImpl implements DatabaseSync native "*DatabaseSync" {
 
   final String lastErrorMessage;
 
@@ -4609,38 +4609,38 @@ class _DatabaseSyncImpl implements DatabaseSync native "*DatabaseSync" {
   void transaction(SQLTransactionSyncCallback callback) native;
 }
 
-class _DedicatedWorkerContextImpl extends _WorkerContextImpl implements DedicatedWorkerContext native "*DedicatedWorkerContext" {
+class DedicatedWorkerContextImpl extends WorkerContextImpl implements DedicatedWorkerContext native "*DedicatedWorkerContext" {
 
-  _DedicatedWorkerContextEventsImpl get on() =>
-    new _DedicatedWorkerContextEventsImpl(this);
+  DedicatedWorkerContextEventsImpl get on() =>
+    new DedicatedWorkerContextEventsImpl(this);
 
   void postMessage(Object message, [List messagePorts]) native;
 
   void webkitPostMessage(Object message, [List transferList]) native;
 }
 
-class _DedicatedWorkerContextEventsImpl extends _WorkerContextEventsImpl implements DedicatedWorkerContextEvents {
-  _DedicatedWorkerContextEventsImpl(_ptr) : super(_ptr);
+class DedicatedWorkerContextEventsImpl extends WorkerContextEventsImpl implements DedicatedWorkerContextEvents {
+  DedicatedWorkerContextEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get message() => this['message'];
 }
 
-class _DelayNodeImpl extends _AudioNodeImpl implements DelayNode native "*DelayNode" {
+class DelayNodeImpl extends AudioNodeImpl implements DelayNode native "*DelayNode" {
 
-  final _AudioParamImpl delayTime;
+  final AudioParamImpl delayTime;
 }
 
-class _DetailsElementImpl extends _ElementImpl implements DetailsElement native "*HTMLDetailsElement" {
+class DetailsElementImpl extends ElementImpl implements DetailsElement native "*HTMLDetailsElement" {
 
   bool open;
 }
 
-class _DeviceMotionEventImpl extends _EventImpl implements DeviceMotionEvent native "*DeviceMotionEvent" {
+class DeviceMotionEventImpl extends EventImpl implements DeviceMotionEvent native "*DeviceMotionEvent" {
 
   final num interval;
 }
 
-class _DeviceOrientationEventImpl extends _EventImpl implements DeviceOrientationEvent native "*DeviceOrientationEvent" {
+class DeviceOrientationEventImpl extends EventImpl implements DeviceOrientationEvent native "*DeviceOrientationEvent" {
 
   final bool absolute;
 
@@ -4653,14 +4653,14 @@ class _DeviceOrientationEventImpl extends _EventImpl implements DeviceOrientatio
   void initDeviceOrientationEvent(String type, bool bubbles, bool cancelable, num alpha, num beta, num gamma, bool absolute) native;
 }
 
-class _DirectoryElementImpl extends _ElementImpl implements DirectoryElement native "*HTMLDirectoryElement" {
+class DirectoryElementImpl extends ElementImpl implements DirectoryElement native "*HTMLDirectoryElement" {
 
   bool compact;
 }
 
-class _DirectoryEntryImpl extends _EntryImpl implements DirectoryEntry native "*DirectoryEntry" {
+class DirectoryEntryImpl extends EntryImpl implements DirectoryEntry native "*DirectoryEntry" {
 
-  _DirectoryReaderImpl createReader() native;
+  DirectoryReaderImpl createReader() native;
 
   void getDirectory(String path, [Object flags, EntryCallback successCallback, ErrorCallback errorCallback]) native;
 
@@ -4669,28 +4669,28 @@ class _DirectoryEntryImpl extends _EntryImpl implements DirectoryEntry native "*
   void removeRecursively(VoidCallback successCallback, [ErrorCallback errorCallback]) native;
 }
 
-class _DirectoryEntrySyncImpl extends _EntrySyncImpl implements DirectoryEntrySync native "*DirectoryEntrySync" {
+class DirectoryEntrySyncImpl extends EntrySyncImpl implements DirectoryEntrySync native "*DirectoryEntrySync" {
 
-  _DirectoryReaderSyncImpl createReader() native;
+  DirectoryReaderSyncImpl createReader() native;
 
-  _DirectoryEntrySyncImpl getDirectory(String path, Object flags) native;
+  DirectoryEntrySyncImpl getDirectory(String path, Object flags) native;
 
-  _FileEntrySyncImpl getFile(String path, Object flags) native;
+  FileEntrySyncImpl getFile(String path, Object flags) native;
 
   void removeRecursively() native;
 }
 
-class _DirectoryReaderImpl implements DirectoryReader native "*DirectoryReader" {
+class DirectoryReaderImpl implements DirectoryReader native "*DirectoryReader" {
 
   void readEntries(EntriesCallback successCallback, [ErrorCallback errorCallback]) native;
 }
 
-class _DirectoryReaderSyncImpl implements DirectoryReaderSync native "*DirectoryReaderSync" {
+class DirectoryReaderSyncImpl implements DirectoryReaderSync native "*DirectoryReaderSync" {
 
-  _EntryArraySyncImpl readEntries() native;
+  EntryArraySyncImpl readEntries() native;
 }
 
-class _DivElementImpl extends _ElementImpl implements DivElement native "*HTMLDivElement" {
+class DivElementImpl extends ElementImpl implements DivElement native "*HTMLDivElement" {
 
   String align;
 }
@@ -4698,29 +4698,29 @@ class _DivElementImpl extends _ElementImpl implements DivElement native "*HTMLDi
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-class _DocumentImpl extends _NodeImpl implements Document
+class DocumentImpl extends NodeImpl implements Document
     native "*HTMLDocument"
 {
 
 
-  _DocumentEventsImpl get on() =>
-    new _DocumentEventsImpl(this);
+  DocumentEventsImpl get on() =>
+    new DocumentEventsImpl(this);
 
-  final _ElementImpl activeElement;
+  final ElementImpl activeElement;
 
-  _ElementImpl body;
+  ElementImpl body;
 
   String charset;
 
   String cookie;
 
-  _WindowImpl get window() native "return this.defaultView;";
+  WindowImpl get window() native "return this.defaultView;";
 
-  final _ElementImpl documentElement;
+  final ElementImpl documentElement;
 
   final String domain;
 
-  final _HeadElementImpl head;
+  final HeadElementImpl head;
 
   final String lastModified;
 
@@ -4732,15 +4732,15 @@ class _DocumentImpl extends _NodeImpl implements Document
 
   String selectedStylesheetSet;
 
-  final _StyleSheetListImpl styleSheets;
+  final StyleSheetListImpl styleSheets;
 
   String title;
 
-  final _ElementImpl webkitCurrentFullScreenElement;
+  final ElementImpl webkitCurrentFullScreenElement;
 
   final bool webkitFullScreenKeyboardInputAllowed;
 
-  final _ElementImpl webkitFullscreenElement;
+  final ElementImpl webkitFullscreenElement;
 
   final bool webkitFullscreenEnabled;
 
@@ -4748,43 +4748,43 @@ class _DocumentImpl extends _NodeImpl implements Document
 
   final bool webkitIsFullScreen;
 
-  final _ElementImpl webkitPointerLockElement;
+  final ElementImpl webkitPointerLockElement;
 
   final String webkitVisibilityState;
 
-  _RangeImpl caretRangeFromPoint(int x, int y) native;
+  RangeImpl caretRangeFromPoint(int x, int y) native;
 
-  _CDATASectionImpl createCDATASection(String data) native;
+  CDATASectionImpl createCDATASection(String data) native;
 
-  _DocumentFragmentImpl createDocumentFragment() native;
+  DocumentFragmentImpl createDocumentFragment() native;
 
-  _ElementImpl $dom_createElement(String tagName) native "createElement";
+  ElementImpl $dom_createElement(String tagName) native "createElement";
 
-  _ElementImpl $dom_createElementNS(String namespaceURI, String qualifiedName) native "createElementNS";
+  ElementImpl $dom_createElementNS(String namespaceURI, String qualifiedName) native "createElementNS";
 
-  _EventImpl $dom_createEvent(String eventType) native "createEvent";
+  EventImpl $dom_createEvent(String eventType) native "createEvent";
 
-  _RangeImpl createRange() native;
+  RangeImpl createRange() native;
 
-  _TextImpl $dom_createTextNode(String data) native "createTextNode";
+  TextImpl $dom_createTextNode(String data) native "createTextNode";
 
-  _TouchImpl createTouch(_WindowImpl window, _EventTargetImpl target, int identifier, int pageX, int pageY, int screenX, int screenY, int webkitRadiusX, int webkitRadiusY, num webkitRotationAngle, num webkitForce) native;
+  TouchImpl createTouch(WindowImpl window, EventTargetImpl target, int identifier, int pageX, int pageY, int screenX, int screenY, int webkitRadiusX, int webkitRadiusY, num webkitRotationAngle, num webkitForce) native;
 
-  _TouchListImpl $dom_createTouchList() native "createTouchList";
+  TouchListImpl $dom_createTouchList() native "createTouchList";
 
-  _ElementImpl elementFromPoint(int x, int y) native;
+  ElementImpl elementFromPoint(int x, int y) native;
 
   bool execCommand(String command, bool userInterface, String value) native;
 
-  _CanvasRenderingContextImpl getCSSCanvasContext(String contextId, String name, int width, int height) native;
+  CanvasRenderingContextImpl getCSSCanvasContext(String contextId, String name, int width, int height) native;
 
-  _ElementImpl $dom_getElementById(String elementId) native "getElementById";
+  ElementImpl $dom_getElementById(String elementId) native "getElementById";
 
-  _NodeListImpl $dom_getElementsByClassName(String tagname) native "getElementsByClassName";
+  NodeListImpl $dom_getElementsByClassName(String tagname) native "getElementsByClassName";
 
-  _NodeListImpl $dom_getElementsByName(String elementName) native "getElementsByName";
+  NodeListImpl $dom_getElementsByName(String elementName) native "getElementsByName";
 
-  _NodeListImpl $dom_getElementsByTagName(String tagname) native "getElementsByTagName";
+  NodeListImpl $dom_getElementsByTagName(String tagname) native "getElementsByTagName";
 
   bool queryCommandEnabled(String command) native;
 
@@ -4796,9 +4796,9 @@ class _DocumentImpl extends _NodeImpl implements Document
 
   String queryCommandValue(String command) native;
 
-  _ElementImpl $dom_querySelector(String selectors) native "querySelector";
+  ElementImpl $dom_querySelector(String selectors) native "querySelector";
 
-  _NodeListImpl $dom_querySelectorAll(String selectors) native "querySelectorAll";
+  NodeListImpl $dom_querySelectorAll(String selectors) native "querySelectorAll";
 
   void webkitCancelFullScreen() native;
 
@@ -4808,7 +4808,7 @@ class _DocumentImpl extends _NodeImpl implements Document
 
   // TODO(jacobr): implement all Element methods not on Document. 
 
-  _ElementImpl query(String selectors) {
+  ElementImpl query(String selectors) {
     // It is fine for our RegExp to detect element id query selectors to have
     // false negatives but not false positives.
     if (const RegExp("^#[_a-zA-Z]\\w*\$").hasMatch(selectors)) {
@@ -4841,8 +4841,8 @@ class _DocumentImpl extends _NodeImpl implements Document
   }
 }
 
-class _DocumentEventsImpl extends _ElementEventsImpl implements DocumentEvents {
-  _DocumentEventsImpl(_ptr) : super(_ptr);
+class DocumentEventsImpl extends ElementEventsImpl implements DocumentEvents {
+  DocumentEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get abort() => this['abort'];
 
@@ -5070,7 +5070,7 @@ class EmptyElementRect implements ElementRect {
   const EmptyElementRect();
 }
 
-class _DocumentFragmentImpl extends _NodeImpl implements DocumentFragment native "*DocumentFragment" {
+class DocumentFragmentImpl extends NodeImpl implements DocumentFragment native "*DocumentFragment" {
   ElementList _elements;
 
   ElementList get elements() {
@@ -5089,7 +5089,7 @@ class _DocumentFragmentImpl extends _NodeImpl implements DocumentFragment native
     elements.addAll(copy);
   }
 
-  _ElementImpl query(String selectors) => $dom_querySelector(selectors);
+  ElementImpl query(String selectors) => $dom_querySelector(selectors);
 
   List<Element> queryAll(String selectors) =>
     new _FrozenElementList._wrap($dom_querySelectorAll(selectors));
@@ -5287,46 +5287,46 @@ class _DocumentFragmentImpl extends _NodeImpl implements DocumentFragment native
   }
 
 
-  _ElementEventsImpl get on() =>
-    new _ElementEventsImpl(this);
+  ElementEventsImpl get on() =>
+    new ElementEventsImpl(this);
 
-  _ElementImpl $dom_querySelector(String selectors) native "querySelector";
+  ElementImpl $dom_querySelector(String selectors) native "querySelector";
 
-  _NodeListImpl $dom_querySelectorAll(String selectors) native "querySelectorAll";
+  NodeListImpl $dom_querySelectorAll(String selectors) native "querySelectorAll";
 
 }
 
-class _DocumentTypeImpl extends _NodeImpl implements DocumentType native "*DocumentType" {
+class DocumentTypeImpl extends NodeImpl implements DocumentType native "*DocumentType" {
 
-  final _NamedNodeMapImpl entities;
+  final NamedNodeMapImpl entities;
 
   final String internalSubset;
 
   final String name;
 
-  final _NamedNodeMapImpl notations;
+  final NamedNodeMapImpl notations;
 
   final String publicId;
 
   final String systemId;
 }
 
-class _DynamicsCompressorNodeImpl extends _AudioNodeImpl implements DynamicsCompressorNode native "*DynamicsCompressorNode" {
+class DynamicsCompressorNodeImpl extends AudioNodeImpl implements DynamicsCompressorNode native "*DynamicsCompressorNode" {
 
-  final _AudioParamImpl attack;
+  final AudioParamImpl attack;
 
-  final _AudioParamImpl knee;
+  final AudioParamImpl knee;
 
-  final _AudioParamImpl ratio;
+  final AudioParamImpl ratio;
 
-  final _AudioParamImpl reduction;
+  final AudioParamImpl reduction;
 
-  final _AudioParamImpl release;
+  final AudioParamImpl release;
 
-  final _AudioParamImpl threshold;
+  final AudioParamImpl threshold;
 }
 
-class _EXTTextureFilterAnisotropicImpl implements EXTTextureFilterAnisotropic native "*EXTTextureFilterAnisotropic" {
+class EXTTextureFilterAnisotropicImpl implements EXTTextureFilterAnisotropic native "*EXTTextureFilterAnisotropic" {
 
   static final int MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF;
 
@@ -5340,10 +5340,10 @@ class _EXTTextureFilterAnisotropicImpl implements EXTTextureFilterAnisotropic na
 // functionality.
 class _ChildrenElementList implements ElementList {
   // Raw Element.
-  final _ElementImpl _element;
-  final _HTMLCollectionImpl _childElements;
+  final ElementImpl _element;
+  final HTMLCollectionImpl _childElements;
 
-  _ChildrenElementList._wrap(_ElementImpl element)
+  _ChildrenElementList._wrap(ElementImpl element)
     : _childElements = element.$dom_children,
       _element = element;
 
@@ -5355,12 +5355,12 @@ class _ChildrenElementList implements ElementList {
     return output;
   }
 
-  _ElementImpl get first() {
+  ElementImpl get first() {
     return _element.$dom_firstElementChild;
   }
 
   void forEach(void f(Element element)) {
-    for (_ElementImpl element in _childElements) {
+    for (ElementImpl element in _childElements) {
       f(element);
     }
   }
@@ -5409,11 +5409,11 @@ class _ChildrenElementList implements ElementList {
     return _childElements.length;
   }
 
-  _ElementImpl operator [](int index) {
+  ElementImpl operator [](int index) {
     return _childElements[index];
   }
 
-  void operator []=(int index, _ElementImpl value) {
+  void operator []=(int index, ElementImpl value) {
     _element.$dom_replaceChild(value, _childElements[index]);
   }
 
@@ -5422,17 +5422,17 @@ class _ChildrenElementList implements ElementList {
      throw const UnsupportedOperationException('');
    }
 
-  Element add(_ElementImpl value) {
+  Element add(ElementImpl value) {
     _element.$dom_appendChild(value);
     return value;
   }
 
-  Element addLast(_ElementImpl value) => add(value);
+  Element addLast(ElementImpl value) => add(value);
 
   Iterator<Element> iterator() => _toList().iterator();
 
   void addAll(Collection<Element> collection) {
-    for (_ElementImpl element in collection) {
+    for (ElementImpl element in collection) {
       _element.$dom_appendChild(element);
     }
   }
@@ -5641,7 +5641,7 @@ class _ElementList extends _ListWrapper<Element> implements ElementList {
 
 class _ElementAttributeMap implements AttributeMap {
 
-  final _ElementImpl _element;
+  final ElementImpl _element;
 
   _ElementAttributeMap(this._element);
 
@@ -5806,7 +5806,7 @@ class _DataAttributeMap implements AttributeMap {
 
 class _CssClassSet implements Set<String> {
 
-  final _ElementImpl _element;
+  final ElementImpl _element;
 
   _CssClassSet(this._element);
 
@@ -5951,17 +5951,17 @@ class _SimpleClientRect implements ClientRect {
  * All your element measurement needs in one place
  * @domName none
  */
-class _ElementRectImpl implements ElementRect {
+class ElementRectImpl implements ElementRect {
   final ClientRect client;
   final ClientRect offset;
   final ClientRect scroll;
 
   // TODO(jacobr): should we move these outside of ElementRect to avoid the
   // overhead of computing them every time even though they are rarely used.
-  final _ClientRectImpl _boundingClientRect; 
-  final _ClientRectListImpl _clientRects;
+  final ClientRectImpl _boundingClientRect; 
+  final ClientRectListImpl _clientRects;
 
-  _ElementRectImpl(_ElementImpl element) :
+  ElementRectImpl(ElementImpl element) :
     client = new _SimpleClientRect(element.$dom_clientLeft,
                                   element.$dom_clientTop,
                                   element.$dom_clientWidth, 
@@ -5977,7 +5977,7 @@ class _ElementRectImpl implements ElementRect {
     _boundingClientRect = element.$dom_getBoundingClientRect(),
     _clientRects = element.$dom_getClientRects();
 
-  _ClientRectImpl get bounding() => _boundingClientRect;
+  ClientRectImpl get bounding() => _boundingClientRect;
 
   // TODO(jacobr): cleanup.
   List<ClientRect> get clientRects() {
@@ -5989,7 +5989,7 @@ class _ElementRectImpl implements ElementRect {
   }
 }
 
-class _ElementImpl extends _NodeImpl implements Element native "*Element" {
+class ElementImpl extends NodeImpl implements Element native "*Element" {
 
   /**
    * @domName Element.hasAttribute, Element.getAttribute, Element.setAttribute,
@@ -6013,7 +6013,7 @@ class _ElementImpl extends _NodeImpl implements Element native "*Element" {
 
   ElementList get elements() => new _ChildrenElementList._wrap(this);
 
-  _ElementImpl query(String selectors) => $dom_querySelector(selectors);
+  ElementImpl query(String selectors) => $dom_querySelector(selectors);
 
   List<Element> queryAll(String selectors) =>
     new _FrozenElementList._wrap($dom_querySelectorAll(selectors));
@@ -6039,7 +6039,7 @@ class _ElementImpl extends _NodeImpl implements Element native "*Element" {
 
   Future<ElementRect> get rect() {
     return _createMeasurementFuture(
-        () => new _ElementRectImpl(this),
+        () => new ElementRectImpl(this),
         new Completer<ElementRect>());
   }
 
@@ -6060,10 +6060,10 @@ class _ElementImpl extends _NodeImpl implements Element native "*Element" {
   // TODO(vsm): Implement noSuchMethod or similar for dart2js.
 
 
-  _ElementEventsImpl get on() =>
-    new _ElementEventsImpl(this);
+  ElementEventsImpl get on() =>
+    new ElementEventsImpl(this);
 
-  _HTMLCollectionImpl get $dom_children() native "return this.children;";
+  HTMLCollectionImpl get $dom_children() native "return this.children;";
 
   String contentEditable;
 
@@ -6095,7 +6095,7 @@ class _ElementImpl extends _NodeImpl implements Element native "*Element" {
 
   void click() native;
 
-  _ElementImpl insertAdjacentElement(String where, _ElementImpl element) native;
+  ElementImpl insertAdjacentElement(String where, ElementImpl element) native;
 
   void insertAdjacentHTML(String where, String html) native;
 
@@ -6119,23 +6119,23 @@ class _ElementImpl extends _NodeImpl implements Element native "*Element" {
 
   final Map<String, String> dataset;
 
-  _ElementImpl get $dom_firstElementChild() native "return this.firstElementChild;";
+  ElementImpl get $dom_firstElementChild() native "return this.firstElementChild;";
 
-  _ElementImpl get $dom_lastElementChild() native "return this.lastElementChild;";
+  ElementImpl get $dom_lastElementChild() native "return this.lastElementChild;";
 
-  final _ElementImpl nextElementSibling;
+  final ElementImpl nextElementSibling;
 
   int get $dom_offsetHeight() native "return this.offsetHeight;";
 
   int get $dom_offsetLeft() native "return this.offsetLeft;";
 
-  final _ElementImpl offsetParent;
+  final ElementImpl offsetParent;
 
   int get $dom_offsetTop() native "return this.offsetTop;";
 
   int get $dom_offsetWidth() native "return this.offsetWidth;";
 
-  final _ElementImpl previousElementSibling;
+  final ElementImpl previousElementSibling;
 
   int get $dom_scrollHeight() native "return this.scrollHeight;";
 
@@ -6149,7 +6149,7 @@ class _ElementImpl extends _NodeImpl implements Element native "*Element" {
 
   int get $dom_scrollWidth() native "return this.scrollWidth;";
 
-  final _CSSStyleDeclarationImpl style;
+  final CSSStyleDeclarationImpl style;
 
   final String tagName;
 
@@ -6161,19 +6161,19 @@ class _ElementImpl extends _NodeImpl implements Element native "*Element" {
 
   String $dom_getAttribute(String name) native "getAttribute";
 
-  _ClientRectImpl $dom_getBoundingClientRect() native "getBoundingClientRect";
+  ClientRectImpl $dom_getBoundingClientRect() native "getBoundingClientRect";
 
-  _ClientRectListImpl $dom_getClientRects() native "getClientRects";
+  ClientRectListImpl $dom_getClientRects() native "getClientRects";
 
-  _NodeListImpl $dom_getElementsByClassName(String name) native "getElementsByClassName";
+  NodeListImpl $dom_getElementsByClassName(String name) native "getElementsByClassName";
 
-  _NodeListImpl $dom_getElementsByTagName(String name) native "getElementsByTagName";
+  NodeListImpl $dom_getElementsByTagName(String name) native "getElementsByTagName";
 
   bool $dom_hasAttribute(String name) native "hasAttribute";
 
-  _ElementImpl $dom_querySelector(String selectors) native "querySelector";
+  ElementImpl $dom_querySelector(String selectors) native "querySelector";
 
-  _NodeListImpl $dom_querySelectorAll(String selectors) native "querySelectorAll";
+  NodeListImpl $dom_querySelectorAll(String selectors) native "querySelectorAll";
 
   void $dom_removeAttribute(String name) native "removeAttribute";
 
@@ -6231,7 +6231,7 @@ class _ElementFactoryProvider {
         parentTag = _CUSTOM_PARENT_TAG_MAP[tag];
       }
     }
-    final _ElementImpl temp = new Element.tag(parentTag);
+    final ElementImpl temp = new Element.tag(parentTag);
     temp.innerHTML = html;
 
     Element element;
@@ -6256,8 +6256,8 @@ class _ElementFactoryProvider {
   factory Element.tag(String tag) native "return document.createElement(tag)";
 }
 
-class _ElementEventsImpl extends _EventsImpl implements ElementEvents {
-  _ElementEventsImpl(_ptr) : super(_ptr);
+class ElementEventsImpl extends EventsImpl implements ElementEvents {
+  ElementEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get abort() => this['abort'];
 
@@ -6356,7 +6356,7 @@ class _ElementEventsImpl extends _EventsImpl implements ElementEvents {
   EventListenerList get transitionEnd() => this['webkitTransitionEnd'];
 }
 
-class _EmbedElementImpl extends _ElementImpl implements EmbedElement native "*HTMLEmbedElement" {
+class EmbedElementImpl extends ElementImpl implements EmbedElement native "*HTMLEmbedElement" {
 
   String align;
 
@@ -6371,7 +6371,7 @@ class _EmbedElementImpl extends _ElementImpl implements EmbedElement native "*HT
   String width;
 }
 
-class _EntityImpl extends _NodeImpl implements Entity native "*Entity" {
+class EntityImpl extends NodeImpl implements Entity native "*Entity" {
 
   final String notationName;
 
@@ -6380,12 +6380,12 @@ class _EntityImpl extends _NodeImpl implements Entity native "*Entity" {
   final String systemId;
 }
 
-class _EntityReferenceImpl extends _NodeImpl implements EntityReference native "*EntityReference" {
+class EntityReferenceImpl extends NodeImpl implements EntityReference native "*EntityReference" {
 }
 
-class _EntryImpl implements Entry native "*Entry" {
+class EntryImpl implements Entry native "*Entry" {
 
-  final _DOMFileSystemImpl filesystem;
+  final DOMFileSystemImpl filesystem;
 
   final String fullPath;
 
@@ -6395,36 +6395,36 @@ class _EntryImpl implements Entry native "*Entry" {
 
   final String name;
 
-  void copyTo(_DirectoryEntryImpl parent, [String name, EntryCallback successCallback, ErrorCallback errorCallback]) native;
+  void copyTo(DirectoryEntryImpl parent, [String name, EntryCallback successCallback, ErrorCallback errorCallback]) native;
 
   void getMetadata(MetadataCallback successCallback, [ErrorCallback errorCallback]) native;
 
   void getParent([EntryCallback successCallback, ErrorCallback errorCallback]) native;
 
-  void moveTo(_DirectoryEntryImpl parent, [String name, EntryCallback successCallback, ErrorCallback errorCallback]) native;
+  void moveTo(DirectoryEntryImpl parent, [String name, EntryCallback successCallback, ErrorCallback errorCallback]) native;
 
   void remove(VoidCallback successCallback, [ErrorCallback errorCallback]) native;
 
   String toURL() native;
 }
 
-class _EntryArrayImpl implements EntryArray native "*EntryArray" {
+class EntryArrayImpl implements EntryArray native "*EntryArray" {
 
   final int length;
 
-  _EntryImpl item(int index) native;
+  EntryImpl item(int index) native;
 }
 
-class _EntryArraySyncImpl implements EntryArraySync native "*EntryArraySync" {
+class EntryArraySyncImpl implements EntryArraySync native "*EntryArraySync" {
 
   final int length;
 
-  _EntrySyncImpl item(int index) native;
+  EntrySyncImpl item(int index) native;
 }
 
-class _EntrySyncImpl implements EntrySync native "*EntrySync" {
+class EntrySyncImpl implements EntrySync native "*EntrySync" {
 
-  final _DOMFileSystemSyncImpl filesystem;
+  final DOMFileSystemSyncImpl filesystem;
 
   final String fullPath;
 
@@ -6434,20 +6434,20 @@ class _EntrySyncImpl implements EntrySync native "*EntrySync" {
 
   final String name;
 
-  _EntrySyncImpl copyTo(_DirectoryEntrySyncImpl parent, String name) native;
+  EntrySyncImpl copyTo(DirectoryEntrySyncImpl parent, String name) native;
 
-  _MetadataImpl getMetadata() native;
+  MetadataImpl getMetadata() native;
 
-  _EntrySyncImpl getParent() native;
+  EntrySyncImpl getParent() native;
 
-  _EntrySyncImpl moveTo(_DirectoryEntrySyncImpl parent, String name) native;
+  EntrySyncImpl moveTo(DirectoryEntrySyncImpl parent, String name) native;
 
   void remove() native;
 
   String toURL() native;
 }
 
-class _ErrorEventImpl extends _EventImpl implements ErrorEvent native "*ErrorEvent" {
+class ErrorEventImpl extends EventImpl implements ErrorEvent native "*ErrorEvent" {
 
   final String filename;
 
@@ -6456,7 +6456,7 @@ class _ErrorEventImpl extends _EventImpl implements ErrorEvent native "*ErrorEve
   final String message;
 }
 
-class _EventImpl implements Event native "*Event" {
+class EventImpl implements Event native "*Event" {
 
   static final int AT_TARGET = 2;
 
@@ -6504,9 +6504,9 @@ class _EventImpl implements Event native "*Event" {
 
   final bool cancelable;
 
-  final _ClipboardImpl clipboardData;
+  final ClipboardImpl clipboardData;
 
-  final _EventTargetImpl currentTarget;
+  final EventTargetImpl currentTarget;
 
   final bool defaultPrevented;
 
@@ -6514,9 +6514,9 @@ class _EventImpl implements Event native "*Event" {
 
   bool returnValue;
 
-  final _EventTargetImpl srcElement;
+  final EventTargetImpl srcElement;
 
-  final _EventTargetImpl target;
+  final EventTargetImpl target;
 
   final int timeStamp;
 
@@ -6531,7 +6531,7 @@ class _EventImpl implements Event native "*Event" {
   void stopPropagation() native;
 }
 
-class _EventExceptionImpl implements EventException native "*EventException" {
+class EventExceptionImpl implements EventException native "*EventException" {
 
   static final int DISPATCH_REQUEST_ERR = 1;
 
@@ -6546,10 +6546,10 @@ class _EventExceptionImpl implements EventException native "*EventException" {
   String toString() native;
 }
 
-class _EventSourceImpl extends _EventTargetImpl implements EventSource native "*EventSource" {
+class EventSourceImpl extends EventTargetImpl implements EventSource native "*EventSource" {
 
-  _EventSourceEventsImpl get on() =>
-    new _EventSourceEventsImpl(this);
+  EventSourceEventsImpl get on() =>
+    new EventSourceEventsImpl(this);
 
   static final int CLOSED = 2;
 
@@ -6567,13 +6567,13 @@ class _EventSourceImpl extends _EventTargetImpl implements EventSource native "*
 
   void close() native;
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _EventSourceEventsImpl extends _EventsImpl implements EventSourceEvents {
-  _EventSourceEventsImpl(_ptr) : super(_ptr);
+class EventSourceEventsImpl extends EventsImpl implements EventSourceEvents {
+  EventSourceEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get error() => this['error'];
 
@@ -6585,36 +6585,36 @@ class _EventSourceEventsImpl extends _EventsImpl implements EventSourceEvents {
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-class _EventsImpl implements Events {
+class EventsImpl implements Events {
   /* Raw event target. */
   // TODO(jacobr): it would be nice if we could specify this as
-  // _EventTargetImpl or EventTarget
+  // EventTargetImpl or EventTarget
   final Dynamic _ptr;
 
-  _EventsImpl(this._ptr);
+  EventsImpl(this._ptr);
 
-  _EventListenerListImpl operator [](String type) {
-    return new _EventListenerListImpl(_ptr, type);
+  EventListenerListImpl operator [](String type) {
+    return new EventListenerListImpl(_ptr, type);
   }
 }
 
-class _EventListenerListImpl implements EventListenerList {
+class EventListenerListImpl implements EventListenerList {
   
-  // TODO(jacobr): make this _EventTargetImpl
+  // TODO(jacobr): make this EventTargetImpl
   final Dynamic _ptr;
   final String _type;
 
-  _EventListenerListImpl(this._ptr, this._type);
+  EventListenerListImpl(this._ptr, this._type);
 
   // TODO(jacobr): implement equals.
 
-  _EventListenerListImpl add(EventListener listener,
+  EventListenerListImpl add(EventListener listener,
       [bool useCapture = false]) {
     _add(listener, useCapture);
     return this;
   }
 
-  _EventListenerListImpl remove(EventListener listener,
+  EventListenerListImpl remove(EventListener listener,
       [bool useCapture = false]) {
     _remove(listener, useCapture);
     return this;
@@ -6637,25 +6637,25 @@ class _EventListenerListImpl implements EventListenerList {
 }
 
 
-class _EventTargetImpl implements EventTarget native "*EventTarget" {
+class EventTargetImpl implements EventTarget native "*EventTarget" {
 
-  Events get on() => new _EventsImpl(this);
+  Events get on() => new EventsImpl(this);
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
 }
 
-class _FieldSetElementImpl extends _ElementImpl implements FieldSetElement native "*HTMLFieldSetElement" {
+class FieldSetElementImpl extends ElementImpl implements FieldSetElement native "*HTMLFieldSetElement" {
 
   bool disabled;
 
-  final _HTMLCollectionImpl elements;
+  final HTMLCollectionImpl elements;
 
-  final _FormElementImpl form;
+  final FormElementImpl form;
 
   String name;
 
@@ -6663,7 +6663,7 @@ class _FieldSetElementImpl extends _ElementImpl implements FieldSetElement nativ
 
   final String validationMessage;
 
-  final _ValidityStateImpl validity;
+  final ValidityStateImpl validity;
 
   final bool willValidate;
 
@@ -6672,7 +6672,7 @@ class _FieldSetElementImpl extends _ElementImpl implements FieldSetElement nativ
   void setCustomValidity(String error) native;
 }
 
-class _FileImpl extends _BlobImpl implements File native "*File" {
+class FileImpl extends BlobImpl implements File native "*File" {
 
   final Date lastModifiedDate;
 
@@ -6681,21 +6681,21 @@ class _FileImpl extends _BlobImpl implements File native "*File" {
   final String webkitRelativePath;
 }
 
-class _FileEntryImpl extends _EntryImpl implements FileEntry native "*FileEntry" {
+class FileEntryImpl extends EntryImpl implements FileEntry native "*FileEntry" {
 
   void createWriter(FileWriterCallback successCallback, [ErrorCallback errorCallback]) native;
 
   void file(FileCallback successCallback, [ErrorCallback errorCallback]) native;
 }
 
-class _FileEntrySyncImpl extends _EntrySyncImpl implements FileEntrySync native "*FileEntrySync" {
+class FileEntrySyncImpl extends EntrySyncImpl implements FileEntrySync native "*FileEntrySync" {
 
-  _FileWriterSyncImpl createWriter() native;
+  FileWriterSyncImpl createWriter() native;
 
-  _FileImpl file() native;
+  FileImpl file() native;
 }
 
-class _FileErrorImpl implements FileError native "*FileError" {
+class FileErrorImpl implements FileError native "*FileError" {
 
   static final int ABORT_ERR = 3;
 
@@ -6724,7 +6724,7 @@ class _FileErrorImpl implements FileError native "*FileError" {
   final int code;
 }
 
-class _FileExceptionImpl implements FileException native "*FileException" {
+class FileExceptionImpl implements FileException native "*FileException" {
 
   static final int ABORT_ERR = 3;
 
@@ -6759,13 +6759,13 @@ class _FileExceptionImpl implements FileException native "*FileException" {
   String toString() native;
 }
 
-class _FileListImpl implements FileList, JavaScriptIndexingBehavior native "*FileList" {
+class FileListImpl implements FileList, JavaScriptIndexingBehavior native "*FileList" {
 
   final int length;
 
-  _FileImpl operator[](int index) native "return this[index];";
+  FileImpl operator[](int index) native "return this[index];";
 
-  void operator[]=(int index, _FileImpl value) {
+  void operator[]=(int index, FileImpl value) {
     throw new UnsupportedOperationException("Cannot assign element of immutable List.");
   }
   // -- start List<File> mixins.
@@ -6845,13 +6845,13 @@ class _FileListImpl implements FileList, JavaScriptIndexingBehavior native "*Fil
 
   // -- end List<File> mixins.
 
-  _FileImpl item(int index) native;
+  FileImpl item(int index) native;
 }
 
-class _FileReaderImpl extends _EventTargetImpl implements FileReader native "*FileReader" {
+class FileReaderImpl extends EventTargetImpl implements FileReader native "*FileReader" {
 
-  _FileReaderEventsImpl get on() =>
-    new _FileReaderEventsImpl(this);
+  FileReaderEventsImpl get on() =>
+    new FileReaderEventsImpl(this);
 
   static final int DONE = 2;
 
@@ -6859,7 +6859,7 @@ class _FileReaderImpl extends _EventTargetImpl implements FileReader native "*Fi
 
   static final int LOADING = 1;
 
-  final _FileErrorImpl error;
+  final FileErrorImpl error;
 
   final int readyState;
 
@@ -6869,21 +6869,21 @@ class _FileReaderImpl extends _EventTargetImpl implements FileReader native "*Fi
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
-  void readAsArrayBuffer(_BlobImpl blob) native;
+  void readAsArrayBuffer(BlobImpl blob) native;
 
-  void readAsBinaryString(_BlobImpl blob) native;
+  void readAsBinaryString(BlobImpl blob) native;
 
-  void readAsDataURL(_BlobImpl blob) native;
+  void readAsDataURL(BlobImpl blob) native;
 
-  void readAsText(_BlobImpl blob, [String encoding]) native;
+  void readAsText(BlobImpl blob, [String encoding]) native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _FileReaderEventsImpl extends _EventsImpl implements FileReaderEvents {
-  _FileReaderEventsImpl(_ptr) : super(_ptr);
+class FileReaderEventsImpl extends EventsImpl implements FileReaderEvents {
+  FileReaderEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get abort() => this['abort'];
 
@@ -6898,21 +6898,21 @@ class _FileReaderEventsImpl extends _EventsImpl implements FileReaderEvents {
   EventListenerList get progress() => this['progress'];
 }
 
-class _FileReaderSyncImpl implements FileReaderSync native "*FileReaderSync" {
+class FileReaderSyncImpl implements FileReaderSync native "*FileReaderSync" {
 
-  _ArrayBufferImpl readAsArrayBuffer(_BlobImpl blob) native;
+  ArrayBufferImpl readAsArrayBuffer(BlobImpl blob) native;
 
-  String readAsBinaryString(_BlobImpl blob) native;
+  String readAsBinaryString(BlobImpl blob) native;
 
-  String readAsDataURL(_BlobImpl blob) native;
+  String readAsDataURL(BlobImpl blob) native;
 
-  String readAsText(_BlobImpl blob, [String encoding]) native;
+  String readAsText(BlobImpl blob, [String encoding]) native;
 }
 
-class _FileWriterImpl extends _EventTargetImpl implements FileWriter native "*FileWriter" {
+class FileWriterImpl extends EventTargetImpl implements FileWriter native "*FileWriter" {
 
-  _FileWriterEventsImpl get on() =>
-    new _FileWriterEventsImpl(this);
+  FileWriterEventsImpl get on() =>
+    new FileWriterEventsImpl(this);
 
   static final int DONE = 2;
 
@@ -6920,7 +6920,7 @@ class _FileWriterImpl extends _EventTargetImpl implements FileWriter native "*Fi
 
   static final int WRITING = 1;
 
-  final _FileErrorImpl error;
+  final FileErrorImpl error;
 
   final int length;
 
@@ -6932,7 +6932,7 @@ class _FileWriterImpl extends _EventTargetImpl implements FileWriter native "*Fi
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
@@ -6940,11 +6940,11 @@ class _FileWriterImpl extends _EventTargetImpl implements FileWriter native "*Fi
 
   void truncate(int size) native;
 
-  void write(_BlobImpl data) native;
+  void write(BlobImpl data) native;
 }
 
-class _FileWriterEventsImpl extends _EventsImpl implements FileWriterEvents {
-  _FileWriterEventsImpl(_ptr) : super(_ptr);
+class FileWriterEventsImpl extends EventsImpl implements FileWriterEvents {
+  FileWriterEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get abort() => this['abort'];
 
@@ -6959,7 +6959,7 @@ class _FileWriterEventsImpl extends _EventsImpl implements FileWriterEvents {
   EventListenerList get writeStart() => this['writestart'];
 }
 
-class _FileWriterSyncImpl implements FileWriterSync native "*FileWriterSync" {
+class FileWriterSyncImpl implements FileWriterSync native "*FileWriterSync" {
 
   final int length;
 
@@ -6969,10 +6969,10 @@ class _FileWriterSyncImpl implements FileWriterSync native "*FileWriterSync" {
 
   void truncate(int size) native;
 
-  void write(_BlobImpl data) native;
+  void write(BlobImpl data) native;
 }
 
-class _Float32ArrayImpl extends _ArrayBufferViewImpl implements Float32Array, List<num>, JavaScriptIndexingBehavior native "*Float32Array" {
+class Float32ArrayImpl extends ArrayBufferViewImpl implements Float32Array, List<num>, JavaScriptIndexingBehavior native "*Float32Array" {
 
   static final int BYTES_PER_ELEMENT = 4;
 
@@ -7060,10 +7060,10 @@ class _Float32ArrayImpl extends _ArrayBufferViewImpl implements Float32Array, Li
 
   void setElements(Object array, [int offset]) native "set";
 
-  _Float32ArrayImpl subarray(int start, [int end]) native;
+  Float32ArrayImpl subarray(int start, [int end]) native;
 }
 
-class _Float64ArrayImpl extends _ArrayBufferViewImpl implements Float64Array, List<num>, JavaScriptIndexingBehavior native "*Float64Array" {
+class Float64ArrayImpl extends ArrayBufferViewImpl implements Float64Array, List<num>, JavaScriptIndexingBehavior native "*Float64Array" {
 
   static final int BYTES_PER_ELEMENT = 8;
 
@@ -7151,10 +7151,10 @@ class _Float64ArrayImpl extends _ArrayBufferViewImpl implements Float64Array, Li
 
   void setElements(Object array, [int offset]) native "set";
 
-  _Float64ArrayImpl subarray(int start, [int end]) native;
+  Float64ArrayImpl subarray(int start, [int end]) native;
 }
 
-class _FontElementImpl extends _ElementImpl implements FontElement native "*HTMLFontElement" {
+class FontElementImpl extends ElementImpl implements FontElement native "*HTMLFontElement" {
 
   String color;
 
@@ -7163,7 +7163,7 @@ class _FontElementImpl extends _ElementImpl implements FontElement native "*HTML
   String size;
 }
 
-class _FormElementImpl extends _ElementImpl implements FormElement native "*HTMLFormElement" {
+class FormElementImpl extends ElementImpl implements FormElement native "*HTMLFormElement" {
 
   String acceptCharset;
 
@@ -7192,11 +7192,11 @@ class _FormElementImpl extends _ElementImpl implements FormElement native "*HTML
   void submit() native;
 }
 
-class _FrameElementImpl extends _ElementImpl implements FrameElement native "*HTMLFrameElement" {
+class FrameElementImpl extends ElementImpl implements FrameElement native "*HTMLFrameElement" {
 
-  final _DocumentImpl contentDocument;
+  final DocumentImpl contentDocument;
 
-  final _WindowImpl contentWindow;
+  final WindowImpl contentWindow;
 
   String frameBorder;
 
@@ -7220,21 +7220,21 @@ class _FrameElementImpl extends _ElementImpl implements FrameElement native "*HT
 
   final int width;
 
-  _SVGDocumentImpl getSVGDocument() native;
+  SVGDocumentImpl getSVGDocument() native;
 }
 
-class _FrameSetElementImpl extends _ElementImpl implements FrameSetElement native "*HTMLFrameSetElement" {
+class FrameSetElementImpl extends ElementImpl implements FrameSetElement native "*HTMLFrameSetElement" {
 
-  _FrameSetElementEventsImpl get on() =>
-    new _FrameSetElementEventsImpl(this);
+  FrameSetElementEventsImpl get on() =>
+    new FrameSetElementEventsImpl(this);
 
   String cols;
 
   String rows;
 }
 
-class _FrameSetElementEventsImpl extends _ElementEventsImpl implements FrameSetElementEvents {
-  _FrameSetElementEventsImpl(_ptr) : super(_ptr);
+class FrameSetElementEventsImpl extends ElementEventsImpl implements FrameSetElementEvents {
+  FrameSetElementEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get beforeUnload() => this['beforeunload'];
 
@@ -7263,7 +7263,7 @@ class _FrameSetElementEventsImpl extends _ElementEventsImpl implements FrameSetE
   EventListenerList get unload() => this['unload'];
 }
 
-class _GamepadImpl implements Gamepad native "*Gamepad" {
+class GamepadImpl implements Gamepad native "*Gamepad" {
 
   final List<num> axes;
 
@@ -7276,14 +7276,14 @@ class _GamepadImpl implements Gamepad native "*Gamepad" {
   final int timestamp;
 }
 
-class _GamepadListImpl implements GamepadList native "*GamepadList" {
+class GamepadListImpl implements GamepadList native "*GamepadList" {
 
   final int length;
 
-  _GamepadImpl item(int index) native;
+  GamepadImpl item(int index) native;
 }
 
-class _GeolocationImpl implements Geolocation native "*Geolocation" {
+class GeolocationImpl implements Geolocation native "*Geolocation" {
 
   void clearWatch(int watchId) native;
 
@@ -7292,14 +7292,14 @@ class _GeolocationImpl implements Geolocation native "*Geolocation" {
   int watchPosition(PositionCallback successCallback, [PositionErrorCallback errorCallback, Object options]) native;
 }
 
-class _GeopositionImpl implements Geoposition native "*Geoposition" {
+class GeopositionImpl implements Geoposition native "*Geoposition" {
 
-  final _CoordinatesImpl coords;
+  final CoordinatesImpl coords;
 
   final int timestamp;
 }
 
-class _HRElementImpl extends _ElementImpl implements HRElement native "*HTMLHRElement" {
+class HRElementImpl extends ElementImpl implements HRElement native "*HTMLHRElement" {
 
   String align;
 
@@ -7310,24 +7310,24 @@ class _HRElementImpl extends _ElementImpl implements HRElement native "*HTMLHREl
   String width;
 }
 
-class _HTMLAllCollectionImpl implements HTMLAllCollection native "*HTMLAllCollection" {
+class HTMLAllCollectionImpl implements HTMLAllCollection native "*HTMLAllCollection" {
 
   final int length;
 
-  _NodeImpl item(int index) native;
+  NodeImpl item(int index) native;
 
-  _NodeImpl namedItem(String name) native;
+  NodeImpl namedItem(String name) native;
 
-  _NodeListImpl tags(String name) native;
+  NodeListImpl tags(String name) native;
 }
 
-class _HTMLCollectionImpl implements HTMLCollection, JavaScriptIndexingBehavior native "*HTMLCollection" {
+class HTMLCollectionImpl implements HTMLCollection, JavaScriptIndexingBehavior native "*HTMLCollection" {
 
   final int length;
 
-  _NodeImpl operator[](int index) native "return this[index];";
+  NodeImpl operator[](int index) native "return this[index];";
 
-  void operator[]=(int index, _NodeImpl value) {
+  void operator[]=(int index, NodeImpl value) {
     throw new UnsupportedOperationException("Cannot assign element of immutable List.");
   }
   // -- start List<Node> mixins.
@@ -7407,12 +7407,12 @@ class _HTMLCollectionImpl implements HTMLCollection, JavaScriptIndexingBehavior 
 
   // -- end List<Node> mixins.
 
-  _NodeImpl item(int index) native;
+  NodeImpl item(int index) native;
 
-  _NodeImpl namedItem(String name) native;
+  NodeImpl namedItem(String name) native;
 }
 
-class _HTMLOptionsCollectionImpl extends _HTMLCollectionImpl implements HTMLOptionsCollection native "*HTMLOptionsCollection" {
+class HTMLOptionsCollectionImpl extends HTMLCollectionImpl implements HTMLOptionsCollection native "*HTMLOptionsCollection" {
 
   // Shadowing definition.
   int get length() native "return this.length;";
@@ -7424,7 +7424,7 @@ class _HTMLOptionsCollectionImpl extends _HTMLCollectionImpl implements HTMLOpti
   void remove(int index) native;
 }
 
-class _HashChangeEventImpl extends _EventImpl implements HashChangeEvent native "*HashChangeEvent" {
+class HashChangeEventImpl extends EventImpl implements HashChangeEvent native "*HashChangeEvent" {
 
   final String newURL;
 
@@ -7433,17 +7433,17 @@ class _HashChangeEventImpl extends _EventImpl implements HashChangeEvent native 
   void initHashChangeEvent(String type, bool canBubble, bool cancelable, String oldURL, String newURL) native;
 }
 
-class _HeadElementImpl extends _ElementImpl implements HeadElement native "*HTMLHeadElement" {
+class HeadElementImpl extends ElementImpl implements HeadElement native "*HTMLHeadElement" {
 
   String profile;
 }
 
-class _HeadingElementImpl extends _ElementImpl implements HeadingElement native "*HTMLHeadingElement" {
+class HeadingElementImpl extends ElementImpl implements HeadingElement native "*HTMLHeadingElement" {
 
   String align;
 }
 
-class _HistoryImpl implements History native "*History" {
+class HistoryImpl implements History native "*History" {
 
   final int length;
 
@@ -7460,13 +7460,13 @@ class _HistoryImpl implements History native "*History" {
   void replaceState(Object data, String title, [String url]) native;
 }
 
-class _HtmlElementImpl extends _ElementImpl implements HtmlElement native "*HTMLHtmlElement" {
+class HtmlElementImpl extends ElementImpl implements HtmlElement native "*HTMLHtmlElement" {
 }
 
-class _IDBAnyImpl implements IDBAny native "*IDBAny" {
+class IDBAnyImpl implements IDBAny native "*IDBAny" {
 }
 
-class _IDBCursorImpl implements IDBCursor native "*IDBCursor" {
+class IDBCursorImpl implements IDBCursor native "*IDBCursor" {
 
   static final int NEXT = 0;
 
@@ -7488,12 +7488,12 @@ class _IDBCursorImpl implements IDBCursor native "*IDBCursor" {
 
   void continueFunction([key]) native "continue";
 
-  _IDBRequestImpl delete() native;
+  IDBRequestImpl delete() native;
 
-  _IDBRequestImpl update(value) native;
+  IDBRequestImpl update(value) native;
 }
 
-class _IDBCursorWithValueImpl extends _IDBCursorImpl implements IDBCursorWithValue native "*IDBCursorWithValue" {
+class IDBCursorWithValueImpl extends IDBCursorImpl implements IDBCursorWithValue native "*IDBCursorWithValue" {
 
   final Dynamic value;
 }
@@ -7501,9 +7501,9 @@ class _IDBCursorWithValueImpl extends _IDBCursorImpl implements IDBCursorWithVal
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-class _IDBDatabaseImpl extends _EventTargetImpl implements IDBDatabase native "*IDBDatabase" {
+class IDBDatabaseImpl extends EventTargetImpl implements IDBDatabase native "*IDBDatabase" {
 
-  _IDBTransactionImpl transaction(storeName_OR_storeNames, String mode) {
+  IDBTransactionImpl transaction(storeName_OR_storeNames, String mode) {
     if (mode != 'readonly' && mode != 'readwrite') {
       throw new IllegalArgumentException(mode);
     }
@@ -7528,24 +7528,24 @@ class _IDBDatabaseImpl extends _EventTargetImpl implements IDBDatabase native "*
     return txn;
   }
 
-  static _IDBTransactionImpl _transaction_string_mode(_IDBDatabaseImpl db, stores, mode) {
+  static IDBTransactionImpl _transaction_string_mode(IDBDatabaseImpl db, stores, mode) {
     return db._transaction(stores, mode);
   }
 
-  static _IDBTransactionImpl _transaction_numeric_mode(_IDBDatabaseImpl db, stores, mode) {
+  static IDBTransactionImpl _transaction_numeric_mode(IDBDatabaseImpl db, stores, mode) {
     int intMode;
     if (mode == 'readonly') intMode = IDBTransaction.READ_ONLY;
     if (mode == 'readwrite') intMode = IDBTransaction.READ_WRITE;
     return db._transaction(stores, intMode);
   }
 
-  _IDBTransactionImpl _transaction(stores, mode) native 'transaction';
+  IDBTransactionImpl _transaction(stores, mode) native 'transaction';
 
   static bool _hasNumericMode(txn) native 'return typeof(txn.mode) === "number"';
 
 
-  _IDBDatabaseEventsImpl get on() =>
-    new _IDBDatabaseEventsImpl(this);
+  IDBDatabaseEventsImpl get on() =>
+    new IDBDatabaseEventsImpl(this);
 
   final String name;
 
@@ -7557,23 +7557,23 @@ class _IDBDatabaseImpl extends _EventTargetImpl implements IDBDatabase native "*
 
   void close() native;
 
-  _IDBObjectStoreImpl createObjectStore(String name, [Map options]) native;
+  IDBObjectStoreImpl createObjectStore(String name, [Map options]) native;
 
   void deleteObjectStore(String name) native;
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
-  _IDBVersionChangeRequestImpl setVersion(String version) native;
+  IDBVersionChangeRequestImpl setVersion(String version) native;
 }
 
-// TODO(sra): This should be a static member of _IDBTransactionImpl but dart2js
+// TODO(sra): This should be a static member of IDBTransactionImpl but dart2js
 // can't handle that.  Move it back after dart2js is completely done.
 var _transaction_fn;  // Assigned one of the static methods.
 
-class _IDBDatabaseEventsImpl extends _EventsImpl implements IDBDatabaseEvents {
-  _IDBDatabaseEventsImpl(_ptr) : super(_ptr);
+class IDBDatabaseEventsImpl extends EventsImpl implements IDBDatabaseEvents {
+  IDBDatabaseEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get abort() => this['abort'];
 
@@ -7582,7 +7582,7 @@ class _IDBDatabaseEventsImpl extends _EventsImpl implements IDBDatabaseEvents {
   EventListenerList get versionChange() => this['versionchange'];
 }
 
-class _IDBDatabaseExceptionImpl implements IDBDatabaseException native "*IDBDatabaseException" {
+class IDBDatabaseExceptionImpl implements IDBDatabaseException native "*IDBDatabaseException" {
 
   static final int ABORT_ERR = 20;
 
@@ -7619,18 +7619,18 @@ class _IDBDatabaseExceptionImpl implements IDBDatabaseException native "*IDBData
   String toString() native;
 }
 
-class _IDBFactoryImpl implements IDBFactory native "*IDBFactory" {
+class IDBFactoryImpl implements IDBFactory native "*IDBFactory" {
 
   int cmp(first, second) native;
 
-  _IDBVersionChangeRequestImpl deleteDatabase(String name) native;
+  IDBVersionChangeRequestImpl deleteDatabase(String name) native;
 
-  _IDBRequestImpl open(String name) native;
+  IDBRequestImpl open(String name) native;
 
-  _IDBRequestImpl webkitGetDatabaseNames() native;
+  IDBRequestImpl webkitGetDatabaseNames() native;
 }
 
-class _IDBIndexImpl implements IDBIndex native "*IDBIndex" {
+class IDBIndexImpl implements IDBIndex native "*IDBIndex" {
 
   final Dynamic keyPath;
 
@@ -7638,25 +7638,25 @@ class _IDBIndexImpl implements IDBIndex native "*IDBIndex" {
 
   final String name;
 
-  final _IDBObjectStoreImpl objectStore;
+  final IDBObjectStoreImpl objectStore;
 
   final bool unique;
 
-  _IDBRequestImpl count([key_OR_range]) native;
+  IDBRequestImpl count([key_OR_range]) native;
 
-  _IDBRequestImpl get(key) native;
+  IDBRequestImpl get(key) native;
 
-  _IDBRequestImpl getKey(key) native;
+  IDBRequestImpl getKey(key) native;
 
-  _IDBRequestImpl openCursor([key_OR_range, direction]) native;
+  IDBRequestImpl openCursor([key_OR_range, direction]) native;
 
-  _IDBRequestImpl openKeyCursor([key_OR_range, direction]) native;
+  IDBRequestImpl openKeyCursor([key_OR_range, direction]) native;
 }
 
-class _IDBKeyImpl implements IDBKey native "*IDBKey" {
+class IDBKeyImpl implements IDBKey native "*IDBKey" {
 }
 
-class _IDBKeyRangeImpl implements IDBKeyRange native "*IDBKeyRange" {
+class IDBKeyRangeImpl implements IDBKeyRange native "*IDBKeyRange" {
 
   final Dynamic lower;
 
@@ -7667,7 +7667,7 @@ class _IDBKeyRangeImpl implements IDBKeyRange native "*IDBKeyRange" {
   final bool upperOpen;
 }
 
-class _IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
+class IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
 
   final bool autoIncrement;
 
@@ -7677,35 +7677,35 @@ class _IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
 
   final String name;
 
-  final _IDBTransactionImpl transaction;
+  final IDBTransactionImpl transaction;
 
-  _IDBRequestImpl add(value, [key]) native;
+  IDBRequestImpl add(value, [key]) native;
 
-  _IDBRequestImpl clear() native;
+  IDBRequestImpl clear() native;
 
-  _IDBRequestImpl count([key_OR_range]) native;
+  IDBRequestImpl count([key_OR_range]) native;
 
-  _IDBIndexImpl createIndex(String name, keyPath, [Map options]) native;
+  IDBIndexImpl createIndex(String name, keyPath, [Map options]) native;
 
-  _IDBRequestImpl delete(key_OR_keyRange) native;
+  IDBRequestImpl delete(key_OR_keyRange) native;
 
   void deleteIndex(String name) native;
 
-  _IDBRequestImpl getObject(key) native "get";
+  IDBRequestImpl getObject(key) native "get";
 
-  _IDBIndexImpl index(String name) native;
+  IDBIndexImpl index(String name) native;
 
-  _IDBRequestImpl openCursor([key_OR_range, direction]) native;
+  IDBRequestImpl openCursor([key_OR_range, direction]) native;
 
-  _IDBRequestImpl put(value, [key]) native;
+  IDBRequestImpl put(value, [key]) native;
 }
 
-class _IDBRequestImpl extends _EventTargetImpl implements IDBRequest native "*IDBRequest" {
+class IDBRequestImpl extends EventTargetImpl implements IDBRequest native "*IDBRequest" {
 
-  _IDBRequestEventsImpl get on() =>
-    new _IDBRequestEventsImpl(this);
+  IDBRequestEventsImpl get on() =>
+    new IDBRequestEventsImpl(this);
 
-  final _DOMErrorImpl error;
+  final DOMErrorImpl error;
 
   final int errorCode;
 
@@ -7715,29 +7715,29 @@ class _IDBRequestImpl extends _EventTargetImpl implements IDBRequest native "*ID
 
   final Dynamic source;
 
-  final _IDBTransactionImpl transaction;
+  final IDBTransactionImpl transaction;
 
   final String webkitErrorMessage;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _IDBRequestEventsImpl extends _EventsImpl implements IDBRequestEvents {
-  _IDBRequestEventsImpl(_ptr) : super(_ptr);
+class IDBRequestEventsImpl extends EventsImpl implements IDBRequestEvents {
+  IDBRequestEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get error() => this['error'];
 
   EventListenerList get success() => this['success'];
 }
 
-class _IDBTransactionImpl extends _EventTargetImpl implements IDBTransaction native "*IDBTransaction" {
+class IDBTransactionImpl extends EventTargetImpl implements IDBTransaction native "*IDBTransaction" {
 
-  _IDBTransactionEventsImpl get on() =>
-    new _IDBTransactionEventsImpl(this);
+  IDBTransactionEventsImpl get on() =>
+    new IDBTransactionEventsImpl(this);
 
   static final int READ_ONLY = 0;
 
@@ -7745,9 +7745,9 @@ class _IDBTransactionImpl extends _EventTargetImpl implements IDBTransaction nat
 
   static final int VERSION_CHANGE = 2;
 
-  final _IDBDatabaseImpl db;
+  final IDBDatabaseImpl db;
 
-  final _DOMErrorImpl error;
+  final DOMErrorImpl error;
 
   final String mode;
 
@@ -7755,15 +7755,15 @@ class _IDBTransactionImpl extends _EventTargetImpl implements IDBTransaction nat
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
-  _IDBObjectStoreImpl objectStore(String name) native;
+  IDBObjectStoreImpl objectStore(String name) native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _IDBTransactionEventsImpl extends _EventsImpl implements IDBTransactionEvents {
-  _IDBTransactionEventsImpl(_ptr) : super(_ptr);
+class IDBTransactionEventsImpl extends EventsImpl implements IDBTransactionEvents {
+  IDBTransactionEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get abort() => this['abort'];
 
@@ -7772,27 +7772,27 @@ class _IDBTransactionEventsImpl extends _EventsImpl implements IDBTransactionEve
   EventListenerList get error() => this['error'];
 }
 
-class _IDBVersionChangeEventImpl extends _EventImpl implements IDBVersionChangeEvent native "*IDBVersionChangeEvent" {
+class IDBVersionChangeEventImpl extends EventImpl implements IDBVersionChangeEvent native "*IDBVersionChangeEvent" {
 
   final String version;
 }
 
-class _IDBVersionChangeRequestImpl extends _IDBRequestImpl implements IDBVersionChangeRequest native "*IDBVersionChangeRequest" {
+class IDBVersionChangeRequestImpl extends IDBRequestImpl implements IDBVersionChangeRequest native "*IDBVersionChangeRequest" {
 
-  _IDBVersionChangeRequestEventsImpl get on() =>
-    new _IDBVersionChangeRequestEventsImpl(this);
+  IDBVersionChangeRequestEventsImpl get on() =>
+    new IDBVersionChangeRequestEventsImpl(this);
 
   // From EventTarget
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _IDBVersionChangeRequestEventsImpl extends _IDBRequestEventsImpl implements IDBVersionChangeRequestEvents {
-  _IDBVersionChangeRequestEventsImpl(_ptr) : super(_ptr);
+class IDBVersionChangeRequestEventsImpl extends IDBRequestEventsImpl implements IDBVersionChangeRequestEvents {
+  IDBVersionChangeRequestEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get blocked() => this['blocked'];
 }
@@ -7800,7 +7800,7 @@ class _IDBVersionChangeRequestEventsImpl extends _IDBRequestEventsImpl implement
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-class _IFrameElementImpl extends _ElementImpl implements IFrameElement native "*HTMLIFrameElement" {
+class IFrameElementImpl extends ElementImpl implements IFrameElement native "*HTMLIFrameElement" {
 
   String align;
 
@@ -7826,34 +7826,34 @@ class _IFrameElementImpl extends _ElementImpl implements IFrameElement native "*
 
   String width;
 
-  _SVGDocumentImpl getSVGDocument() native;
+  SVGDocumentImpl getSVGDocument() native;
 
 
   Window get _contentWindow() native "return this.contentWindow;";
 
   // Override contentWindow to return secure wrapper.
   Window get contentWindow() {
-    return _DOMWindowCrossFrameImpl._createSafe(_contentWindow);
+    return DOMWindowCrossFrameImpl._createSafe(_contentWindow);
   }
 }
 
-class _IceCandidateImpl implements IceCandidate native "*IceCandidate" {
+class IceCandidateImpl implements IceCandidate native "*IceCandidate" {
 
   final String label;
 
   String toSdp() native;
 }
 
-class _ImageDataImpl implements ImageData native "*ImageData" {
+class ImageDataImpl implements ImageData native "*ImageData" {
 
-  final _Uint8ClampedArrayImpl data;
+  final Uint8ClampedArrayImpl data;
 
   final int height;
 
   final int width;
 }
 
-class _ImageElementImpl extends _ElementImpl implements ImageElement native "*HTMLImageElement" {
+class ImageElementImpl extends ElementImpl implements ImageElement native "*HTMLImageElement" {
 
   String align;
 
@@ -7894,10 +7894,10 @@ class _ImageElementImpl extends _ElementImpl implements ImageElement native "*HT
   final int y;
 }
 
-class _InputElementImpl extends _ElementImpl implements InputElement native "*HTMLInputElement" {
+class InputElementImpl extends ElementImpl implements InputElement native "*HTMLInputElement" {
 
-  _InputElementEventsImpl get on() =>
-    new _InputElementEventsImpl(this);
+  InputElementEventsImpl get on() =>
+    new InputElementEventsImpl(this);
 
   String accept;
 
@@ -7917,9 +7917,9 @@ class _InputElementImpl extends _ElementImpl implements InputElement native "*HT
 
   bool disabled;
 
-  _FileListImpl files;
+  FileListImpl files;
 
-  final _FormElementImpl form;
+  final FormElementImpl form;
 
   String formAction;
 
@@ -7937,7 +7937,7 @@ class _InputElementImpl extends _ElementImpl implements InputElement native "*HT
 
   bool indeterminate;
 
-  final _NodeListImpl labels;
+  final NodeListImpl labels;
 
   String max;
 
@@ -7975,7 +7975,7 @@ class _InputElementImpl extends _ElementImpl implements InputElement native "*HT
 
   final String validationMessage;
 
-  final _ValidityStateImpl validity;
+  final ValidityStateImpl validity;
 
   String value;
 
@@ -7983,7 +7983,7 @@ class _InputElementImpl extends _ElementImpl implements InputElement native "*HT
 
   num valueAsNumber;
 
-  final _EntryArrayImpl webkitEntries;
+  final EntryArrayImpl webkitEntries;
 
   bool webkitGrammar;
 
@@ -8008,13 +8008,13 @@ class _InputElementImpl extends _ElementImpl implements InputElement native "*HT
   void stepUp([int n]) native;
 }
 
-class _InputElementEventsImpl extends _ElementEventsImpl implements InputElementEvents {
-  _InputElementEventsImpl(_ptr) : super(_ptr);
+class InputElementEventsImpl extends ElementEventsImpl implements InputElementEvents {
+  InputElementEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get speechChange() => this['webkitSpeechChange'];
 }
 
-class _Int16ArrayImpl extends _ArrayBufferViewImpl implements Int16Array, List<int>, JavaScriptIndexingBehavior native "*Int16Array" {
+class Int16ArrayImpl extends ArrayBufferViewImpl implements Int16Array, List<int>, JavaScriptIndexingBehavior native "*Int16Array" {
 
   static final int BYTES_PER_ELEMENT = 2;
 
@@ -8102,10 +8102,10 @@ class _Int16ArrayImpl extends _ArrayBufferViewImpl implements Int16Array, List<i
 
   void setElements(Object array, [int offset]) native "set";
 
-  _Int16ArrayImpl subarray(int start, [int end]) native;
+  Int16ArrayImpl subarray(int start, [int end]) native;
 }
 
-class _Int32ArrayImpl extends _ArrayBufferViewImpl implements Int32Array, List<int>, JavaScriptIndexingBehavior native "*Int32Array" {
+class Int32ArrayImpl extends ArrayBufferViewImpl implements Int32Array, List<int>, JavaScriptIndexingBehavior native "*Int32Array" {
 
   static final int BYTES_PER_ELEMENT = 4;
 
@@ -8193,10 +8193,10 @@ class _Int32ArrayImpl extends _ArrayBufferViewImpl implements Int32Array, List<i
 
   void setElements(Object array, [int offset]) native "set";
 
-  _Int32ArrayImpl subarray(int start, [int end]) native;
+  Int32ArrayImpl subarray(int start, [int end]) native;
 }
 
-class _Int8ArrayImpl extends _ArrayBufferViewImpl implements Int8Array, List<int>, JavaScriptIndexingBehavior native "*Int8Array" {
+class Int8ArrayImpl extends ArrayBufferViewImpl implements Int8Array, List<int>, JavaScriptIndexingBehavior native "*Int8Array" {
 
   static final int BYTES_PER_ELEMENT = 1;
 
@@ -8284,13 +8284,13 @@ class _Int8ArrayImpl extends _ArrayBufferViewImpl implements Int8Array, List<int
 
   void setElements(Object array, [int offset]) native "set";
 
-  _Int8ArrayImpl subarray(int start, [int end]) native;
+  Int8ArrayImpl subarray(int start, [int end]) native;
 }
 
-class _JavaScriptAudioNodeImpl extends _AudioNodeImpl implements JavaScriptAudioNode native "*JavaScriptAudioNode" {
+class JavaScriptAudioNodeImpl extends AudioNodeImpl implements JavaScriptAudioNode native "*JavaScriptAudioNode" {
 
-  _JavaScriptAudioNodeEventsImpl get on() =>
-    new _JavaScriptAudioNodeEventsImpl(this);
+  JavaScriptAudioNodeEventsImpl get on() =>
+    new JavaScriptAudioNodeEventsImpl(this);
 
   final int bufferSize;
 
@@ -8298,18 +8298,18 @@ class _JavaScriptAudioNodeImpl extends _AudioNodeImpl implements JavaScriptAudio
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _JavaScriptAudioNodeEventsImpl extends _EventsImpl implements JavaScriptAudioNodeEvents {
-  _JavaScriptAudioNodeEventsImpl(_ptr) : super(_ptr);
+class JavaScriptAudioNodeEventsImpl extends EventsImpl implements JavaScriptAudioNodeEvents {
+  JavaScriptAudioNodeEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get audioProcess() => this['audioprocess'];
 }
 
-class _JavaScriptCallFrameImpl implements JavaScriptCallFrame native "*JavaScriptCallFrame" {
+class JavaScriptCallFrameImpl implements JavaScriptCallFrame native "*JavaScriptCallFrame" {
 
   static final int CATCH_SCOPE = 4;
 
@@ -8321,7 +8321,7 @@ class _JavaScriptCallFrameImpl implements JavaScriptCallFrame native "*JavaScrip
 
   static final int WITH_SCOPE = 2;
 
-  final _JavaScriptCallFrameImpl caller;
+  final JavaScriptCallFrameImpl caller;
 
   final int column;
 
@@ -8344,7 +8344,7 @@ class _JavaScriptCallFrameImpl implements JavaScriptCallFrame native "*JavaScrip
   int scopeType(int scopeIndex) native;
 }
 
-class _KeyboardEventImpl extends _UIEventImpl implements KeyboardEvent native "*KeyboardEvent" {
+class KeyboardEventImpl extends UIEventImpl implements KeyboardEvent native "*KeyboardEvent" {
 
   final bool altGraphKey;
 
@@ -8360,10 +8360,10 @@ class _KeyboardEventImpl extends _UIEventImpl implements KeyboardEvent native "*
 
   final bool shiftKey;
 
-  void initKeyboardEvent(String type, bool canBubble, bool cancelable, _WindowImpl view, String keyIdentifier, int keyLocation, bool ctrlKey, bool altKey, bool shiftKey, bool metaKey, bool altGraphKey) native;
+  void initKeyboardEvent(String type, bool canBubble, bool cancelable, WindowImpl view, String keyIdentifier, int keyLocation, bool ctrlKey, bool altKey, bool shiftKey, bool metaKey, bool altGraphKey) native;
 }
 
-class _KeygenElementImpl extends _ElementImpl implements KeygenElement native "*HTMLKeygenElement" {
+class KeygenElementImpl extends ElementImpl implements KeygenElement native "*HTMLKeygenElement" {
 
   bool autofocus;
 
@@ -8371,11 +8371,11 @@ class _KeygenElementImpl extends _ElementImpl implements KeygenElement native "*
 
   bool disabled;
 
-  final _FormElementImpl form;
+  final FormElementImpl form;
 
   String keytype;
 
-  final _NodeListImpl labels;
+  final NodeListImpl labels;
 
   String name;
 
@@ -8383,7 +8383,7 @@ class _KeygenElementImpl extends _ElementImpl implements KeygenElement native "*
 
   final String validationMessage;
 
-  final _ValidityStateImpl validity;
+  final ValidityStateImpl validity;
 
   final bool willValidate;
 
@@ -8392,30 +8392,30 @@ class _KeygenElementImpl extends _ElementImpl implements KeygenElement native "*
   void setCustomValidity(String error) native;
 }
 
-class _LIElementImpl extends _ElementImpl implements LIElement native "*HTMLLIElement" {
+class LIElementImpl extends ElementImpl implements LIElement native "*HTMLLIElement" {
 
   String type;
 
   int value;
 }
 
-class _LabelElementImpl extends _ElementImpl implements LabelElement native "*HTMLLabelElement" {
+class LabelElementImpl extends ElementImpl implements LabelElement native "*HTMLLabelElement" {
 
-  final _ElementImpl control;
+  final ElementImpl control;
 
-  final _FormElementImpl form;
+  final FormElementImpl form;
 
   String htmlFor;
 }
 
-class _LegendElementImpl extends _ElementImpl implements LegendElement native "*HTMLLegendElement" {
+class LegendElementImpl extends ElementImpl implements LegendElement native "*HTMLLegendElement" {
 
   String align;
 
-  final _FormElementImpl form;
+  final FormElementImpl form;
 }
 
-class _LinkElementImpl extends _ElementImpl implements LinkElement native "*HTMLLinkElement" {
+class LinkElementImpl extends ElementImpl implements LinkElement native "*HTMLLinkElement" {
 
   String charset;
 
@@ -8431,16 +8431,16 @@ class _LinkElementImpl extends _ElementImpl implements LinkElement native "*HTML
 
   String rev;
 
-  final _StyleSheetImpl sheet;
+  final StyleSheetImpl sheet;
 
-  _DOMSettableTokenListImpl sizes;
+  DOMSettableTokenListImpl sizes;
 
   String target;
 
   String type;
 }
 
-class _LocalMediaStreamImpl extends _MediaStreamImpl implements LocalMediaStream native "*LocalMediaStream" {
+class LocalMediaStreamImpl extends MediaStreamImpl implements LocalMediaStream native "*LocalMediaStream" {
 
   void stop() native;
 
@@ -8448,12 +8448,12 @@ class _LocalMediaStreamImpl extends _MediaStreamImpl implements LocalMediaStream
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _LocationImpl implements Location native "*Location" {
+class LocationImpl implements Location native "*Location" {
 
   final List<String> ancestorOrigins;
 
@@ -8484,14 +8484,14 @@ class _LocationImpl implements Location native "*Location" {
   String toString() native;
 }
 
-class _MapElementImpl extends _ElementImpl implements MapElement native "*HTMLMapElement" {
+class MapElementImpl extends ElementImpl implements MapElement native "*HTMLMapElement" {
 
-  final _HTMLCollectionImpl areas;
+  final HTMLCollectionImpl areas;
 
   String name;
 }
 
-class _MarqueeElementImpl extends _ElementImpl implements MarqueeElement native "*HTMLMarqueeElement" {
+class MarqueeElementImpl extends ElementImpl implements MarqueeElement native "*HTMLMarqueeElement" {
 
   String behavior;
 
@@ -8520,9 +8520,9 @@ class _MarqueeElementImpl extends _ElementImpl implements MarqueeElement native 
   void stop() native;
 }
 
-class _MediaControllerImpl extends _EventTargetImpl implements MediaController native "*MediaController" {
+class MediaControllerImpl extends EventTargetImpl implements MediaController native "*MediaController" {
 
-  final _TimeRangesImpl buffered;
+  final TimeRangesImpl buffered;
 
   num currentTime;
 
@@ -8536,15 +8536,15 @@ class _MediaControllerImpl extends _EventTargetImpl implements MediaController n
 
   num playbackRate;
 
-  final _TimeRangesImpl played;
+  final TimeRangesImpl played;
 
-  final _TimeRangesImpl seekable;
+  final TimeRangesImpl seekable;
 
   num volume;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void pause() native;
 
@@ -8553,10 +8553,10 @@ class _MediaControllerImpl extends _EventTargetImpl implements MediaController n
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _MediaElementImpl extends _ElementImpl implements MediaElement native "*HTMLMediaElement" {
+class MediaElementImpl extends ElementImpl implements MediaElement native "*HTMLMediaElement" {
 
-  _MediaElementEventsImpl get on() =>
-    new _MediaElementEventsImpl(this);
+  MediaElementEventsImpl get on() =>
+    new MediaElementEventsImpl(this);
 
   static final int HAVE_CURRENT_DATA = 2;
 
@@ -8578,9 +8578,9 @@ class _MediaElementImpl extends _ElementImpl implements MediaElement native "*HT
 
   bool autoplay;
 
-  final _TimeRangesImpl buffered;
+  final TimeRangesImpl buffered;
 
-  _MediaControllerImpl controller;
+  MediaControllerImpl controller;
 
   bool controls;
 
@@ -8596,7 +8596,7 @@ class _MediaElementImpl extends _ElementImpl implements MediaElement native "*HT
 
   final bool ended;
 
-  final _MediaErrorImpl error;
+  final MediaErrorImpl error;
 
   final num initialTime;
 
@@ -8612,13 +8612,13 @@ class _MediaElementImpl extends _ElementImpl implements MediaElement native "*HT
 
   num playbackRate;
 
-  final _TimeRangesImpl played;
+  final TimeRangesImpl played;
 
   String preload;
 
   final int readyState;
 
-  final _TimeRangesImpl seekable;
+  final TimeRangesImpl seekable;
 
   final bool seeking;
 
@@ -8626,7 +8626,7 @@ class _MediaElementImpl extends _ElementImpl implements MediaElement native "*HT
 
   final num startTime;
 
-  final _TextTrackListImpl textTracks;
+  final TextTrackListImpl textTracks;
 
   num volume;
 
@@ -8642,7 +8642,7 @@ class _MediaElementImpl extends _ElementImpl implements MediaElement native "*HT
 
   final int webkitVideoDecodedByteCount;
 
-  _TextTrackImpl addTextTrack(String kind, [String label, String language]) native;
+  TextTrackImpl addTextTrack(String kind, [String label, String language]) native;
 
   String canPlayType(String type, String keySystem) native;
 
@@ -8652,15 +8652,15 @@ class _MediaElementImpl extends _ElementImpl implements MediaElement native "*HT
 
   void play() native;
 
-  void webkitAddKey(String keySystem, _Uint8ArrayImpl key, [_Uint8ArrayImpl initData, String sessionId]) native;
+  void webkitAddKey(String keySystem, Uint8ArrayImpl key, [_Uint8ArrayImpl initData, String sessionId]) native;
 
   void webkitCancelKeyRequest(String keySystem, String sessionId) native;
 
   void webkitGenerateKeyRequest(String keySystem, [_Uint8ArrayImpl initData]) native;
 }
 
-class _MediaElementEventsImpl extends _ElementEventsImpl implements MediaElementEvents {
-  _MediaElementEventsImpl(_ptr) : super(_ptr);
+class MediaElementEventsImpl extends ElementEventsImpl implements MediaElementEvents {
+  MediaElementEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get keyAdded() => this['webkitkeyadded'];
 
@@ -8671,12 +8671,12 @@ class _MediaElementEventsImpl extends _ElementEventsImpl implements MediaElement
   EventListenerList get needKey() => this['webkitneedkey'];
 }
 
-class _MediaElementAudioSourceNodeImpl extends _AudioSourceNodeImpl implements MediaElementAudioSourceNode native "*MediaElementAudioSourceNode" {
+class MediaElementAudioSourceNodeImpl extends AudioSourceNodeImpl implements MediaElementAudioSourceNode native "*MediaElementAudioSourceNode" {
 
-  final _MediaElementImpl mediaElement;
+  final MediaElementImpl mediaElement;
 }
 
-class _MediaErrorImpl implements MediaError native "*MediaError" {
+class MediaErrorImpl implements MediaError native "*MediaError" {
 
   static final int MEDIA_ERR_ABORTED = 1;
 
@@ -8691,7 +8691,7 @@ class _MediaErrorImpl implements MediaError native "*MediaError" {
   final int code;
 }
 
-class _MediaKeyErrorImpl implements MediaKeyError native "*MediaKeyError" {
+class MediaKeyErrorImpl implements MediaKeyError native "*MediaKeyError" {
 
   static final int MEDIA_KEYERR_CLIENT = 2;
 
@@ -8708,24 +8708,24 @@ class _MediaKeyErrorImpl implements MediaKeyError native "*MediaKeyError" {
   final int code;
 }
 
-class _MediaKeyEventImpl extends _EventImpl implements MediaKeyEvent native "*MediaKeyEvent" {
+class MediaKeyEventImpl extends EventImpl implements MediaKeyEvent native "*MediaKeyEvent" {
 
   final String defaultURL;
 
-  final _MediaKeyErrorImpl errorCode;
+  final MediaKeyErrorImpl errorCode;
 
-  final _Uint8ArrayImpl initData;
+  final Uint8ArrayImpl initData;
 
   final String keySystem;
 
-  final _Uint8ArrayImpl message;
+  final Uint8ArrayImpl message;
 
   final String sessionId;
 
   final int systemCode;
 }
 
-class _MediaListImpl implements MediaList, JavaScriptIndexingBehavior native "*MediaList" {
+class MediaListImpl implements MediaList, JavaScriptIndexingBehavior native "*MediaList" {
 
   final int length;
 
@@ -8820,7 +8820,7 @@ class _MediaListImpl implements MediaList, JavaScriptIndexingBehavior native "*M
   String item(int index) native;
 }
 
-class _MediaQueryListImpl implements MediaQueryList native "*MediaQueryList" {
+class MediaQueryListImpl implements MediaQueryList native "*MediaQueryList" {
 
   final bool matches;
 
@@ -8831,78 +8831,78 @@ class _MediaQueryListImpl implements MediaQueryList native "*MediaQueryList" {
   void removeListener(MediaQueryListListener listener) native;
 }
 
-class _MediaSourceImpl extends _EventTargetImpl implements MediaSource native "*MediaSource" {
+class MediaSourceImpl extends EventTargetImpl implements MediaSource native "*MediaSource" {
 
-  final _SourceBufferListImpl activeSourceBuffers;
+  final SourceBufferListImpl activeSourceBuffers;
 
   final String readyState;
 
-  final _SourceBufferListImpl sourceBuffers;
+  final SourceBufferListImpl sourceBuffers;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  _SourceBufferImpl addSourceBuffer(String type) native;
+  SourceBufferImpl addSourceBuffer(String type) native;
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
   void endOfStream(String error) native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
-  void removeSourceBuffer(_SourceBufferImpl buffer) native;
+  void removeSourceBuffer(SourceBufferImpl buffer) native;
 }
 
-class _MediaStreamImpl extends _EventTargetImpl implements MediaStream native "*MediaStream" {
+class MediaStreamImpl extends EventTargetImpl implements MediaStream native "*MediaStream" {
 
-  _MediaStreamEventsImpl get on() =>
-    new _MediaStreamEventsImpl(this);
+  MediaStreamEventsImpl get on() =>
+    new MediaStreamEventsImpl(this);
 
   static final int ENDED = 2;
 
   static final int LIVE = 1;
 
-  final _MediaStreamTrackListImpl audioTracks;
+  final MediaStreamTrackListImpl audioTracks;
 
   final String label;
 
   final int readyState;
 
-  final _MediaStreamTrackListImpl videoTracks;
+  final MediaStreamTrackListImpl videoTracks;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _MediaStreamEventsImpl extends _EventsImpl implements MediaStreamEvents {
-  _MediaStreamEventsImpl(_ptr) : super(_ptr);
+class MediaStreamEventsImpl extends EventsImpl implements MediaStreamEvents {
+  MediaStreamEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get ended() => this['ended'];
 }
 
-class _MediaStreamAudioSourceNodeImpl extends _AudioSourceNodeImpl implements MediaStreamAudioSourceNode native "*MediaStreamAudioSourceNode" {
+class MediaStreamAudioSourceNodeImpl extends AudioSourceNodeImpl implements MediaStreamAudioSourceNode native "*MediaStreamAudioSourceNode" {
 
-  final _MediaStreamImpl mediaStream;
+  final MediaStreamImpl mediaStream;
 }
 
-class _MediaStreamEventImpl extends _EventImpl implements MediaStreamEvent native "*MediaStreamEvent" {
+class MediaStreamEventImpl extends EventImpl implements MediaStreamEvent native "*MediaStreamEvent" {
 
-  final _MediaStreamImpl stream;
+  final MediaStreamImpl stream;
 }
 
-class _MediaStreamListImpl implements MediaStreamList native "*MediaStreamList" {
+class MediaStreamListImpl implements MediaStreamList native "*MediaStreamList" {
 
   final int length;
 
-  _MediaStreamImpl item(int index) native;
+  MediaStreamImpl item(int index) native;
 }
 
-class _MediaStreamTrackImpl extends _EventTargetImpl implements MediaStreamTrack native "*MediaStreamTrack" {
+class MediaStreamTrackImpl extends EventTargetImpl implements MediaStreamTrack native "*MediaStreamTrack" {
 
-  _MediaStreamTrackEventsImpl get on() =>
-    new _MediaStreamTrackEventsImpl(this);
+  MediaStreamTrackEventsImpl get on() =>
+    new MediaStreamTrackEventsImpl(this);
 
   static final int ENDED = 2;
 
@@ -8920,13 +8920,13 @@ class _MediaStreamTrackImpl extends _EventTargetImpl implements MediaStreamTrack
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _MediaStreamTrackEventsImpl extends _EventsImpl implements MediaStreamTrackEvents {
-  _MediaStreamTrackEventsImpl(_ptr) : super(_ptr);
+class MediaStreamTrackEventsImpl extends EventsImpl implements MediaStreamTrackEvents {
+  MediaStreamTrackEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get ended() => this['ended'];
 
@@ -8935,40 +8935,40 @@ class _MediaStreamTrackEventsImpl extends _EventsImpl implements MediaStreamTrac
   EventListenerList get unmute() => this['unmute'];
 }
 
-class _MediaStreamTrackEventImpl extends _EventImpl implements MediaStreamTrackEvent native "*MediaStreamTrackEvent" {
+class MediaStreamTrackEventImpl extends EventImpl implements MediaStreamTrackEvent native "*MediaStreamTrackEvent" {
 
-  final _MediaStreamTrackImpl track;
+  final MediaStreamTrackImpl track;
 }
 
-class _MediaStreamTrackListImpl extends _EventTargetImpl implements MediaStreamTrackList native "*MediaStreamTrackList" {
+class MediaStreamTrackListImpl extends EventTargetImpl implements MediaStreamTrackList native "*MediaStreamTrackList" {
 
-  _MediaStreamTrackListEventsImpl get on() =>
-    new _MediaStreamTrackListEventsImpl(this);
+  MediaStreamTrackListEventsImpl get on() =>
+    new MediaStreamTrackListEventsImpl(this);
 
   final int length;
 
-  void add(_MediaStreamTrackImpl track) native;
+  void add(MediaStreamTrackImpl track) native;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
-  _MediaStreamTrackImpl item(int index) native;
+  MediaStreamTrackImpl item(int index) native;
 
-  void remove(_MediaStreamTrackImpl track) native;
+  void remove(MediaStreamTrackImpl track) native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _MediaStreamTrackListEventsImpl extends _EventsImpl implements MediaStreamTrackListEvents {
-  _MediaStreamTrackListEventsImpl(_ptr) : super(_ptr);
+class MediaStreamTrackListEventsImpl extends EventsImpl implements MediaStreamTrackListEvents {
+  MediaStreamTrackListEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get addTrack() => this['addtrack'];
 
   EventListenerList get removeTrack() => this['removetrack'];
 }
 
-class _MemoryInfoImpl implements MemoryInfo native "*MemoryInfo" {
+class MemoryInfoImpl implements MemoryInfo native "*MemoryInfo" {
 
   final int jsHeapSizeLimit;
 
@@ -8977,19 +8977,19 @@ class _MemoryInfoImpl implements MemoryInfo native "*MemoryInfo" {
   final int usedJSHeapSize;
 }
 
-class _MenuElementImpl extends _ElementImpl implements MenuElement native "*HTMLMenuElement" {
+class MenuElementImpl extends ElementImpl implements MenuElement native "*HTMLMenuElement" {
 
   bool compact;
 }
 
-class _MessageChannelImpl implements MessageChannel native "*MessageChannel" {
+class MessageChannelImpl implements MessageChannel native "*MessageChannel" {
 
-  final _MessagePortImpl port1;
+  final MessagePortImpl port1;
 
-  final _MessagePortImpl port2;
+  final MessagePortImpl port2;
 }
 
-class _MessageEventImpl extends _EventImpl implements MessageEvent native "*MessageEvent" {
+class MessageEventImpl extends EventImpl implements MessageEvent native "*MessageEvent" {
 
   final Object data;
 
@@ -8999,23 +8999,23 @@ class _MessageEventImpl extends _EventImpl implements MessageEvent native "*Mess
 
   final List ports;
 
-  final _WindowImpl source;
+  final WindowImpl source;
 
-  void initMessageEvent(String typeArg, bool canBubbleArg, bool cancelableArg, Object dataArg, String originArg, String lastEventIdArg, _WindowImpl sourceArg, List messagePorts) native;
+  void initMessageEvent(String typeArg, bool canBubbleArg, bool cancelableArg, Object dataArg, String originArg, String lastEventIdArg, WindowImpl sourceArg, List messagePorts) native;
 
-  void webkitInitMessageEvent(String typeArg, bool canBubbleArg, bool cancelableArg, Object dataArg, String originArg, String lastEventIdArg, _WindowImpl sourceArg, List transferables) native;
+  void webkitInitMessageEvent(String typeArg, bool canBubbleArg, bool cancelableArg, Object dataArg, String originArg, String lastEventIdArg, WindowImpl sourceArg, List transferables) native;
 }
 
-class _MessagePortImpl extends _EventTargetImpl implements MessagePort native "*MessagePort" {
+class MessagePortImpl extends EventTargetImpl implements MessagePort native "*MessagePort" {
 
-  _MessagePortEventsImpl get on() =>
-    new _MessagePortEventsImpl(this);
+  MessagePortEventsImpl get on() =>
+    new MessagePortEventsImpl(this);
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
   void close() native;
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void postMessage(String message, [List messagePorts]) native;
 
@@ -9026,13 +9026,13 @@ class _MessagePortImpl extends _EventTargetImpl implements MessagePort native "*
   void webkitPostMessage(String message, [List transfer]) native;
 }
 
-class _MessagePortEventsImpl extends _EventsImpl implements MessagePortEvents {
-  _MessagePortEventsImpl(_ptr) : super(_ptr);
+class MessagePortEventsImpl extends EventsImpl implements MessagePortEvents {
+  MessagePortEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get message() => this['message'];
 }
 
-class _MetaElementImpl extends _ElementImpl implements MetaElement native "*HTMLMetaElement" {
+class MetaElementImpl extends ElementImpl implements MetaElement native "*HTMLMetaElement" {
 
   String content;
 
@@ -9043,18 +9043,18 @@ class _MetaElementImpl extends _ElementImpl implements MetaElement native "*HTML
   String scheme;
 }
 
-class _MetadataImpl implements Metadata native "*Metadata" {
+class MetadataImpl implements Metadata native "*Metadata" {
 
   final Date modificationTime;
 
   final int size;
 }
 
-class _MeterElementImpl extends _ElementImpl implements MeterElement native "*HTMLMeterElement" {
+class MeterElementImpl extends ElementImpl implements MeterElement native "*HTMLMeterElement" {
 
   num high;
 
-  final _NodeListImpl labels;
+  final NodeListImpl labels;
 
   num low;
 
@@ -9067,14 +9067,14 @@ class _MeterElementImpl extends _ElementImpl implements MeterElement native "*HT
   num value;
 }
 
-class _ModElementImpl extends _ElementImpl implements ModElement native "*HTMLModElement" {
+class ModElementImpl extends ElementImpl implements ModElement native "*HTMLModElement" {
 
   String cite;
 
   String dateTime;
 }
 
-class _MouseEventImpl extends _UIEventImpl implements MouseEvent native "*MouseEvent" {
+class MouseEventImpl extends UIEventImpl implements MouseEvent native "*MouseEvent" {
 
   final bool altKey;
 
@@ -9086,9 +9086,9 @@ class _MouseEventImpl extends _UIEventImpl implements MouseEvent native "*MouseE
 
   final bool ctrlKey;
 
-  final _ClipboardImpl dataTransfer;
+  final ClipboardImpl dataTransfer;
 
-  final _NodeImpl fromElement;
+  final NodeImpl fromElement;
 
   final bool metaKey;
 
@@ -9096,7 +9096,7 @@ class _MouseEventImpl extends _UIEventImpl implements MouseEvent native "*MouseE
 
   final int offsetY;
 
-  final _EventTargetImpl relatedTarget;
+  final EventTargetImpl relatedTarget;
 
   final int screenX;
 
@@ -9104,7 +9104,7 @@ class _MouseEventImpl extends _UIEventImpl implements MouseEvent native "*MouseE
 
   final bool shiftKey;
 
-  final _NodeImpl toElement;
+  final NodeImpl toElement;
 
   final int webkitMovementX;
 
@@ -9114,10 +9114,10 @@ class _MouseEventImpl extends _UIEventImpl implements MouseEvent native "*MouseE
 
   final int y;
 
-  void $dom_initMouseEvent(String type, bool canBubble, bool cancelable, _WindowImpl view, int detail, int screenX, int screenY, int clientX, int clientY, bool ctrlKey, bool altKey, bool shiftKey, bool metaKey, int button, _EventTargetImpl relatedTarget) native "initMouseEvent";
+  void $dom_initMouseEvent(String type, bool canBubble, bool cancelable, WindowImpl view, int detail, int screenX, int screenY, int clientX, int clientY, bool ctrlKey, bool altKey, bool shiftKey, bool metaKey, int button, EventTargetImpl relatedTarget) native "initMouseEvent";
 }
 
-class _MutationEventImpl extends _EventImpl implements MutationEvent native "*MutationEvent" {
+class MutationEventImpl extends EventImpl implements MutationEvent native "*MutationEvent" {
 
   static final int ADDITION = 2;
 
@@ -9133,19 +9133,19 @@ class _MutationEventImpl extends _EventImpl implements MutationEvent native "*Mu
 
   final String prevValue;
 
-  final _NodeImpl relatedNode;
+  final NodeImpl relatedNode;
 
-  void initMutationEvent(String type, bool canBubble, bool cancelable, _NodeImpl relatedNode, String prevValue, String newValue, String attrName, int attrChange) native;
+  void initMutationEvent(String type, bool canBubble, bool cancelable, NodeImpl relatedNode, String prevValue, String newValue, String attrName, int attrChange) native;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-class _MutationObserverImpl implements MutationObserver native "*MutationObserver" {
+class MutationObserverImpl implements MutationObserver native "*MutationObserver" {
 
   void disconnect() native;
 
-  void _observe(_NodeImpl target, Map options) native "observe";
+  void _observe(NodeImpl target, Map options) native "observe";
 
   List<MutationRecord> takeRecords() native;
 
@@ -9211,34 +9211,34 @@ class _MutationObserverImpl implements MutationObserver native "*MutationObserve
   _call(target, options) native 'observe';
 }
 
-class _MutationRecordImpl implements MutationRecord native "*MutationRecord" {
+class MutationRecordImpl implements MutationRecord native "*MutationRecord" {
 
-  final _NodeListImpl addedNodes;
+  final NodeListImpl addedNodes;
 
   final String attributeName;
 
   final String attributeNamespace;
 
-  final _NodeImpl nextSibling;
+  final NodeImpl nextSibling;
 
   final String oldValue;
 
-  final _NodeImpl previousSibling;
+  final NodeImpl previousSibling;
 
-  final _NodeListImpl removedNodes;
+  final NodeListImpl removedNodes;
 
-  final _NodeImpl target;
+  final NodeImpl target;
 
   final String type;
 }
 
-class _NamedNodeMapImpl implements NamedNodeMap, JavaScriptIndexingBehavior native "*NamedNodeMap" {
+class NamedNodeMapImpl implements NamedNodeMap, JavaScriptIndexingBehavior native "*NamedNodeMap" {
 
   final int length;
 
-  _NodeImpl operator[](int index) native "return this[index];";
+  NodeImpl operator[](int index) native "return this[index];";
 
-  void operator[]=(int index, _NodeImpl value) {
+  void operator[]=(int index, NodeImpl value) {
     throw new UnsupportedOperationException("Cannot assign element of immutable List.");
   }
   // -- start List<Node> mixins.
@@ -9318,22 +9318,22 @@ class _NamedNodeMapImpl implements NamedNodeMap, JavaScriptIndexingBehavior nati
 
   // -- end List<Node> mixins.
 
-  _NodeImpl getNamedItem(String name) native;
+  NodeImpl getNamedItem(String name) native;
 
-  _NodeImpl getNamedItemNS(String namespaceURI, String localName) native;
+  NodeImpl getNamedItemNS(String namespaceURI, String localName) native;
 
-  _NodeImpl item(int index) native;
+  NodeImpl item(int index) native;
 
-  _NodeImpl removeNamedItem(String name) native;
+  NodeImpl removeNamedItem(String name) native;
 
-  _NodeImpl removeNamedItemNS(String namespaceURI, String localName) native;
+  NodeImpl removeNamedItemNS(String namespaceURI, String localName) native;
 
-  _NodeImpl setNamedItem(_NodeImpl node) native;
+  NodeImpl setNamedItem(NodeImpl node) native;
 
-  _NodeImpl setNamedItemNS(_NodeImpl node) native;
+  NodeImpl setNamedItemNS(NodeImpl node) native;
 }
 
-class _NavigatorImpl implements Navigator native "*Navigator" {
+class NavigatorImpl implements Navigator native "*Navigator" {
 
   final String appCodeName;
 
@@ -9343,17 +9343,17 @@ class _NavigatorImpl implements Navigator native "*Navigator" {
 
   final bool cookieEnabled;
 
-  final _GeolocationImpl geolocation;
+  final GeolocationImpl geolocation;
 
   final String language;
 
-  final _DOMMimeTypeArrayImpl mimeTypes;
+  final DOMMimeTypeArrayImpl mimeTypes;
 
   final bool onLine;
 
   final String platform;
 
-  final _DOMPluginArrayImpl plugins;
+  final DOMPluginArrayImpl plugins;
 
   final String product;
 
@@ -9365,18 +9365,18 @@ class _NavigatorImpl implements Navigator native "*Navigator" {
 
   final String vendorSub;
 
-  final _BatteryManagerImpl webkitBattery;
+  final BatteryManagerImpl webkitBattery;
 
   void getStorageUpdates() native;
 
   bool javaEnabled() native;
 
-  _GamepadListImpl webkitGetGamepads() native;
+  GamepadListImpl webkitGetGamepads() native;
 
   void webkitGetUserMedia(Map options, NavigatorUserMediaSuccessCallback successCallback, [NavigatorUserMediaErrorCallback errorCallback]) native;
 }
 
-class _NavigatorUserMediaErrorImpl implements NavigatorUserMediaError native "*NavigatorUserMediaError" {
+class NavigatorUserMediaErrorImpl implements NavigatorUserMediaError native "*NavigatorUserMediaError" {
 
   static final int PERMISSION_DENIED = 1;
 
@@ -9392,30 +9392,30 @@ class _NavigatorUserMediaErrorImpl implements NavigatorUserMediaError native "*N
  * improving performance for the typical cases where it is not required.
  */
 class _ChildNodeListLazy implements NodeList {
-  final _NodeImpl _this;
+  final NodeImpl _this;
 
   _ChildNodeListLazy(this._this);
 
 
-  _NodeImpl get first() native "return this._this.firstChild;";
-  _NodeImpl last() native "return this._this.lastChild;";
+  NodeImpl get first() native "return this._this.firstChild;";
+  NodeImpl last() native "return this._this.lastChild;";
 
-  void add(_NodeImpl value) {
+  void add(NodeImpl value) {
     _this.$dom_appendChild(value);
   }
 
-  void addLast(_NodeImpl value) {
+  void addLast(NodeImpl value) {
     _this.$dom_appendChild(value);
   }
 
 
-  void addAll(Collection<_NodeImpl> collection) {
-    for (_NodeImpl node in collection) {
+  void addAll(Collection<NodeImpl> collection) {
+    for (NodeImpl node in collection) {
       _this.$dom_appendChild(node);
     }
   }
 
-  _NodeImpl removeLast() {
+  NodeImpl removeLast() {
     final result = last();
     if (result != null) {
       _this.$dom_removeChild(result);
@@ -9427,7 +9427,7 @@ class _ChildNodeListLazy implements NodeList {
     _this.text = '';
   }
 
-  void operator []=(int index, _NodeImpl value) {
+  void operator []=(int index, NodeImpl value) {
     _this.$dom_replaceChild(value, this[index]);
   }
 
@@ -9484,10 +9484,10 @@ class _ChildNodeListLazy implements NodeList {
   // a local copy of $dom_childNodes is more efficient.
   int get length() => _this.$dom_childNodes.length;
 
-  _NodeImpl operator[](int index) => _this.$dom_childNodes[index];
+  NodeImpl operator[](int index) => _this.$dom_childNodes[index];
 }
 
-class _NodeImpl extends _EventTargetImpl implements Node native "*Node" {
+class NodeImpl extends EventTargetImpl implements Node native "*Node" {
   _ChildNodeListLazy get nodes() {
     return new _ChildNodeListLazy(this);
   }
@@ -9503,17 +9503,17 @@ class _NodeImpl extends _EventTargetImpl implements Node native "*Node" {
   }
 
   // TODO(jacobr): should we throw an exception if parent is already null?
-  _NodeImpl remove() {
+  NodeImpl remove() {
     if (this.parent != null) {
-      final _NodeImpl parent = this.parent;
+      final NodeImpl parent = this.parent;
       parent.$dom_removeChild(this);
     }
     return this;
   }
 
-  _NodeImpl replaceWith(Node otherNode) {
+  NodeImpl replaceWith(Node otherNode) {
     try {
-      final _NodeImpl parent = this.parent;
+      final NodeImpl parent = this.parent;
       parent.$dom_replaceChild(otherNode, this);
     } catch(var e) {
       
@@ -9558,23 +9558,23 @@ class _NodeImpl extends _EventTargetImpl implements Node native "*Node" {
 
   static final int TEXT_NODE = 3;
 
-  _NamedNodeMapImpl get $dom_attributes() native "return this.attributes;";
+  NamedNodeMapImpl get $dom_attributes() native "return this.attributes;";
 
-  _NodeListImpl get $dom_childNodes() native "return this.childNodes;";
+  NodeListImpl get $dom_childNodes() native "return this.childNodes;";
 
-  _NodeImpl get $dom_firstChild() native "return this.firstChild;";
+  NodeImpl get $dom_firstChild() native "return this.firstChild;";
 
-  _NodeImpl get $dom_lastChild() native "return this.lastChild;";
+  NodeImpl get $dom_lastChild() native "return this.lastChild;";
 
-  _NodeImpl get nextNode() native "return this.nextSibling;";
+  NodeImpl get nextNode() native "return this.nextSibling;";
 
   int get $dom_nodeType() native "return this.nodeType;";
 
-  _DocumentImpl get document() native "return this.ownerDocument;";
+  DocumentImpl get document() native "return this.ownerDocument;";
 
-  _NodeImpl get parent() native "return this.parentNode;";
+  NodeImpl get parent() native "return this.parentNode;";
 
-  _NodeImpl get previousNode() native "return this.previousSibling;";
+  NodeImpl get previousNode() native "return this.previousSibling;";
 
   String get text() native "return this.textContent;";
 
@@ -9582,27 +9582,27 @@ class _NodeImpl extends _EventTargetImpl implements Node native "*Node" {
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  _NodeImpl $dom_appendChild(_NodeImpl newChild) native "appendChild";
+  NodeImpl $dom_appendChild(NodeImpl newChild) native "appendChild";
 
-  _NodeImpl clone(bool deep) native "cloneNode";
+  NodeImpl clone(bool deep) native "cloneNode";
 
-  bool contains(_NodeImpl other) native;
+  bool contains(NodeImpl other) native;
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
   bool hasChildNodes() native;
 
-  _NodeImpl insertBefore(_NodeImpl newChild, _NodeImpl refChild) native;
+  NodeImpl insertBefore(NodeImpl newChild, NodeImpl refChild) native;
 
-  _NodeImpl $dom_removeChild(_NodeImpl oldChild) native "removeChild";
+  NodeImpl $dom_removeChild(NodeImpl oldChild) native "removeChild";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
-  _NodeImpl $dom_replaceChild(_NodeImpl newChild, _NodeImpl oldChild) native "replaceChild";
+  NodeImpl $dom_replaceChild(NodeImpl newChild, NodeImpl oldChild) native "replaceChild";
 
 }
 
-class _NodeFilterImpl implements NodeFilter native "*NodeFilter" {
+class NodeFilterImpl implements NodeFilter native "*NodeFilter" {
 
   static final int FILTER_ACCEPT = 1;
 
@@ -9636,28 +9636,28 @@ class _NodeFilterImpl implements NodeFilter native "*NodeFilter" {
 
   static final int SHOW_TEXT = 0x00000004;
 
-  int acceptNode(_NodeImpl n) native;
+  int acceptNode(NodeImpl n) native;
 }
 
-class _NodeIteratorImpl implements NodeIterator native "*NodeIterator" {
+class NodeIteratorImpl implements NodeIterator native "*NodeIterator" {
 
   final bool expandEntityReferences;
 
-  final _NodeFilterImpl filter;
+  final NodeFilterImpl filter;
 
   final bool pointerBeforeReferenceNode;
 
-  final _NodeImpl referenceNode;
+  final NodeImpl referenceNode;
 
-  final _NodeImpl root;
+  final NodeImpl root;
 
   final int whatToShow;
 
   void detach() native;
 
-  _NodeImpl nextNode() native;
+  NodeImpl nextNode() native;
 
-  _NodeImpl previousNode() native;
+  NodeImpl previousNode() native;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -9740,8 +9740,8 @@ class _NodeListWrapper extends _ListWrapper<Node> implements NodeList {
     new _NodeListWrapper(_list.getRange(start, rangeLength));
 }
 
-class _NodeListImpl implements NodeList, JavaScriptIndexingBehavior native "*NodeList" {
-  _NodeImpl _parent;
+class NodeListImpl implements NodeList, JavaScriptIndexingBehavior native "*NodeList" {
+  NodeImpl _parent;
 
   // -- start List<Node> mixins.
   // Node is the element type.
@@ -9757,21 +9757,21 @@ class _NodeListImpl implements NodeList, JavaScriptIndexingBehavior native "*Nod
 
   // From Collection<Node>:
 
-  void add(_NodeImpl value) {
+  void add(NodeImpl value) {
     _parent.$dom_appendChild(value);
   }
 
-  void addLast(_NodeImpl value) {
+  void addLast(NodeImpl value) {
     _parent.$dom_appendChild(value);
   }
 
-  void addAll(Collection<_NodeImpl> collection) {
-    for (_NodeImpl node in collection) {
+  void addAll(Collection<NodeImpl> collection) {
+    for (NodeImpl node in collection) {
       _parent.$dom_appendChild(node);      
     }
   }
 
-  _NodeImpl removeLast() {
+  NodeImpl removeLast() {
     final result = this.last();
     if (result != null) {
       _parent.$dom_removeChild(result);
@@ -9783,7 +9783,7 @@ class _NodeListImpl implements NodeList, JavaScriptIndexingBehavior native "*Nod
     _parent.text = '';
   }
 
-  void operator []=(int index, _NodeImpl value) {
+  void operator []=(int index, NodeImpl value) {
     _parent.$dom_replaceChild(value, this[index]);
   }
 
@@ -9833,23 +9833,23 @@ class _NodeListImpl implements NodeList, JavaScriptIndexingBehavior native "*Nod
 
   final int length;
 
-  _NodeImpl operator[](int index) native "return this[index];";
+  NodeImpl operator[](int index) native "return this[index];";
 
-  _NodeImpl _item(int index) native "item";
+  NodeImpl _item(int index) native "item";
 
 }
 
-class _NotationImpl extends _NodeImpl implements Notation native "*Notation" {
+class NotationImpl extends NodeImpl implements Notation native "*Notation" {
 
   final String publicId;
 
   final String systemId;
 }
 
-class _NotificationImpl extends _EventTargetImpl implements Notification native "*Notification" {
+class NotificationImpl extends EventTargetImpl implements Notification native "*Notification" {
 
-  _NotificationEventsImpl get on() =>
-    new _NotificationEventsImpl(this);
+  NotificationEventsImpl get on() =>
+    new NotificationEventsImpl(this);
 
   String dir;
 
@@ -9865,15 +9865,15 @@ class _NotificationImpl extends _EventTargetImpl implements Notification native 
 
   void close() native;
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
   void show() native;
 }
 
-class _NotificationEventsImpl extends _EventsImpl implements NotificationEvents {
-  _NotificationEventsImpl(_ptr) : super(_ptr);
+class NotificationEventsImpl extends EventsImpl implements NotificationEvents {
+  NotificationEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get click() => this['click'];
 
@@ -9886,39 +9886,39 @@ class _NotificationEventsImpl extends _EventsImpl implements NotificationEvents 
   EventListenerList get show() => this['show'];
 }
 
-class _NotificationCenterImpl implements NotificationCenter native "*NotificationCenter" {
+class NotificationCenterImpl implements NotificationCenter native "*NotificationCenter" {
 
   int checkPermission() native;
 
-  _NotificationImpl createHTMLNotification(String url) native;
+  NotificationImpl createHTMLNotification(String url) native;
 
-  _NotificationImpl createNotification(String iconUrl, String title, String body) native;
+  NotificationImpl createNotification(String iconUrl, String title, String body) native;
 
   void requestPermission(VoidCallback callback) native;
 }
 
-class _OESStandardDerivativesImpl implements OESStandardDerivatives native "*OESStandardDerivatives" {
+class OESStandardDerivativesImpl implements OESStandardDerivatives native "*OESStandardDerivatives" {
 
   static final int FRAGMENT_SHADER_DERIVATIVE_HINT_OES = 0x8B8B;
 }
 
-class _OESTextureFloatImpl implements OESTextureFloat native "*OESTextureFloat" {
+class OESTextureFloatImpl implements OESTextureFloat native "*OESTextureFloat" {
 }
 
-class _OESVertexArrayObjectImpl implements OESVertexArrayObject native "*OESVertexArrayObject" {
+class OESVertexArrayObjectImpl implements OESVertexArrayObject native "*OESVertexArrayObject" {
 
   static final int VERTEX_ARRAY_BINDING_OES = 0x85B5;
 
-  void bindVertexArrayOES(_WebGLVertexArrayObjectOESImpl arrayObject) native;
+  void bindVertexArrayOES(WebGLVertexArrayObjectOESImpl arrayObject) native;
 
-  _WebGLVertexArrayObjectOESImpl createVertexArrayOES() native;
+  WebGLVertexArrayObjectOESImpl createVertexArrayOES() native;
 
-  void deleteVertexArrayOES(_WebGLVertexArrayObjectOESImpl arrayObject) native;
+  void deleteVertexArrayOES(WebGLVertexArrayObjectOESImpl arrayObject) native;
 
-  bool isVertexArrayOES(_WebGLVertexArrayObjectOESImpl arrayObject) native;
+  bool isVertexArrayOES(WebGLVertexArrayObjectOESImpl arrayObject) native;
 }
 
-class _OListElementImpl extends _ElementImpl implements OListElement native "*HTMLOListElement" {
+class OListElementImpl extends ElementImpl implements OListElement native "*HTMLOListElement" {
 
   bool compact;
 
@@ -9929,7 +9929,7 @@ class _OListElementImpl extends _ElementImpl implements OListElement native "*HT
   String type;
 }
 
-class _ObjectElementImpl extends _ElementImpl implements ObjectElement native "*HTMLObjectElement" {
+class ObjectElementImpl extends ElementImpl implements ObjectElement native "*HTMLObjectElement" {
 
   String align;
 
@@ -9943,13 +9943,13 @@ class _ObjectElementImpl extends _ElementImpl implements ObjectElement native "*
 
   String codeType;
 
-  final _DocumentImpl contentDocument;
+  final DocumentImpl contentDocument;
 
   String data;
 
   bool declare;
 
-  final _FormElementImpl form;
+  final FormElementImpl form;
 
   String height;
 
@@ -9965,7 +9965,7 @@ class _ObjectElementImpl extends _ElementImpl implements ObjectElement native "*
 
   final String validationMessage;
 
-  final _ValidityStateImpl validity;
+  final ValidityStateImpl validity;
 
   int vspace;
 
@@ -9978,25 +9978,25 @@ class _ObjectElementImpl extends _ElementImpl implements ObjectElement native "*
   void setCustomValidity(String error) native;
 }
 
-class _OfflineAudioCompletionEventImpl extends _EventImpl implements OfflineAudioCompletionEvent native "*OfflineAudioCompletionEvent" {
+class OfflineAudioCompletionEventImpl extends EventImpl implements OfflineAudioCompletionEvent native "*OfflineAudioCompletionEvent" {
 
-  final _AudioBufferImpl renderedBuffer;
+  final AudioBufferImpl renderedBuffer;
 }
 
-class _OptGroupElementImpl extends _ElementImpl implements OptGroupElement native "*HTMLOptGroupElement" {
+class OptGroupElementImpl extends ElementImpl implements OptGroupElement native "*HTMLOptGroupElement" {
 
   bool disabled;
 
   String label;
 }
 
-class _OptionElementImpl extends _ElementImpl implements OptionElement native "*HTMLOptionElement" {
+class OptionElementImpl extends ElementImpl implements OptionElement native "*HTMLOptionElement" {
 
   bool defaultSelected;
 
   bool disabled;
 
-  final _FormElementImpl form;
+  final FormElementImpl form;
 
   final int index;
 
@@ -10007,7 +10007,7 @@ class _OptionElementImpl extends _ElementImpl implements OptionElement native "*
   String value;
 }
 
-class _OscillatorImpl extends _AudioSourceNodeImpl implements Oscillator native "*Oscillator" {
+class OscillatorImpl extends AudioSourceNodeImpl implements Oscillator native "*Oscillator" {
 
   static final int CUSTOM = 4;
 
@@ -10027,9 +10027,9 @@ class _OscillatorImpl extends _AudioSourceNodeImpl implements Oscillator native 
 
   static final int UNSCHEDULED_STATE = 0;
 
-  final _AudioParamImpl detune;
+  final AudioParamImpl detune;
 
-  final _AudioParamImpl frequency;
+  final AudioParamImpl frequency;
 
   final int playbackState;
 
@@ -10039,18 +10039,18 @@ class _OscillatorImpl extends _AudioSourceNodeImpl implements Oscillator native 
 
   void noteOn(num when) native;
 
-  void setWaveTable(_WaveTableImpl waveTable) native;
+  void setWaveTable(WaveTableImpl waveTable) native;
 }
 
-class _OutputElementImpl extends _ElementImpl implements OutputElement native "*HTMLOutputElement" {
+class OutputElementImpl extends ElementImpl implements OutputElement native "*HTMLOutputElement" {
 
   String defaultValue;
 
-  final _FormElementImpl form;
+  final FormElementImpl form;
 
-  _DOMSettableTokenListImpl htmlFor;
+  DOMSettableTokenListImpl htmlFor;
 
-  final _NodeListImpl labels;
+  final NodeListImpl labels;
 
   String name;
 
@@ -10058,7 +10058,7 @@ class _OutputElementImpl extends _ElementImpl implements OutputElement native "*
 
   final String validationMessage;
 
-  final _ValidityStateImpl validity;
+  final ValidityStateImpl validity;
 
   String value;
 
@@ -10069,7 +10069,7 @@ class _OutputElementImpl extends _ElementImpl implements OutputElement native "*
   void setCustomValidity(String error) native;
 }
 
-class _OverflowEventImpl extends _EventImpl implements OverflowEvent native "*OverflowEvent" {
+class OverflowEventImpl extends EventImpl implements OverflowEvent native "*OverflowEvent" {
 
   static final int BOTH = 2;
 
@@ -10084,22 +10084,22 @@ class _OverflowEventImpl extends _EventImpl implements OverflowEvent native "*Ov
   final bool verticalOverflow;
 }
 
-class _PagePopupControllerImpl implements PagePopupController native "*PagePopupController" {
+class PagePopupControllerImpl implements PagePopupController native "*PagePopupController" {
 
   void setValueAndClosePopup(int numberValue, String stringValue) native;
 }
 
-class _PageTransitionEventImpl extends _EventImpl implements PageTransitionEvent native "*PageTransitionEvent" {
+class PageTransitionEventImpl extends EventImpl implements PageTransitionEvent native "*PageTransitionEvent" {
 
   final bool persisted;
 }
 
-class _ParagraphElementImpl extends _ElementImpl implements ParagraphElement native "*HTMLParagraphElement" {
+class ParagraphElementImpl extends ElementImpl implements ParagraphElement native "*HTMLParagraphElement" {
 
   String align;
 }
 
-class _ParamElementImpl extends _ElementImpl implements ParamElement native "*HTMLParamElement" {
+class ParamElementImpl extends ElementImpl implements ParamElement native "*HTMLParamElement" {
 
   String name;
 
@@ -10110,10 +10110,10 @@ class _ParamElementImpl extends _ElementImpl implements ParamElement native "*HT
   String valueType;
 }
 
-class _PeerConnection00Impl extends _EventTargetImpl implements PeerConnection00 native "*PeerConnection00" {
+class PeerConnection00Impl extends EventTargetImpl implements PeerConnection00 native "*PeerConnection00" {
 
-  _PeerConnection00EventsImpl get on() =>
-    new _PeerConnection00EventsImpl(this);
+  PeerConnection00EventsImpl get on() =>
+    new PeerConnection00EventsImpl(this);
 
   static final int ACTIVE = 2;
 
@@ -10145,43 +10145,43 @@ class _PeerConnection00Impl extends _EventTargetImpl implements PeerConnection00
 
   final int iceState;
 
-  final _SessionDescriptionImpl localDescription;
+  final SessionDescriptionImpl localDescription;
 
-  final _MediaStreamListImpl localStreams;
+  final MediaStreamListImpl localStreams;
 
   final int readyState;
 
-  final _SessionDescriptionImpl remoteDescription;
+  final SessionDescriptionImpl remoteDescription;
 
-  final _MediaStreamListImpl remoteStreams;
+  final MediaStreamListImpl remoteStreams;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  void addStream(_MediaStreamImpl stream, [Map mediaStreamHints]) native;
+  void addStream(MediaStreamImpl stream, [Map mediaStreamHints]) native;
 
   void close() native;
 
-  _SessionDescriptionImpl createAnswer(String offer, [Map mediaHints]) native;
+  SessionDescriptionImpl createAnswer(String offer, [Map mediaHints]) native;
 
-  _SessionDescriptionImpl createOffer([Map mediaHints]) native;
+  SessionDescriptionImpl createOffer([Map mediaHints]) native;
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
-  void processIceMessage(_IceCandidateImpl candidate) native;
+  void processIceMessage(IceCandidateImpl candidate) native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
-  void removeStream(_MediaStreamImpl stream) native;
+  void removeStream(MediaStreamImpl stream) native;
 
-  void setLocalDescription(int action, _SessionDescriptionImpl desc) native;
+  void setLocalDescription(int action, SessionDescriptionImpl desc) native;
 
-  void setRemoteDescription(int action, _SessionDescriptionImpl desc) native;
+  void setRemoteDescription(int action, SessionDescriptionImpl desc) native;
 
   void startIce([Map iceOptions]) native;
 }
 
-class _PeerConnection00EventsImpl extends _EventsImpl implements PeerConnection00Events {
-  _PeerConnection00EventsImpl(_ptr) : super(_ptr);
+class PeerConnection00EventsImpl extends EventsImpl implements PeerConnection00Events {
+  PeerConnection00EventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get addStream() => this['addstream'];
 
@@ -10194,18 +10194,18 @@ class _PeerConnection00EventsImpl extends _EventsImpl implements PeerConnection0
   EventListenerList get stateChange() => this['statechange'];
 }
 
-class _PerformanceImpl extends _EventTargetImpl implements Performance native "*Performance" {
+class PerformanceImpl extends EventTargetImpl implements Performance native "*Performance" {
 
-  final _MemoryInfoImpl memory;
+  final MemoryInfoImpl memory;
 
-  final _PerformanceNavigationImpl navigation;
+  final PerformanceNavigationImpl navigation;
 
-  final _PerformanceTimingImpl timing;
+  final PerformanceTimingImpl timing;
 
   num webkitNow() native;
 }
 
-class _PerformanceNavigationImpl implements PerformanceNavigation native "*PerformanceNavigation" {
+class PerformanceNavigationImpl implements PerformanceNavigation native "*PerformanceNavigation" {
 
   static final int TYPE_BACK_FORWARD = 2;
 
@@ -10220,7 +10220,7 @@ class _PerformanceNavigationImpl implements PerformanceNavigation native "*Perfo
   final int type;
 }
 
-class _PerformanceTimingImpl implements PerformanceTiming native "*PerformanceTiming" {
+class PerformanceTimingImpl implements PerformanceTiming native "*PerformanceTiming" {
 
   final int connectEnd;
 
@@ -10265,19 +10265,19 @@ class _PerformanceTimingImpl implements PerformanceTiming native "*PerformanceTi
   final int unloadEventStart;
 }
 
-class _PointImpl implements Point native "*WebKitPoint" {
+class PointImpl implements Point native "*WebKitPoint" {
 
   num x;
 
   num y;
 }
 
-class _PopStateEventImpl extends _EventImpl implements PopStateEvent native "*PopStateEvent" {
+class PopStateEventImpl extends EventImpl implements PopStateEvent native "*PopStateEvent" {
 
   final Object state;
 }
 
-class _PositionErrorImpl implements PositionError native "*PositionError" {
+class PositionErrorImpl implements PositionError native "*PositionError" {
 
   static final int PERMISSION_DENIED = 1;
 
@@ -10290,25 +10290,25 @@ class _PositionErrorImpl implements PositionError native "*PositionError" {
   final String message;
 }
 
-class _PreElementImpl extends _ElementImpl implements PreElement native "*HTMLPreElement" {
+class PreElementImpl extends ElementImpl implements PreElement native "*HTMLPreElement" {
 
   int width;
 
   bool wrap;
 }
 
-class _ProcessingInstructionImpl extends _NodeImpl implements ProcessingInstruction native "*ProcessingInstruction" {
+class ProcessingInstructionImpl extends NodeImpl implements ProcessingInstruction native "*ProcessingInstruction" {
 
   String data;
 
-  final _StyleSheetImpl sheet;
+  final StyleSheetImpl sheet;
 
   final String target;
 }
 
-class _ProgressElementImpl extends _ElementImpl implements ProgressElement native "*HTMLProgressElement" {
+class ProgressElementImpl extends ElementImpl implements ProgressElement native "*HTMLProgressElement" {
 
-  final _NodeListImpl labels;
+  final NodeListImpl labels;
 
   num max;
 
@@ -10317,7 +10317,7 @@ class _ProgressElementImpl extends _ElementImpl implements ProgressElement nativ
   num value;
 }
 
-class _ProgressEventImpl extends _EventImpl implements ProgressEvent native "*ProgressEvent" {
+class ProgressEventImpl extends EventImpl implements ProgressEvent native "*ProgressEvent" {
 
   final bool lengthComputable;
 
@@ -10326,35 +10326,35 @@ class _ProgressEventImpl extends _EventImpl implements ProgressEvent native "*Pr
   final int total;
 }
 
-class _QuoteElementImpl extends _ElementImpl implements QuoteElement native "*HTMLQuoteElement" {
+class QuoteElementImpl extends ElementImpl implements QuoteElement native "*HTMLQuoteElement" {
 
   String cite;
 }
 
-class _RGBColorImpl implements RGBColor native "*RGBColor" {
+class RGBColorImpl implements RGBColor native "*RGBColor" {
 
-  final _CSSPrimitiveValueImpl blue;
+  final CSSPrimitiveValueImpl blue;
 
-  final _CSSPrimitiveValueImpl green;
+  final CSSPrimitiveValueImpl green;
 
-  final _CSSPrimitiveValueImpl red;
+  final CSSPrimitiveValueImpl red;
 }
 
-class _RTCPeerConnectionImpl extends _EventTargetImpl implements RTCPeerConnection native "*RTCPeerConnection" {
+class RTCPeerConnectionImpl extends EventTargetImpl implements RTCPeerConnection native "*RTCPeerConnection" {
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _RadioNodeListImpl extends _NodeListImpl implements RadioNodeList native "*RadioNodeList" {
+class RadioNodeListImpl extends NodeListImpl implements RadioNodeList native "*RadioNodeList" {
 
   String value;
 }
 
-class _RangeImpl implements Range native "*Range" {
+class RangeImpl implements Range native "*Range" {
 
   static final int END_TO_END = 2;
 
@@ -10374,27 +10374,27 @@ class _RangeImpl implements Range native "*Range" {
 
   final bool collapsed;
 
-  final _NodeImpl commonAncestorContainer;
+  final NodeImpl commonAncestorContainer;
 
-  final _NodeImpl endContainer;
+  final NodeImpl endContainer;
 
   final int endOffset;
 
-  final _NodeImpl startContainer;
+  final NodeImpl startContainer;
 
   final int startOffset;
 
-  _DocumentFragmentImpl cloneContents() native;
+  DocumentFragmentImpl cloneContents() native;
 
-  _RangeImpl cloneRange() native;
+  RangeImpl cloneRange() native;
 
   void collapse(bool toStart) native;
 
-  int compareNode(_NodeImpl refNode) native;
+  int compareNode(NodeImpl refNode) native;
 
-  int comparePoint(_NodeImpl refNode, int offset) native;
+  int comparePoint(NodeImpl refNode, int offset) native;
 
-  _DocumentFragmentImpl createContextualFragment(String html) native;
+  DocumentFragmentImpl createContextualFragment(String html) native;
 
   void deleteContents() native;
 
@@ -10402,40 +10402,40 @@ class _RangeImpl implements Range native "*Range" {
 
   void expand(String unit) native;
 
-  _DocumentFragmentImpl extractContents() native;
+  DocumentFragmentImpl extractContents() native;
 
-  _ClientRectImpl getBoundingClientRect() native;
+  ClientRectImpl getBoundingClientRect() native;
 
-  _ClientRectListImpl getClientRects() native;
+  ClientRectListImpl getClientRects() native;
 
-  void insertNode(_NodeImpl newNode) native;
+  void insertNode(NodeImpl newNode) native;
 
-  bool intersectsNode(_NodeImpl refNode) native;
+  bool intersectsNode(NodeImpl refNode) native;
 
-  bool isPointInRange(_NodeImpl refNode, int offset) native;
+  bool isPointInRange(NodeImpl refNode, int offset) native;
 
-  void selectNode(_NodeImpl refNode) native;
+  void selectNode(NodeImpl refNode) native;
 
-  void selectNodeContents(_NodeImpl refNode) native;
+  void selectNodeContents(NodeImpl refNode) native;
 
-  void setEnd(_NodeImpl refNode, int offset) native;
+  void setEnd(NodeImpl refNode, int offset) native;
 
-  void setEndAfter(_NodeImpl refNode) native;
+  void setEndAfter(NodeImpl refNode) native;
 
-  void setEndBefore(_NodeImpl refNode) native;
+  void setEndBefore(NodeImpl refNode) native;
 
-  void setStart(_NodeImpl refNode, int offset) native;
+  void setStart(NodeImpl refNode, int offset) native;
 
-  void setStartAfter(_NodeImpl refNode) native;
+  void setStartAfter(NodeImpl refNode) native;
 
-  void setStartBefore(_NodeImpl refNode) native;
+  void setStartBefore(NodeImpl refNode) native;
 
-  void surroundContents(_NodeImpl newParent) native;
+  void surroundContents(NodeImpl newParent) native;
 
   String toString() native;
 }
 
-class _RangeExceptionImpl implements RangeException native "*RangeException" {
+class RangeExceptionImpl implements RangeException native "*RangeException" {
 
   static final int BAD_BOUNDARYPOINTS_ERR = 1;
 
@@ -10450,7 +10450,7 @@ class _RangeExceptionImpl implements RangeException native "*RangeException" {
   String toString() native;
 }
 
-class _RealtimeAnalyserNodeImpl extends _AudioNodeImpl implements RealtimeAnalyserNode native "*RealtimeAnalyserNode" {
+class RealtimeAnalyserNodeImpl extends AudioNodeImpl implements RealtimeAnalyserNode native "*RealtimeAnalyserNode" {
 
   int fftSize;
 
@@ -10462,25 +10462,25 @@ class _RealtimeAnalyserNodeImpl extends _AudioNodeImpl implements RealtimeAnalys
 
   num smoothingTimeConstant;
 
-  void getByteFrequencyData(_Uint8ArrayImpl array) native;
+  void getByteFrequencyData(Uint8ArrayImpl array) native;
 
-  void getByteTimeDomainData(_Uint8ArrayImpl array) native;
+  void getByteTimeDomainData(Uint8ArrayImpl array) native;
 
-  void getFloatFrequencyData(_Float32ArrayImpl array) native;
+  void getFloatFrequencyData(Float32ArrayImpl array) native;
 }
 
-class _RectImpl implements Rect native "*Rect" {
+class RectImpl implements Rect native "*Rect" {
 
-  final _CSSPrimitiveValueImpl bottom;
+  final CSSPrimitiveValueImpl bottom;
 
-  final _CSSPrimitiveValueImpl left;
+  final CSSPrimitiveValueImpl left;
 
-  final _CSSPrimitiveValueImpl right;
+  final CSSPrimitiveValueImpl right;
 
-  final _CSSPrimitiveValueImpl top;
+  final CSSPrimitiveValueImpl top;
 }
 
-class _SQLErrorImpl implements SQLError native "*SQLError" {
+class SQLErrorImpl implements SQLError native "*SQLError" {
 
   static final int CONSTRAINT_ERR = 6;
 
@@ -10503,7 +10503,7 @@ class _SQLErrorImpl implements SQLError native "*SQLError" {
   final String message;
 }
 
-class _SQLExceptionImpl implements SQLException native "*SQLException" {
+class SQLExceptionImpl implements SQLException native "*SQLException" {
 
   static final int CONSTRAINT_ERR = 6;
 
@@ -10526,43 +10526,43 @@ class _SQLExceptionImpl implements SQLException native "*SQLException" {
   final String message;
 }
 
-class _SQLResultSetImpl implements SQLResultSet native "*SQLResultSet" {
+class SQLResultSetImpl implements SQLResultSet native "*SQLResultSet" {
 
   final int insertId;
 
-  final _SQLResultSetRowListImpl rows;
+  final SQLResultSetRowListImpl rows;
 
   final int rowsAffected;
 }
 
-class _SQLResultSetRowListImpl implements SQLResultSetRowList native "*SQLResultSetRowList" {
+class SQLResultSetRowListImpl implements SQLResultSetRowList native "*SQLResultSetRowList" {
 
   final int length;
 
   Object item(int index) native;
 }
 
-class _SQLTransactionImpl implements SQLTransaction native "*SQLTransaction" {
+class SQLTransactionImpl implements SQLTransaction native "*SQLTransaction" {
 }
 
-class _SQLTransactionSyncImpl implements SQLTransactionSync native "*SQLTransactionSync" {
+class SQLTransactionSyncImpl implements SQLTransactionSync native "*SQLTransactionSync" {
 }
 
-class _SVGAElementImpl extends _SVGElementImpl implements SVGAElement native "*SVGAElement" {
+class SVGAElementImpl extends SVGElementImpl implements SVGAElement native "*SVGAElement" {
 
-  final _SVGAnimatedStringImpl target;
+  final SVGAnimatedStringImpl target;
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -10574,40 +10574,40 @@ class _SVGAElementImpl extends _SVGElementImpl implements SVGAElement native "*S
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGAltGlyphDefElementImpl extends _SVGElementImpl implements SVGAltGlyphDefElement native "*SVGAltGlyphDefElement" {
+class SVGAltGlyphDefElementImpl extends SVGElementImpl implements SVGAltGlyphDefElement native "*SVGAltGlyphDefElement" {
 }
 
-class _SVGAltGlyphElementImpl extends _SVGTextPositioningElementImpl implements SVGAltGlyphElement native "*SVGAltGlyphElement" {
+class SVGAltGlyphElementImpl extends SVGTextPositioningElementImpl implements SVGAltGlyphElement native "*SVGAltGlyphElement" {
 
   String format;
 
@@ -10615,13 +10615,13 @@ class _SVGAltGlyphElementImpl extends _SVGTextPositioningElementImpl implements 
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 }
 
-class _SVGAltGlyphItemElementImpl extends _SVGElementImpl implements SVGAltGlyphItemElement native "*SVGAltGlyphItemElement" {
+class SVGAltGlyphItemElementImpl extends SVGElementImpl implements SVGAltGlyphItemElement native "*SVGAltGlyphItemElement" {
 }
 
-class _SVGAngleImpl implements SVGAngle native "*SVGAngle" {
+class SVGAngleImpl implements SVGAngle native "*SVGAngle" {
 
   static final int SVG_ANGLETYPE_DEG = 2;
 
@@ -10646,105 +10646,105 @@ class _SVGAngleImpl implements SVGAngle native "*SVGAngle" {
   void newValueSpecifiedUnits(int unitType, num valueInSpecifiedUnits) native;
 }
 
-class _SVGAnimateColorElementImpl extends _SVGAnimationElementImpl implements SVGAnimateColorElement native "*SVGAnimateColorElement" {
+class SVGAnimateColorElementImpl extends SVGAnimationElementImpl implements SVGAnimateColorElement native "*SVGAnimateColorElement" {
 }
 
-class _SVGAnimateElementImpl extends _SVGAnimationElementImpl implements SVGAnimateElement native "*SVGAnimateElement" {
+class SVGAnimateElementImpl extends SVGAnimationElementImpl implements SVGAnimateElement native "*SVGAnimateElement" {
 }
 
-class _SVGAnimateMotionElementImpl extends _SVGAnimationElementImpl implements SVGAnimateMotionElement native "*SVGAnimateMotionElement" {
+class SVGAnimateMotionElementImpl extends SVGAnimationElementImpl implements SVGAnimateMotionElement native "*SVGAnimateMotionElement" {
 }
 
-class _SVGAnimateTransformElementImpl extends _SVGAnimationElementImpl implements SVGAnimateTransformElement native "*SVGAnimateTransformElement" {
+class SVGAnimateTransformElementImpl extends SVGAnimationElementImpl implements SVGAnimateTransformElement native "*SVGAnimateTransformElement" {
 }
 
-class _SVGAnimatedAngleImpl implements SVGAnimatedAngle native "*SVGAnimatedAngle" {
+class SVGAnimatedAngleImpl implements SVGAnimatedAngle native "*SVGAnimatedAngle" {
 
-  final _SVGAngleImpl animVal;
+  final SVGAngleImpl animVal;
 
-  final _SVGAngleImpl baseVal;
+  final SVGAngleImpl baseVal;
 }
 
-class _SVGAnimatedBooleanImpl implements SVGAnimatedBoolean native "*SVGAnimatedBoolean" {
+class SVGAnimatedBooleanImpl implements SVGAnimatedBoolean native "*SVGAnimatedBoolean" {
 
   final bool animVal;
 
   bool baseVal;
 }
 
-class _SVGAnimatedEnumerationImpl implements SVGAnimatedEnumeration native "*SVGAnimatedEnumeration" {
+class SVGAnimatedEnumerationImpl implements SVGAnimatedEnumeration native "*SVGAnimatedEnumeration" {
 
   final int animVal;
 
   int baseVal;
 }
 
-class _SVGAnimatedIntegerImpl implements SVGAnimatedInteger native "*SVGAnimatedInteger" {
+class SVGAnimatedIntegerImpl implements SVGAnimatedInteger native "*SVGAnimatedInteger" {
 
   final int animVal;
 
   int baseVal;
 }
 
-class _SVGAnimatedLengthImpl implements SVGAnimatedLength native "*SVGAnimatedLength" {
+class SVGAnimatedLengthImpl implements SVGAnimatedLength native "*SVGAnimatedLength" {
 
-  final _SVGLengthImpl animVal;
+  final SVGLengthImpl animVal;
 
-  final _SVGLengthImpl baseVal;
+  final SVGLengthImpl baseVal;
 }
 
-class _SVGAnimatedLengthListImpl implements SVGAnimatedLengthList native "*SVGAnimatedLengthList" {
+class SVGAnimatedLengthListImpl implements SVGAnimatedLengthList native "*SVGAnimatedLengthList" {
 
-  final _SVGLengthListImpl animVal;
+  final SVGLengthListImpl animVal;
 
-  final _SVGLengthListImpl baseVal;
+  final SVGLengthListImpl baseVal;
 }
 
-class _SVGAnimatedNumberImpl implements SVGAnimatedNumber native "*SVGAnimatedNumber" {
+class SVGAnimatedNumberImpl implements SVGAnimatedNumber native "*SVGAnimatedNumber" {
 
   final num animVal;
 
   num baseVal;
 }
 
-class _SVGAnimatedNumberListImpl implements SVGAnimatedNumberList native "*SVGAnimatedNumberList" {
+class SVGAnimatedNumberListImpl implements SVGAnimatedNumberList native "*SVGAnimatedNumberList" {
 
-  final _SVGNumberListImpl animVal;
+  final SVGNumberListImpl animVal;
 
-  final _SVGNumberListImpl baseVal;
+  final SVGNumberListImpl baseVal;
 }
 
-class _SVGAnimatedPreserveAspectRatioImpl implements SVGAnimatedPreserveAspectRatio native "*SVGAnimatedPreserveAspectRatio" {
+class SVGAnimatedPreserveAspectRatioImpl implements SVGAnimatedPreserveAspectRatio native "*SVGAnimatedPreserveAspectRatio" {
 
-  final _SVGPreserveAspectRatioImpl animVal;
+  final SVGPreserveAspectRatioImpl animVal;
 
-  final _SVGPreserveAspectRatioImpl baseVal;
+  final SVGPreserveAspectRatioImpl baseVal;
 }
 
-class _SVGAnimatedRectImpl implements SVGAnimatedRect native "*SVGAnimatedRect" {
+class SVGAnimatedRectImpl implements SVGAnimatedRect native "*SVGAnimatedRect" {
 
-  final _SVGRectImpl animVal;
+  final SVGRectImpl animVal;
 
-  final _SVGRectImpl baseVal;
+  final SVGRectImpl baseVal;
 }
 
-class _SVGAnimatedStringImpl implements SVGAnimatedString native "*SVGAnimatedString" {
+class SVGAnimatedStringImpl implements SVGAnimatedString native "*SVGAnimatedString" {
 
   final String animVal;
 
   String baseVal;
 }
 
-class _SVGAnimatedTransformListImpl implements SVGAnimatedTransformList native "*SVGAnimatedTransformList" {
+class SVGAnimatedTransformListImpl implements SVGAnimatedTransformList native "*SVGAnimatedTransformList" {
 
-  final _SVGTransformListImpl animVal;
+  final SVGTransformListImpl animVal;
 
-  final _SVGTransformListImpl baseVal;
+  final SVGTransformListImpl baseVal;
 }
 
-class _SVGAnimationElementImpl extends _SVGElementImpl implements SVGAnimationElement native "*SVGAnimationElement" {
+class SVGAnimationElementImpl extends SVGElementImpl implements SVGAnimationElement native "*SVGAnimationElement" {
 
-  final _SVGElementImpl targetElement;
+  final SVGElementImpl targetElement;
 
   num getCurrentTime() native;
 
@@ -10754,17 +10754,17 @@ class _SVGAnimationElementImpl extends _SVGElementImpl implements SVGAnimationEl
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From ElementTimeControl
 
@@ -10777,21 +10777,21 @@ class _SVGAnimationElementImpl extends _SVGElementImpl implements SVGAnimationEl
   void endElementAt(num offset) native;
 }
 
-class _SVGCircleElementImpl extends _SVGElementImpl implements SVGCircleElement native "*SVGCircleElement" {
+class SVGCircleElementImpl extends SVGElementImpl implements SVGCircleElement native "*SVGCircleElement" {
 
-  final _SVGAnimatedLengthImpl cx;
+  final SVGAnimatedLengthImpl cx;
 
-  final _SVGAnimatedLengthImpl cy;
+  final SVGAnimatedLengthImpl cy;
 
-  final _SVGAnimatedLengthImpl r;
+  final SVGAnimatedLengthImpl r;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -10803,47 +10803,47 @@ class _SVGCircleElementImpl extends _SVGElementImpl implements SVGCircleElement 
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGClipPathElementImpl extends _SVGElementImpl implements SVGClipPathElement native "*SVGClipPathElement" {
+class SVGClipPathElementImpl extends SVGElementImpl implements SVGClipPathElement native "*SVGClipPathElement" {
 
-  final _SVGAnimatedEnumerationImpl clipPathUnits;
+  final SVGAnimatedEnumerationImpl clipPathUnits;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -10855,37 +10855,37 @@ class _SVGClipPathElementImpl extends _SVGElementImpl implements SVGClipPathElem
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGColorImpl extends _CSSValueImpl implements SVGColor native "*SVGColor" {
+class SVGColorImpl extends CSSValueImpl implements SVGColor native "*SVGColor" {
 
   static final int SVG_COLORTYPE_CURRENTCOLOR = 3;
 
@@ -10897,7 +10897,7 @@ class _SVGColorImpl extends _CSSValueImpl implements SVGColor native "*SVGColor"
 
   final int colorType;
 
-  final _RGBColorImpl rgbColor;
+  final RGBColorImpl rgbColor;
 
   void setColor(int colorType, String rgbColor, String iccColor) native;
 
@@ -10906,7 +10906,7 @@ class _SVGColorImpl extends _CSSValueImpl implements SVGColor native "*SVGColor"
   void setRGBColorICCColor(String rgbColor, String iccColor) native;
 }
 
-class _SVGComponentTransferFunctionElementImpl extends _SVGElementImpl implements SVGComponentTransferFunctionElement native "*SVGComponentTransferFunctionElement" {
+class SVGComponentTransferFunctionElementImpl extends SVGElementImpl implements SVGComponentTransferFunctionElement native "*SVGComponentTransferFunctionElement" {
 
   static final int SVG_FECOMPONENTTRANSFER_TYPE_DISCRETE = 3;
 
@@ -10920,55 +10920,55 @@ class _SVGComponentTransferFunctionElementImpl extends _SVGElementImpl implement
 
   static final int SVG_FECOMPONENTTRANSFER_TYPE_UNKNOWN = 0;
 
-  final _SVGAnimatedNumberImpl amplitude;
+  final SVGAnimatedNumberImpl amplitude;
 
-  final _SVGAnimatedNumberImpl exponent;
+  final SVGAnimatedNumberImpl exponent;
 
-  final _SVGAnimatedNumberImpl intercept;
+  final SVGAnimatedNumberImpl intercept;
 
-  final _SVGAnimatedNumberImpl offset;
+  final SVGAnimatedNumberImpl offset;
 
-  final _SVGAnimatedNumberImpl slope;
+  final SVGAnimatedNumberImpl slope;
 
-  final _SVGAnimatedNumberListImpl tableValues;
+  final SVGAnimatedNumberListImpl tableValues;
 
-  final _SVGAnimatedEnumerationImpl type;
+  final SVGAnimatedEnumerationImpl type;
 }
 
-class _SVGCursorElementImpl extends _SVGElementImpl implements SVGCursorElement native "*SVGCursorElement" {
+class SVGCursorElementImpl extends SVGElementImpl implements SVGCursorElement native "*SVGCursorElement" {
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 }
 
-class _SVGDefsElementImpl extends _SVGElementImpl implements SVGDefsElement native "*SVGDefsElement" {
+class SVGDefsElementImpl extends SVGElementImpl implements SVGDefsElement native "*SVGDefsElement" {
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -10980,37 +10980,37 @@ class _SVGDefsElementImpl extends _SVGElementImpl implements SVGDefsElement nati
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGDescElementImpl extends _SVGElementImpl implements SVGDescElement native "*SVGDescElement" {
+class SVGDescElementImpl extends SVGElementImpl implements SVGDescElement native "*SVGDescElement" {
 
   // From SVGLangSpace
 
@@ -11020,19 +11020,19 @@ class _SVGDescElementImpl extends _SVGElementImpl implements SVGDescElement nati
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGDocumentImpl extends _DocumentImpl implements SVGDocument native "*SVGDocument" {
+class SVGDocumentImpl extends DocumentImpl implements SVGDocument native "*SVGDocument" {
 
-  final _SVGSVGElementImpl rootElement;
+  final SVGSVGElementImpl rootElement;
 
-  _EventImpl $dom_createEvent(String eventType) native "createEvent";
+  EventImpl $dom_createEvent(String eventType) native "createEvent";
 }
 // Copyright (c) 2011, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -11048,7 +11048,7 @@ class _AttributeClassSet extends _CssClassSet {
   }
 }
 
-class _SVGElementImpl extends _ElementImpl implements SVGElement native "*SVGElement" {
+class SVGElementImpl extends ElementImpl implements SVGElement native "*SVGElement" {
   Set<String> get classes() {
     if (_cssClassSet === null) {
       _cssClassSet = new _AttributeClassSet(_ptr);
@@ -11092,38 +11092,38 @@ class _SVGElementImpl extends _ElementImpl implements SVGElement native "*SVGEle
 
   void set id(String value) native "this.id = value;";
 
-  final _SVGSVGElementImpl ownerSVGElement;
+  final SVGSVGElementImpl ownerSVGElement;
 
-  final _SVGElementImpl viewportElement;
+  final SVGElementImpl viewportElement;
 
   String xmlbase;
 
 }
 
-class _SVGElementInstanceImpl extends _EventTargetImpl implements SVGElementInstance native "*SVGElementInstance" {
+class SVGElementInstanceImpl extends EventTargetImpl implements SVGElementInstance native "*SVGElementInstance" {
 
-  _SVGElementInstanceEventsImpl get on() =>
-    new _SVGElementInstanceEventsImpl(this);
+  SVGElementInstanceEventsImpl get on() =>
+    new SVGElementInstanceEventsImpl(this);
 
-  final _SVGElementInstanceListImpl childNodes;
+  final SVGElementInstanceListImpl childNodes;
 
-  final _SVGElementImpl correspondingElement;
+  final SVGElementImpl correspondingElement;
 
-  final _SVGUseElementImpl correspondingUseElement;
+  final SVGUseElementImpl correspondingUseElement;
 
-  final _SVGElementInstanceImpl firstChild;
+  final SVGElementInstanceImpl firstChild;
 
-  final _SVGElementInstanceImpl lastChild;
+  final SVGElementInstanceImpl lastChild;
 
-  final _SVGElementInstanceImpl nextSibling;
+  final SVGElementInstanceImpl nextSibling;
 
-  final _SVGElementInstanceImpl parentNode;
+  final SVGElementInstanceImpl parentNode;
 
-  final _SVGElementInstanceImpl previousSibling;
+  final SVGElementInstanceImpl previousSibling;
 }
 
-class _SVGElementInstanceEventsImpl extends _EventsImpl implements SVGElementInstanceEvents {
-  _SVGElementInstanceEventsImpl(_ptr) : super(_ptr);
+class SVGElementInstanceEventsImpl extends EventsImpl implements SVGElementInstanceEvents {
+  SVGElementInstanceEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get abort() => this['abort'];
 
@@ -11206,30 +11206,30 @@ class _SVGElementInstanceEventsImpl extends _EventsImpl implements SVGElementIns
   EventListenerList get unload() => this['unload'];
 }
 
-class _SVGElementInstanceListImpl implements SVGElementInstanceList native "*SVGElementInstanceList" {
+class SVGElementInstanceListImpl implements SVGElementInstanceList native "*SVGElementInstanceList" {
 
   final int length;
 
-  _SVGElementInstanceImpl item(int index) native;
+  SVGElementInstanceImpl item(int index) native;
 }
 
-class _SVGEllipseElementImpl extends _SVGElementImpl implements SVGEllipseElement native "*SVGEllipseElement" {
+class SVGEllipseElementImpl extends SVGElementImpl implements SVGEllipseElement native "*SVGEllipseElement" {
 
-  final _SVGAnimatedLengthImpl cx;
+  final SVGAnimatedLengthImpl cx;
 
-  final _SVGAnimatedLengthImpl cy;
+  final SVGAnimatedLengthImpl cy;
 
-  final _SVGAnimatedLengthImpl rx;
+  final SVGAnimatedLengthImpl rx;
 
-  final _SVGAnimatedLengthImpl ry;
+  final SVGAnimatedLengthImpl ry;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -11241,37 +11241,37 @@ class _SVGEllipseElementImpl extends _SVGElementImpl implements SVGEllipseElemen
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGExceptionImpl implements SVGException native "*SVGException" {
+class SVGExceptionImpl implements SVGException native "*SVGException" {
 
   static final int SVG_INVALID_VALUE_ERR = 1;
 
@@ -11288,7 +11288,7 @@ class _SVGExceptionImpl implements SVGException native "*SVGException" {
   String toString() native;
 }
 
-class _SVGFEBlendElementImpl extends _SVGElementImpl implements SVGFEBlendElement native "*SVGFEBlendElement" {
+class SVGFEBlendElementImpl extends SVGElementImpl implements SVGFEBlendElement native "*SVGFEBlendElement" {
 
   static final int SVG_FEBLEND_MODE_DARKEN = 4;
 
@@ -11302,35 +11302,35 @@ class _SVGFEBlendElementImpl extends _SVGElementImpl implements SVGFEBlendElemen
 
   static final int SVG_FEBLEND_MODE_UNKNOWN = 0;
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 
-  final _SVGAnimatedStringImpl in2;
+  final SVGAnimatedStringImpl in2;
 
-  final _SVGAnimatedEnumerationImpl mode;
+  final SVGAnimatedEnumerationImpl mode;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFEColorMatrixElementImpl extends _SVGElementImpl implements SVGFEColorMatrixElement native "*SVGFEColorMatrixElement" {
+class SVGFEColorMatrixElementImpl extends SVGElementImpl implements SVGFEColorMatrixElement native "*SVGFEColorMatrixElement" {
 
   static final int SVG_FECOLORMATRIX_TYPE_HUEROTATE = 3;
 
@@ -11342,61 +11342,61 @@ class _SVGFEColorMatrixElementImpl extends _SVGElementImpl implements SVGFEColor
 
   static final int SVG_FECOLORMATRIX_TYPE_UNKNOWN = 0;
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 
-  final _SVGAnimatedEnumerationImpl type;
+  final SVGAnimatedEnumerationImpl type;
 
-  final _SVGAnimatedNumberListImpl values;
-
-  // From SVGFilterPrimitiveStandardAttributes
-
-  final _SVGAnimatedLengthImpl height;
-
-  final _SVGAnimatedStringImpl result;
-
-  final _SVGAnimatedLengthImpl width;
-
-  final _SVGAnimatedLengthImpl x;
-
-  final _SVGAnimatedLengthImpl y;
-
-  // From SVGStylable
-
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
-
-  // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
-
-  _CSSValueImpl getPresentationAttribute(String name) native;
-}
-
-class _SVGFEComponentTransferElementImpl extends _SVGElementImpl implements SVGFEComponentTransferElement native "*SVGFEComponentTransferElement" {
-
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedNumberListImpl values;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFECompositeElementImpl extends _SVGElementImpl implements SVGFECompositeElement native "*SVGFECompositeElement" {
+class SVGFEComponentTransferElementImpl extends SVGElementImpl implements SVGFEComponentTransferElement native "*SVGFEComponentTransferElement" {
+
+  final SVGAnimatedStringImpl in1;
+
+  // From SVGFilterPrimitiveStandardAttributes
+
+  final SVGAnimatedLengthImpl height;
+
+  final SVGAnimatedStringImpl result;
+
+  final SVGAnimatedLengthImpl width;
+
+  final SVGAnimatedLengthImpl x;
+
+  final SVGAnimatedLengthImpl y;
+
+  // From SVGStylable
+
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+
+  // Use implementation from Element.
+  // final CSSStyleDeclarationImpl style;
+
+  CSSValueImpl getPresentationAttribute(String name) native;
+}
+
+class SVGFECompositeElementImpl extends SVGElementImpl implements SVGFECompositeElement native "*SVGFECompositeElement" {
 
   static final int SVG_FECOMPOSITE_OPERATOR_ARITHMETIC = 6;
 
@@ -11412,43 +11412,43 @@ class _SVGFECompositeElementImpl extends _SVGElementImpl implements SVGFEComposi
 
   static final int SVG_FECOMPOSITE_OPERATOR_XOR = 5;
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 
-  final _SVGAnimatedStringImpl in2;
+  final SVGAnimatedStringImpl in2;
 
-  final _SVGAnimatedNumberImpl k1;
+  final SVGAnimatedNumberImpl k1;
 
-  final _SVGAnimatedNumberImpl k2;
+  final SVGAnimatedNumberImpl k2;
 
-  final _SVGAnimatedNumberImpl k3;
+  final SVGAnimatedNumberImpl k3;
 
-  final _SVGAnimatedNumberImpl k4;
+  final SVGAnimatedNumberImpl k4;
 
-  final _SVGAnimatedEnumerationImpl operator;
+  final SVGAnimatedEnumerationImpl operator;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFEConvolveMatrixElementImpl extends _SVGElementImpl implements SVGFEConvolveMatrixElement native "*SVGFEConvolveMatrixElement" {
+class SVGFEConvolveMatrixElementImpl extends SVGElementImpl implements SVGFEConvolveMatrixElement native "*SVGFEConvolveMatrixElement" {
 
   static final int SVG_EDGEMODE_DUPLICATE = 1;
 
@@ -11458,87 +11458,87 @@ class _SVGFEConvolveMatrixElementImpl extends _SVGElementImpl implements SVGFECo
 
   static final int SVG_EDGEMODE_WRAP = 2;
 
-  final _SVGAnimatedNumberImpl bias;
+  final SVGAnimatedNumberImpl bias;
 
-  final _SVGAnimatedNumberImpl divisor;
+  final SVGAnimatedNumberImpl divisor;
 
-  final _SVGAnimatedEnumerationImpl edgeMode;
+  final SVGAnimatedEnumerationImpl edgeMode;
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 
-  final _SVGAnimatedNumberListImpl kernelMatrix;
+  final SVGAnimatedNumberListImpl kernelMatrix;
 
-  final _SVGAnimatedNumberImpl kernelUnitLengthX;
+  final SVGAnimatedNumberImpl kernelUnitLengthX;
 
-  final _SVGAnimatedNumberImpl kernelUnitLengthY;
+  final SVGAnimatedNumberImpl kernelUnitLengthY;
 
-  final _SVGAnimatedIntegerImpl orderX;
+  final SVGAnimatedIntegerImpl orderX;
 
-  final _SVGAnimatedIntegerImpl orderY;
+  final SVGAnimatedIntegerImpl orderY;
 
-  final _SVGAnimatedBooleanImpl preserveAlpha;
+  final SVGAnimatedBooleanImpl preserveAlpha;
 
-  final _SVGAnimatedIntegerImpl targetX;
+  final SVGAnimatedIntegerImpl targetX;
 
-  final _SVGAnimatedIntegerImpl targetY;
-
-  // From SVGFilterPrimitiveStandardAttributes
-
-  final _SVGAnimatedLengthImpl height;
-
-  final _SVGAnimatedStringImpl result;
-
-  final _SVGAnimatedLengthImpl width;
-
-  final _SVGAnimatedLengthImpl x;
-
-  final _SVGAnimatedLengthImpl y;
-
-  // From SVGStylable
-
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
-
-  // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
-
-  _CSSValueImpl getPresentationAttribute(String name) native;
-}
-
-class _SVGFEDiffuseLightingElementImpl extends _SVGElementImpl implements SVGFEDiffuseLightingElement native "*SVGFEDiffuseLightingElement" {
-
-  final _SVGAnimatedNumberImpl diffuseConstant;
-
-  final _SVGAnimatedStringImpl in1;
-
-  final _SVGAnimatedNumberImpl kernelUnitLengthX;
-
-  final _SVGAnimatedNumberImpl kernelUnitLengthY;
-
-  final _SVGAnimatedNumberImpl surfaceScale;
+  final SVGAnimatedIntegerImpl targetY;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFEDisplacementMapElementImpl extends _SVGElementImpl implements SVGFEDisplacementMapElement native "*SVGFEDisplacementMapElement" {
+class SVGFEDiffuseLightingElementImpl extends SVGElementImpl implements SVGFEDiffuseLightingElement native "*SVGFEDiffuseLightingElement" {
+
+  final SVGAnimatedNumberImpl diffuseConstant;
+
+  final SVGAnimatedStringImpl in1;
+
+  final SVGAnimatedNumberImpl kernelUnitLengthX;
+
+  final SVGAnimatedNumberImpl kernelUnitLengthY;
+
+  final SVGAnimatedNumberImpl surfaceScale;
+
+  // From SVGFilterPrimitiveStandardAttributes
+
+  final SVGAnimatedLengthImpl height;
+
+  final SVGAnimatedStringImpl result;
+
+  final SVGAnimatedLengthImpl width;
+
+  final SVGAnimatedLengthImpl x;
+
+  final SVGAnimatedLengthImpl y;
+
+  // From SVGStylable
+
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+
+  // Use implementation from Element.
+  // final CSSStyleDeclarationImpl style;
+
+  CSSValueImpl getPresentationAttribute(String name) native;
+}
+
+class SVGFEDisplacementMapElementImpl extends SVGElementImpl implements SVGFEDisplacementMapElement native "*SVGFEDisplacementMapElement" {
 
   static final int SVG_CHANNEL_A = 4;
 
@@ -11550,156 +11550,156 @@ class _SVGFEDisplacementMapElementImpl extends _SVGElementImpl implements SVGFED
 
   static final int SVG_CHANNEL_UNKNOWN = 0;
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 
-  final _SVGAnimatedStringImpl in2;
+  final SVGAnimatedStringImpl in2;
 
-  final _SVGAnimatedNumberImpl scale;
+  final SVGAnimatedNumberImpl scale;
 
-  final _SVGAnimatedEnumerationImpl xChannelSelector;
+  final SVGAnimatedEnumerationImpl xChannelSelector;
 
-  final _SVGAnimatedEnumerationImpl yChannelSelector;
+  final SVGAnimatedEnumerationImpl yChannelSelector;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFEDistantLightElementImpl extends _SVGElementImpl implements SVGFEDistantLightElement native "*SVGFEDistantLightElement" {
+class SVGFEDistantLightElementImpl extends SVGElementImpl implements SVGFEDistantLightElement native "*SVGFEDistantLightElement" {
 
-  final _SVGAnimatedNumberImpl azimuth;
+  final SVGAnimatedNumberImpl azimuth;
 
-  final _SVGAnimatedNumberImpl elevation;
+  final SVGAnimatedNumberImpl elevation;
 }
 
-class _SVGFEDropShadowElementImpl extends _SVGElementImpl implements SVGFEDropShadowElement native "*SVGFEDropShadowElement" {
+class SVGFEDropShadowElementImpl extends SVGElementImpl implements SVGFEDropShadowElement native "*SVGFEDropShadowElement" {
 
-  final _SVGAnimatedNumberImpl dx;
+  final SVGAnimatedNumberImpl dx;
 
-  final _SVGAnimatedNumberImpl dy;
+  final SVGAnimatedNumberImpl dy;
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 
-  final _SVGAnimatedNumberImpl stdDeviationX;
+  final SVGAnimatedNumberImpl stdDeviationX;
 
-  final _SVGAnimatedNumberImpl stdDeviationY;
+  final SVGAnimatedNumberImpl stdDeviationY;
 
   void setStdDeviation(num stdDeviationX, num stdDeviationY) native;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFEFloodElementImpl extends _SVGElementImpl implements SVGFEFloodElement native "*SVGFEFloodElement" {
+class SVGFEFloodElementImpl extends SVGElementImpl implements SVGFEFloodElement native "*SVGFEFloodElement" {
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFEFuncAElementImpl extends _SVGComponentTransferFunctionElementImpl implements SVGFEFuncAElement native "*SVGFEFuncAElement" {
+class SVGFEFuncAElementImpl extends SVGComponentTransferFunctionElementImpl implements SVGFEFuncAElement native "*SVGFEFuncAElement" {
 }
 
-class _SVGFEFuncBElementImpl extends _SVGComponentTransferFunctionElementImpl implements SVGFEFuncBElement native "*SVGFEFuncBElement" {
+class SVGFEFuncBElementImpl extends SVGComponentTransferFunctionElementImpl implements SVGFEFuncBElement native "*SVGFEFuncBElement" {
 }
 
-class _SVGFEFuncGElementImpl extends _SVGComponentTransferFunctionElementImpl implements SVGFEFuncGElement native "*SVGFEFuncGElement" {
+class SVGFEFuncGElementImpl extends SVGComponentTransferFunctionElementImpl implements SVGFEFuncGElement native "*SVGFEFuncGElement" {
 }
 
-class _SVGFEFuncRElementImpl extends _SVGComponentTransferFunctionElementImpl implements SVGFEFuncRElement native "*SVGFEFuncRElement" {
+class SVGFEFuncRElementImpl extends SVGComponentTransferFunctionElementImpl implements SVGFEFuncRElement native "*SVGFEFuncRElement" {
 }
 
-class _SVGFEGaussianBlurElementImpl extends _SVGElementImpl implements SVGFEGaussianBlurElement native "*SVGFEGaussianBlurElement" {
+class SVGFEGaussianBlurElementImpl extends SVGElementImpl implements SVGFEGaussianBlurElement native "*SVGFEGaussianBlurElement" {
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 
-  final _SVGAnimatedNumberImpl stdDeviationX;
+  final SVGAnimatedNumberImpl stdDeviationX;
 
-  final _SVGAnimatedNumberImpl stdDeviationY;
+  final SVGAnimatedNumberImpl stdDeviationY;
 
   void setStdDeviation(num stdDeviationX, num stdDeviationY) native;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFEImageElementImpl extends _SVGElementImpl implements SVGFEImageElement native "*SVGFEImageElement" {
+class SVGFEImageElementImpl extends SVGElementImpl implements SVGFEImageElement native "*SVGFEImageElement" {
 
-  final _SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
+  final SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 
   // From SVGLangSpace
 
@@ -11709,60 +11709,60 @@ class _SVGFEImageElementImpl extends _SVGElementImpl implements SVGFEImageElemen
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFEMergeElementImpl extends _SVGElementImpl implements SVGFEMergeElement native "*SVGFEMergeElement" {
+class SVGFEMergeElementImpl extends SVGElementImpl implements SVGFEMergeElement native "*SVGFEMergeElement" {
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFEMergeNodeElementImpl extends _SVGElementImpl implements SVGFEMergeNodeElement native "*SVGFEMergeNodeElement" {
+class SVGFEMergeNodeElementImpl extends SVGElementImpl implements SVGFEMergeNodeElement native "*SVGFEMergeNodeElement" {
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 }
 
-class _SVGFEMorphologyElementImpl extends _SVGElementImpl implements SVGFEMorphologyElement native "*SVGFEMorphologyElement" {
+class SVGFEMorphologyElementImpl extends SVGElementImpl implements SVGFEMorphologyElement native "*SVGFEMorphologyElement" {
 
   static final int SVG_MORPHOLOGY_OPERATOR_DILATE = 2;
 
@@ -11770,155 +11770,155 @@ class _SVGFEMorphologyElementImpl extends _SVGElementImpl implements SVGFEMorpho
 
   static final int SVG_MORPHOLOGY_OPERATOR_UNKNOWN = 0;
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 
-  final _SVGAnimatedEnumerationImpl operator;
+  final SVGAnimatedEnumerationImpl operator;
 
-  final _SVGAnimatedNumberImpl radiusX;
+  final SVGAnimatedNumberImpl radiusX;
 
-  final _SVGAnimatedNumberImpl radiusY;
+  final SVGAnimatedNumberImpl radiusY;
 
   void setRadius(num radiusX, num radiusY) native;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFEOffsetElementImpl extends _SVGElementImpl implements SVGFEOffsetElement native "*SVGFEOffsetElement" {
+class SVGFEOffsetElementImpl extends SVGElementImpl implements SVGFEOffsetElement native "*SVGFEOffsetElement" {
 
-  final _SVGAnimatedNumberImpl dx;
+  final SVGAnimatedNumberImpl dx;
 
-  final _SVGAnimatedNumberImpl dy;
+  final SVGAnimatedNumberImpl dy;
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFEPointLightElementImpl extends _SVGElementImpl implements SVGFEPointLightElement native "*SVGFEPointLightElement" {
+class SVGFEPointLightElementImpl extends SVGElementImpl implements SVGFEPointLightElement native "*SVGFEPointLightElement" {
 
-  final _SVGAnimatedNumberImpl x;
+  final SVGAnimatedNumberImpl x;
 
-  final _SVGAnimatedNumberImpl y;
+  final SVGAnimatedNumberImpl y;
 
-  final _SVGAnimatedNumberImpl z;
+  final SVGAnimatedNumberImpl z;
 }
 
-class _SVGFESpecularLightingElementImpl extends _SVGElementImpl implements SVGFESpecularLightingElement native "*SVGFESpecularLightingElement" {
+class SVGFESpecularLightingElementImpl extends SVGElementImpl implements SVGFESpecularLightingElement native "*SVGFESpecularLightingElement" {
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 
-  final _SVGAnimatedNumberImpl specularConstant;
+  final SVGAnimatedNumberImpl specularConstant;
 
-  final _SVGAnimatedNumberImpl specularExponent;
+  final SVGAnimatedNumberImpl specularExponent;
 
-  final _SVGAnimatedNumberImpl surfaceScale;
+  final SVGAnimatedNumberImpl surfaceScale;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFESpotLightElementImpl extends _SVGElementImpl implements SVGFESpotLightElement native "*SVGFESpotLightElement" {
+class SVGFESpotLightElementImpl extends SVGElementImpl implements SVGFESpotLightElement native "*SVGFESpotLightElement" {
 
-  final _SVGAnimatedNumberImpl limitingConeAngle;
+  final SVGAnimatedNumberImpl limitingConeAngle;
 
-  final _SVGAnimatedNumberImpl pointsAtX;
+  final SVGAnimatedNumberImpl pointsAtX;
 
-  final _SVGAnimatedNumberImpl pointsAtY;
+  final SVGAnimatedNumberImpl pointsAtY;
 
-  final _SVGAnimatedNumberImpl pointsAtZ;
+  final SVGAnimatedNumberImpl pointsAtZ;
 
-  final _SVGAnimatedNumberImpl specularExponent;
+  final SVGAnimatedNumberImpl specularExponent;
 
-  final _SVGAnimatedNumberImpl x;
+  final SVGAnimatedNumberImpl x;
 
-  final _SVGAnimatedNumberImpl y;
+  final SVGAnimatedNumberImpl y;
 
-  final _SVGAnimatedNumberImpl z;
+  final SVGAnimatedNumberImpl z;
 }
 
-class _SVGFETileElementImpl extends _SVGElementImpl implements SVGFETileElement native "*SVGFETileElement" {
+class SVGFETileElementImpl extends SVGElementImpl implements SVGFETileElement native "*SVGFETileElement" {
 
-  final _SVGAnimatedStringImpl in1;
+  final SVGAnimatedStringImpl in1;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFETurbulenceElementImpl extends _SVGElementImpl implements SVGFETurbulenceElement native "*SVGFETurbulenceElement" {
+class SVGFETurbulenceElementImpl extends SVGElementImpl implements SVGFETurbulenceElement native "*SVGFETurbulenceElement" {
 
   static final int SVG_STITCHTYPE_NOSTITCH = 2;
 
@@ -11932,63 +11932,63 @@ class _SVGFETurbulenceElementImpl extends _SVGElementImpl implements SVGFETurbul
 
   static final int SVG_TURBULENCE_TYPE_UNKNOWN = 0;
 
-  final _SVGAnimatedNumberImpl baseFrequencyX;
+  final SVGAnimatedNumberImpl baseFrequencyX;
 
-  final _SVGAnimatedNumberImpl baseFrequencyY;
+  final SVGAnimatedNumberImpl baseFrequencyY;
 
-  final _SVGAnimatedIntegerImpl numOctaves;
+  final SVGAnimatedIntegerImpl numOctaves;
 
-  final _SVGAnimatedNumberImpl seed;
+  final SVGAnimatedNumberImpl seed;
 
-  final _SVGAnimatedEnumerationImpl stitchTiles;
+  final SVGAnimatedEnumerationImpl stitchTiles;
 
-  final _SVGAnimatedEnumerationImpl type;
+  final SVGAnimatedEnumerationImpl type;
 
   // From SVGFilterPrimitiveStandardAttributes
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedStringImpl result;
+  final SVGAnimatedStringImpl result;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFilterElementImpl extends _SVGElementImpl implements SVGFilterElement native "*SVGFilterElement" {
+class SVGFilterElementImpl extends SVGElementImpl implements SVGFilterElement native "*SVGFilterElement" {
 
-  final _SVGAnimatedIntegerImpl filterResX;
+  final SVGAnimatedIntegerImpl filterResX;
 
-  final _SVGAnimatedIntegerImpl filterResY;
+  final SVGAnimatedIntegerImpl filterResY;
 
-  final _SVGAnimatedEnumerationImpl filterUnits;
+  final SVGAnimatedEnumerationImpl filterUnits;
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedEnumerationImpl primitiveUnits;
+  final SVGAnimatedEnumerationImpl primitiveUnits;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   void setFilterRes(int filterResX, int filterResY) native;
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 
   // From SVGLangSpace
 
@@ -11998,53 +11998,53 @@ class _SVGFilterElementImpl extends _SVGElementImpl implements SVGFilterElement 
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGFontElementImpl extends _SVGElementImpl implements SVGFontElement native "*SVGFontElement" {
+class SVGFontElementImpl extends SVGElementImpl implements SVGFontElement native "*SVGFontElement" {
 }
 
-class _SVGFontFaceElementImpl extends _SVGElementImpl implements SVGFontFaceElement native "*SVGFontFaceElement" {
+class SVGFontFaceElementImpl extends SVGElementImpl implements SVGFontFaceElement native "*SVGFontFaceElement" {
 }
 
-class _SVGFontFaceFormatElementImpl extends _SVGElementImpl implements SVGFontFaceFormatElement native "*SVGFontFaceFormatElement" {
+class SVGFontFaceFormatElementImpl extends SVGElementImpl implements SVGFontFaceFormatElement native "*SVGFontFaceFormatElement" {
 }
 
-class _SVGFontFaceNameElementImpl extends _SVGElementImpl implements SVGFontFaceNameElement native "*SVGFontFaceNameElement" {
+class SVGFontFaceNameElementImpl extends SVGElementImpl implements SVGFontFaceNameElement native "*SVGFontFaceNameElement" {
 }
 
-class _SVGFontFaceSrcElementImpl extends _SVGElementImpl implements SVGFontFaceSrcElement native "*SVGFontFaceSrcElement" {
+class SVGFontFaceSrcElementImpl extends SVGElementImpl implements SVGFontFaceSrcElement native "*SVGFontFaceSrcElement" {
 }
 
-class _SVGFontFaceUriElementImpl extends _SVGElementImpl implements SVGFontFaceUriElement native "*SVGFontFaceUriElement" {
+class SVGFontFaceUriElementImpl extends SVGElementImpl implements SVGFontFaceUriElement native "*SVGFontFaceUriElement" {
 }
 
-class _SVGForeignObjectElementImpl extends _SVGElementImpl implements SVGForeignObjectElement native "*SVGForeignObjectElement" {
+class SVGForeignObjectElementImpl extends SVGElementImpl implements SVGForeignObjectElement native "*SVGForeignObjectElement" {
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -12056,45 +12056,45 @@ class _SVGForeignObjectElementImpl extends _SVGElementImpl implements SVGForeign
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGGElementImpl extends _SVGElementImpl implements SVGGElement native "*SVGGElement" {
+class SVGGElementImpl extends SVGElementImpl implements SVGGElement native "*SVGGElement" {
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -12106,40 +12106,40 @@ class _SVGGElementImpl extends _SVGElementImpl implements SVGGElement native "*S
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGGlyphElementImpl extends _SVGElementImpl implements SVGGlyphElement native "*SVGGlyphElement" {
+class SVGGlyphElementImpl extends SVGElementImpl implements SVGGlyphElement native "*SVGGlyphElement" {
 }
 
-class _SVGGlyphRefElementImpl extends _SVGElementImpl implements SVGGlyphRefElement native "*SVGGlyphRefElement" {
+class SVGGlyphRefElementImpl extends SVGElementImpl implements SVGGlyphRefElement native "*SVGGlyphRefElement" {
 
   num dx;
 
@@ -12155,19 +12155,19 @@ class _SVGGlyphRefElementImpl extends _SVGElementImpl implements SVGGlyphRefElem
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGGradientElementImpl extends _SVGElementImpl implements SVGGradientElement native "*SVGGradientElement" {
+class SVGGradientElementImpl extends SVGElementImpl implements SVGGradientElement native "*SVGGradientElement" {
 
   static final int SVG_SPREADMETHOD_PAD = 1;
 
@@ -12177,56 +12177,56 @@ class _SVGGradientElementImpl extends _SVGElementImpl implements SVGGradientElem
 
   static final int SVG_SPREADMETHOD_UNKNOWN = 0;
 
-  final _SVGAnimatedTransformListImpl gradientTransform;
+  final SVGAnimatedTransformListImpl gradientTransform;
 
-  final _SVGAnimatedEnumerationImpl gradientUnits;
+  final SVGAnimatedEnumerationImpl gradientUnits;
 
-  final _SVGAnimatedEnumerationImpl spreadMethod;
+  final SVGAnimatedEnumerationImpl spreadMethod;
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGHKernElementImpl extends _SVGElementImpl implements SVGHKernElement native "*SVGHKernElement" {
+class SVGHKernElementImpl extends SVGElementImpl implements SVGHKernElement native "*SVGHKernElement" {
 }
 
-class _SVGImageElementImpl extends _SVGElementImpl implements SVGImageElement native "*SVGImageElement" {
+class SVGImageElementImpl extends SVGElementImpl implements SVGImageElement native "*SVGImageElement" {
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
+  final SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -12238,37 +12238,37 @@ class _SVGImageElementImpl extends _SVGElementImpl implements SVGImageElement na
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGLengthImpl implements SVGLength native "*SVGLength" {
+class SVGLengthImpl implements SVGLength native "*SVGLength" {
 
   static final int SVG_LENGTHTYPE_CM = 6;
 
@@ -12305,42 +12305,42 @@ class _SVGLengthImpl implements SVGLength native "*SVGLength" {
   void newValueSpecifiedUnits(int unitType, num valueInSpecifiedUnits) native;
 }
 
-class _SVGLengthListImpl implements SVGLengthList native "*SVGLengthList" {
+class SVGLengthListImpl implements SVGLengthList native "*SVGLengthList" {
 
   final int numberOfItems;
 
-  _SVGLengthImpl appendItem(_SVGLengthImpl item) native;
+  SVGLengthImpl appendItem(SVGLengthImpl item) native;
 
   void clear() native;
 
-  _SVGLengthImpl getItem(int index) native;
+  SVGLengthImpl getItem(int index) native;
 
-  _SVGLengthImpl initialize(_SVGLengthImpl item) native;
+  SVGLengthImpl initialize(SVGLengthImpl item) native;
 
-  _SVGLengthImpl insertItemBefore(_SVGLengthImpl item, int index) native;
+  SVGLengthImpl insertItemBefore(SVGLengthImpl item, int index) native;
 
-  _SVGLengthImpl removeItem(int index) native;
+  SVGLengthImpl removeItem(int index) native;
 
-  _SVGLengthImpl replaceItem(_SVGLengthImpl item, int index) native;
+  SVGLengthImpl replaceItem(SVGLengthImpl item, int index) native;
 }
 
-class _SVGLineElementImpl extends _SVGElementImpl implements SVGLineElement native "*SVGLineElement" {
+class SVGLineElementImpl extends SVGElementImpl implements SVGLineElement native "*SVGLineElement" {
 
-  final _SVGAnimatedLengthImpl x1;
+  final SVGAnimatedLengthImpl x1;
 
-  final _SVGAnimatedLengthImpl x2;
+  final SVGAnimatedLengthImpl x2;
 
-  final _SVGAnimatedLengthImpl y1;
+  final SVGAnimatedLengthImpl y1;
 
-  final _SVGAnimatedLengthImpl y2;
+  final SVGAnimatedLengthImpl y2;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -12352,59 +12352,59 @@ class _SVGLineElementImpl extends _SVGElementImpl implements SVGLineElement nati
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGLinearGradientElementImpl extends _SVGGradientElementImpl implements SVGLinearGradientElement native "*SVGLinearGradientElement" {
+class SVGLinearGradientElementImpl extends SVGGradientElementImpl implements SVGLinearGradientElement native "*SVGLinearGradientElement" {
 
-  final _SVGAnimatedLengthImpl x1;
+  final SVGAnimatedLengthImpl x1;
 
-  final _SVGAnimatedLengthImpl x2;
+  final SVGAnimatedLengthImpl x2;
 
-  final _SVGAnimatedLengthImpl y1;
+  final SVGAnimatedLengthImpl y1;
 
-  final _SVGAnimatedLengthImpl y2;
+  final SVGAnimatedLengthImpl y2;
 }
 
-class _SVGMPathElementImpl extends _SVGElementImpl implements SVGMPathElement native "*SVGMPathElement" {
+class SVGMPathElementImpl extends SVGElementImpl implements SVGMPathElement native "*SVGMPathElement" {
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 }
 
-class _SVGMarkerElementImpl extends _SVGElementImpl implements SVGMarkerElement native "*SVGMarkerElement" {
+class SVGMarkerElementImpl extends SVGElementImpl implements SVGMarkerElement native "*SVGMarkerElement" {
 
   static final int SVG_MARKERUNITS_STROKEWIDTH = 2;
 
@@ -12418,21 +12418,21 @@ class _SVGMarkerElementImpl extends _SVGElementImpl implements SVGMarkerElement 
 
   static final int SVG_MARKER_ORIENT_UNKNOWN = 0;
 
-  final _SVGAnimatedLengthImpl markerHeight;
+  final SVGAnimatedLengthImpl markerHeight;
 
-  final _SVGAnimatedEnumerationImpl markerUnits;
+  final SVGAnimatedEnumerationImpl markerUnits;
 
-  final _SVGAnimatedLengthImpl markerWidth;
+  final SVGAnimatedLengthImpl markerWidth;
 
-  final _SVGAnimatedAngleImpl orientAngle;
+  final SVGAnimatedAngleImpl orientAngle;
 
-  final _SVGAnimatedEnumerationImpl orientType;
+  final SVGAnimatedEnumerationImpl orientType;
 
-  final _SVGAnimatedLengthImpl refX;
+  final SVGAnimatedLengthImpl refX;
 
-  final _SVGAnimatedLengthImpl refY;
+  final SVGAnimatedLengthImpl refY;
 
-  void setOrientToAngle(_SVGAngleImpl angle) native;
+  void setOrientToAngle(SVGAngleImpl angle) native;
 
   void setOrientToAuto() native;
 
@@ -12444,45 +12444,45 @@ class _SVGMarkerElementImpl extends _SVGElementImpl implements SVGMarkerElement 
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGFitToViewBox
 
-  final _SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
+  final SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
 
-  final _SVGAnimatedRectImpl viewBox;
+  final SVGAnimatedRectImpl viewBox;
 }
 
-class _SVGMaskElementImpl extends _SVGElementImpl implements SVGMaskElement native "*SVGMaskElement" {
+class SVGMaskElementImpl extends SVGElementImpl implements SVGMaskElement native "*SVGMaskElement" {
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedEnumerationImpl maskContentUnits;
+  final SVGAnimatedEnumerationImpl maskContentUnits;
 
-  final _SVGAnimatedEnumerationImpl maskUnits;
+  final SVGAnimatedEnumerationImpl maskUnits;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -12494,19 +12494,19 @@ class _SVGMaskElementImpl extends _SVGElementImpl implements SVGMaskElement nati
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGMatrixImpl implements SVGMatrix native "*SVGMatrix" {
+class SVGMatrixImpl implements SVGMatrix native "*SVGMatrix" {
 
   num a;
 
@@ -12520,60 +12520,60 @@ class _SVGMatrixImpl implements SVGMatrix native "*SVGMatrix" {
 
   num f;
 
-  _SVGMatrixImpl flipX() native;
+  SVGMatrixImpl flipX() native;
 
-  _SVGMatrixImpl flipY() native;
+  SVGMatrixImpl flipY() native;
 
-  _SVGMatrixImpl inverse() native;
+  SVGMatrixImpl inverse() native;
 
-  _SVGMatrixImpl multiply(_SVGMatrixImpl secondMatrix) native;
+  SVGMatrixImpl multiply(SVGMatrixImpl secondMatrix) native;
 
-  _SVGMatrixImpl rotate(num angle) native;
+  SVGMatrixImpl rotate(num angle) native;
 
-  _SVGMatrixImpl rotateFromVector(num x, num y) native;
+  SVGMatrixImpl rotateFromVector(num x, num y) native;
 
-  _SVGMatrixImpl scale(num scaleFactor) native;
+  SVGMatrixImpl scale(num scaleFactor) native;
 
-  _SVGMatrixImpl scaleNonUniform(num scaleFactorX, num scaleFactorY) native;
+  SVGMatrixImpl scaleNonUniform(num scaleFactorX, num scaleFactorY) native;
 
-  _SVGMatrixImpl skewX(num angle) native;
+  SVGMatrixImpl skewX(num angle) native;
 
-  _SVGMatrixImpl skewY(num angle) native;
+  SVGMatrixImpl skewY(num angle) native;
 
-  _SVGMatrixImpl translate(num x, num y) native;
+  SVGMatrixImpl translate(num x, num y) native;
 }
 
-class _SVGMetadataElementImpl extends _SVGElementImpl implements SVGMetadataElement native "*SVGMetadataElement" {
+class SVGMetadataElementImpl extends SVGElementImpl implements SVGMetadataElement native "*SVGMetadataElement" {
 }
 
-class _SVGMissingGlyphElementImpl extends _SVGElementImpl implements SVGMissingGlyphElement native "*SVGMissingGlyphElement" {
+class SVGMissingGlyphElementImpl extends SVGElementImpl implements SVGMissingGlyphElement native "*SVGMissingGlyphElement" {
 }
 
-class _SVGNumberImpl implements SVGNumber native "*SVGNumber" {
+class SVGNumberImpl implements SVGNumber native "*SVGNumber" {
 
   num value;
 }
 
-class _SVGNumberListImpl implements SVGNumberList native "*SVGNumberList" {
+class SVGNumberListImpl implements SVGNumberList native "*SVGNumberList" {
 
   final int numberOfItems;
 
-  _SVGNumberImpl appendItem(_SVGNumberImpl item) native;
+  SVGNumberImpl appendItem(SVGNumberImpl item) native;
 
   void clear() native;
 
-  _SVGNumberImpl getItem(int index) native;
+  SVGNumberImpl getItem(int index) native;
 
-  _SVGNumberImpl initialize(_SVGNumberImpl item) native;
+  SVGNumberImpl initialize(SVGNumberImpl item) native;
 
-  _SVGNumberImpl insertItemBefore(_SVGNumberImpl item, int index) native;
+  SVGNumberImpl insertItemBefore(SVGNumberImpl item, int index) native;
 
-  _SVGNumberImpl removeItem(int index) native;
+  SVGNumberImpl removeItem(int index) native;
 
-  _SVGNumberImpl replaceItem(_SVGNumberImpl item, int index) native;
+  SVGNumberImpl replaceItem(SVGNumberImpl item, int index) native;
 }
 
-class _SVGPaintImpl extends _SVGColorImpl implements SVGPaint native "*SVGPaint" {
+class SVGPaintImpl extends SVGColorImpl implements SVGPaint native "*SVGPaint" {
 
   static final int SVG_PAINTTYPE_CURRENTCOLOR = 102;
 
@@ -12604,69 +12604,69 @@ class _SVGPaintImpl extends _SVGColorImpl implements SVGPaint native "*SVGPaint"
   void setUri(String uri) native;
 }
 
-class _SVGPathElementImpl extends _SVGElementImpl implements SVGPathElement native "*SVGPathElement" {
+class SVGPathElementImpl extends SVGElementImpl implements SVGPathElement native "*SVGPathElement" {
 
-  final _SVGPathSegListImpl animatedNormalizedPathSegList;
+  final SVGPathSegListImpl animatedNormalizedPathSegList;
 
-  final _SVGPathSegListImpl animatedPathSegList;
+  final SVGPathSegListImpl animatedPathSegList;
 
-  final _SVGPathSegListImpl normalizedPathSegList;
+  final SVGPathSegListImpl normalizedPathSegList;
 
-  final _SVGAnimatedNumberImpl pathLength;
+  final SVGAnimatedNumberImpl pathLength;
 
-  final _SVGPathSegListImpl pathSegList;
+  final SVGPathSegListImpl pathSegList;
 
-  _SVGPathSegArcAbsImpl createSVGPathSegArcAbs(num x, num y, num r1, num r2, num angle, bool largeArcFlag, bool sweepFlag) native;
+  SVGPathSegArcAbsImpl createSVGPathSegArcAbs(num x, num y, num r1, num r2, num angle, bool largeArcFlag, bool sweepFlag) native;
 
-  _SVGPathSegArcRelImpl createSVGPathSegArcRel(num x, num y, num r1, num r2, num angle, bool largeArcFlag, bool sweepFlag) native;
+  SVGPathSegArcRelImpl createSVGPathSegArcRel(num x, num y, num r1, num r2, num angle, bool largeArcFlag, bool sweepFlag) native;
 
-  _SVGPathSegClosePathImpl createSVGPathSegClosePath() native;
+  SVGPathSegClosePathImpl createSVGPathSegClosePath() native;
 
-  _SVGPathSegCurvetoCubicAbsImpl createSVGPathSegCurvetoCubicAbs(num x, num y, num x1, num y1, num x2, num y2) native;
+  SVGPathSegCurvetoCubicAbsImpl createSVGPathSegCurvetoCubicAbs(num x, num y, num x1, num y1, num x2, num y2) native;
 
-  _SVGPathSegCurvetoCubicRelImpl createSVGPathSegCurvetoCubicRel(num x, num y, num x1, num y1, num x2, num y2) native;
+  SVGPathSegCurvetoCubicRelImpl createSVGPathSegCurvetoCubicRel(num x, num y, num x1, num y1, num x2, num y2) native;
 
-  _SVGPathSegCurvetoCubicSmoothAbsImpl createSVGPathSegCurvetoCubicSmoothAbs(num x, num y, num x2, num y2) native;
+  SVGPathSegCurvetoCubicSmoothAbsImpl createSVGPathSegCurvetoCubicSmoothAbs(num x, num y, num x2, num y2) native;
 
-  _SVGPathSegCurvetoCubicSmoothRelImpl createSVGPathSegCurvetoCubicSmoothRel(num x, num y, num x2, num y2) native;
+  SVGPathSegCurvetoCubicSmoothRelImpl createSVGPathSegCurvetoCubicSmoothRel(num x, num y, num x2, num y2) native;
 
-  _SVGPathSegCurvetoQuadraticAbsImpl createSVGPathSegCurvetoQuadraticAbs(num x, num y, num x1, num y1) native;
+  SVGPathSegCurvetoQuadraticAbsImpl createSVGPathSegCurvetoQuadraticAbs(num x, num y, num x1, num y1) native;
 
-  _SVGPathSegCurvetoQuadraticRelImpl createSVGPathSegCurvetoQuadraticRel(num x, num y, num x1, num y1) native;
+  SVGPathSegCurvetoQuadraticRelImpl createSVGPathSegCurvetoQuadraticRel(num x, num y, num x1, num y1) native;
 
-  _SVGPathSegCurvetoQuadraticSmoothAbsImpl createSVGPathSegCurvetoQuadraticSmoothAbs(num x, num y) native;
+  SVGPathSegCurvetoQuadraticSmoothAbsImpl createSVGPathSegCurvetoQuadraticSmoothAbs(num x, num y) native;
 
-  _SVGPathSegCurvetoQuadraticSmoothRelImpl createSVGPathSegCurvetoQuadraticSmoothRel(num x, num y) native;
+  SVGPathSegCurvetoQuadraticSmoothRelImpl createSVGPathSegCurvetoQuadraticSmoothRel(num x, num y) native;
 
-  _SVGPathSegLinetoAbsImpl createSVGPathSegLinetoAbs(num x, num y) native;
+  SVGPathSegLinetoAbsImpl createSVGPathSegLinetoAbs(num x, num y) native;
 
-  _SVGPathSegLinetoHorizontalAbsImpl createSVGPathSegLinetoHorizontalAbs(num x) native;
+  SVGPathSegLinetoHorizontalAbsImpl createSVGPathSegLinetoHorizontalAbs(num x) native;
 
-  _SVGPathSegLinetoHorizontalRelImpl createSVGPathSegLinetoHorizontalRel(num x) native;
+  SVGPathSegLinetoHorizontalRelImpl createSVGPathSegLinetoHorizontalRel(num x) native;
 
-  _SVGPathSegLinetoRelImpl createSVGPathSegLinetoRel(num x, num y) native;
+  SVGPathSegLinetoRelImpl createSVGPathSegLinetoRel(num x, num y) native;
 
-  _SVGPathSegLinetoVerticalAbsImpl createSVGPathSegLinetoVerticalAbs(num y) native;
+  SVGPathSegLinetoVerticalAbsImpl createSVGPathSegLinetoVerticalAbs(num y) native;
 
-  _SVGPathSegLinetoVerticalRelImpl createSVGPathSegLinetoVerticalRel(num y) native;
+  SVGPathSegLinetoVerticalRelImpl createSVGPathSegLinetoVerticalRel(num y) native;
 
-  _SVGPathSegMovetoAbsImpl createSVGPathSegMovetoAbs(num x, num y) native;
+  SVGPathSegMovetoAbsImpl createSVGPathSegMovetoAbs(num x, num y) native;
 
-  _SVGPathSegMovetoRelImpl createSVGPathSegMovetoRel(num x, num y) native;
+  SVGPathSegMovetoRelImpl createSVGPathSegMovetoRel(num x, num y) native;
 
   int getPathSegAtLength(num distance) native;
 
-  _SVGPointImpl getPointAtLength(num distance) native;
+  SVGPointImpl getPointAtLength(num distance) native;
 
   num getTotalLength() native;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -12678,37 +12678,37 @@ class _SVGPathElementImpl extends _SVGElementImpl implements SVGPathElement nati
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGPathSegImpl implements SVGPathSeg native "*SVGPathSeg" {
+class SVGPathSegImpl implements SVGPathSeg native "*SVGPathSeg" {
 
   static final int PATHSEG_ARC_ABS = 10;
 
@@ -12755,7 +12755,7 @@ class _SVGPathSegImpl implements SVGPathSeg native "*SVGPathSeg" {
   final String pathSegTypeAsLetter;
 }
 
-class _SVGPathSegArcAbsImpl extends _SVGPathSegImpl implements SVGPathSegArcAbs native "*SVGPathSegArcAbs" {
+class SVGPathSegArcAbsImpl extends SVGPathSegImpl implements SVGPathSegArcAbs native "*SVGPathSegArcAbs" {
 
   num angle;
 
@@ -12772,7 +12772,7 @@ class _SVGPathSegArcAbsImpl extends _SVGPathSegImpl implements SVGPathSegArcAbs 
   num y;
 }
 
-class _SVGPathSegArcRelImpl extends _SVGPathSegImpl implements SVGPathSegArcRel native "*SVGPathSegArcRel" {
+class SVGPathSegArcRelImpl extends SVGPathSegImpl implements SVGPathSegArcRel native "*SVGPathSegArcRel" {
 
   num angle;
 
@@ -12789,10 +12789,10 @@ class _SVGPathSegArcRelImpl extends _SVGPathSegImpl implements SVGPathSegArcRel 
   num y;
 }
 
-class _SVGPathSegClosePathImpl extends _SVGPathSegImpl implements SVGPathSegClosePath native "*SVGPathSegClosePath" {
+class SVGPathSegClosePathImpl extends SVGPathSegImpl implements SVGPathSegClosePath native "*SVGPathSegClosePath" {
 }
 
-class _SVGPathSegCurvetoCubicAbsImpl extends _SVGPathSegImpl implements SVGPathSegCurvetoCubicAbs native "*SVGPathSegCurvetoCubicAbs" {
+class SVGPathSegCurvetoCubicAbsImpl extends SVGPathSegImpl implements SVGPathSegCurvetoCubicAbs native "*SVGPathSegCurvetoCubicAbs" {
 
   num x;
 
@@ -12807,7 +12807,7 @@ class _SVGPathSegCurvetoCubicAbsImpl extends _SVGPathSegImpl implements SVGPathS
   num y2;
 }
 
-class _SVGPathSegCurvetoCubicRelImpl extends _SVGPathSegImpl implements SVGPathSegCurvetoCubicRel native "*SVGPathSegCurvetoCubicRel" {
+class SVGPathSegCurvetoCubicRelImpl extends SVGPathSegImpl implements SVGPathSegCurvetoCubicRel native "*SVGPathSegCurvetoCubicRel" {
 
   num x;
 
@@ -12822,7 +12822,7 @@ class _SVGPathSegCurvetoCubicRelImpl extends _SVGPathSegImpl implements SVGPathS
   num y2;
 }
 
-class _SVGPathSegCurvetoCubicSmoothAbsImpl extends _SVGPathSegImpl implements SVGPathSegCurvetoCubicSmoothAbs native "*SVGPathSegCurvetoCubicSmoothAbs" {
+class SVGPathSegCurvetoCubicSmoothAbsImpl extends SVGPathSegImpl implements SVGPathSegCurvetoCubicSmoothAbs native "*SVGPathSegCurvetoCubicSmoothAbs" {
 
   num x;
 
@@ -12833,7 +12833,7 @@ class _SVGPathSegCurvetoCubicSmoothAbsImpl extends _SVGPathSegImpl implements SV
   num y2;
 }
 
-class _SVGPathSegCurvetoCubicSmoothRelImpl extends _SVGPathSegImpl implements SVGPathSegCurvetoCubicSmoothRel native "*SVGPathSegCurvetoCubicSmoothRel" {
+class SVGPathSegCurvetoCubicSmoothRelImpl extends SVGPathSegImpl implements SVGPathSegCurvetoCubicSmoothRel native "*SVGPathSegCurvetoCubicSmoothRel" {
 
   num x;
 
@@ -12844,7 +12844,7 @@ class _SVGPathSegCurvetoCubicSmoothRelImpl extends _SVGPathSegImpl implements SV
   num y2;
 }
 
-class _SVGPathSegCurvetoQuadraticAbsImpl extends _SVGPathSegImpl implements SVGPathSegCurvetoQuadraticAbs native "*SVGPathSegCurvetoQuadraticAbs" {
+class SVGPathSegCurvetoQuadraticAbsImpl extends SVGPathSegImpl implements SVGPathSegCurvetoQuadraticAbs native "*SVGPathSegCurvetoQuadraticAbs" {
 
   num x;
 
@@ -12855,7 +12855,7 @@ class _SVGPathSegCurvetoQuadraticAbsImpl extends _SVGPathSegImpl implements SVGP
   num y1;
 }
 
-class _SVGPathSegCurvetoQuadraticRelImpl extends _SVGPathSegImpl implements SVGPathSegCurvetoQuadraticRel native "*SVGPathSegCurvetoQuadraticRel" {
+class SVGPathSegCurvetoQuadraticRelImpl extends SVGPathSegImpl implements SVGPathSegCurvetoQuadraticRel native "*SVGPathSegCurvetoQuadraticRel" {
 
   num x;
 
@@ -12866,114 +12866,114 @@ class _SVGPathSegCurvetoQuadraticRelImpl extends _SVGPathSegImpl implements SVGP
   num y1;
 }
 
-class _SVGPathSegCurvetoQuadraticSmoothAbsImpl extends _SVGPathSegImpl implements SVGPathSegCurvetoQuadraticSmoothAbs native "*SVGPathSegCurvetoQuadraticSmoothAbs" {
+class SVGPathSegCurvetoQuadraticSmoothAbsImpl extends SVGPathSegImpl implements SVGPathSegCurvetoQuadraticSmoothAbs native "*SVGPathSegCurvetoQuadraticSmoothAbs" {
 
   num x;
 
   num y;
 }
 
-class _SVGPathSegCurvetoQuadraticSmoothRelImpl extends _SVGPathSegImpl implements SVGPathSegCurvetoQuadraticSmoothRel native "*SVGPathSegCurvetoQuadraticSmoothRel" {
+class SVGPathSegCurvetoQuadraticSmoothRelImpl extends SVGPathSegImpl implements SVGPathSegCurvetoQuadraticSmoothRel native "*SVGPathSegCurvetoQuadraticSmoothRel" {
 
   num x;
 
   num y;
 }
 
-class _SVGPathSegLinetoAbsImpl extends _SVGPathSegImpl implements SVGPathSegLinetoAbs native "*SVGPathSegLinetoAbs" {
+class SVGPathSegLinetoAbsImpl extends SVGPathSegImpl implements SVGPathSegLinetoAbs native "*SVGPathSegLinetoAbs" {
 
   num x;
 
   num y;
 }
 
-class _SVGPathSegLinetoHorizontalAbsImpl extends _SVGPathSegImpl implements SVGPathSegLinetoHorizontalAbs native "*SVGPathSegLinetoHorizontalAbs" {
+class SVGPathSegLinetoHorizontalAbsImpl extends SVGPathSegImpl implements SVGPathSegLinetoHorizontalAbs native "*SVGPathSegLinetoHorizontalAbs" {
 
   num x;
 }
 
-class _SVGPathSegLinetoHorizontalRelImpl extends _SVGPathSegImpl implements SVGPathSegLinetoHorizontalRel native "*SVGPathSegLinetoHorizontalRel" {
+class SVGPathSegLinetoHorizontalRelImpl extends SVGPathSegImpl implements SVGPathSegLinetoHorizontalRel native "*SVGPathSegLinetoHorizontalRel" {
 
   num x;
 }
 
-class _SVGPathSegLinetoRelImpl extends _SVGPathSegImpl implements SVGPathSegLinetoRel native "*SVGPathSegLinetoRel" {
+class SVGPathSegLinetoRelImpl extends SVGPathSegImpl implements SVGPathSegLinetoRel native "*SVGPathSegLinetoRel" {
 
   num x;
 
   num y;
 }
 
-class _SVGPathSegLinetoVerticalAbsImpl extends _SVGPathSegImpl implements SVGPathSegLinetoVerticalAbs native "*SVGPathSegLinetoVerticalAbs" {
+class SVGPathSegLinetoVerticalAbsImpl extends SVGPathSegImpl implements SVGPathSegLinetoVerticalAbs native "*SVGPathSegLinetoVerticalAbs" {
 
   num y;
 }
 
-class _SVGPathSegLinetoVerticalRelImpl extends _SVGPathSegImpl implements SVGPathSegLinetoVerticalRel native "*SVGPathSegLinetoVerticalRel" {
+class SVGPathSegLinetoVerticalRelImpl extends SVGPathSegImpl implements SVGPathSegLinetoVerticalRel native "*SVGPathSegLinetoVerticalRel" {
 
   num y;
 }
 
-class _SVGPathSegListImpl implements SVGPathSegList native "*SVGPathSegList" {
+class SVGPathSegListImpl implements SVGPathSegList native "*SVGPathSegList" {
 
   final int numberOfItems;
 
-  _SVGPathSegImpl appendItem(_SVGPathSegImpl newItem) native;
+  SVGPathSegImpl appendItem(SVGPathSegImpl newItem) native;
 
   void clear() native;
 
-  _SVGPathSegImpl getItem(int index) native;
+  SVGPathSegImpl getItem(int index) native;
 
-  _SVGPathSegImpl initialize(_SVGPathSegImpl newItem) native;
+  SVGPathSegImpl initialize(SVGPathSegImpl newItem) native;
 
-  _SVGPathSegImpl insertItemBefore(_SVGPathSegImpl newItem, int index) native;
+  SVGPathSegImpl insertItemBefore(SVGPathSegImpl newItem, int index) native;
 
-  _SVGPathSegImpl removeItem(int index) native;
+  SVGPathSegImpl removeItem(int index) native;
 
-  _SVGPathSegImpl replaceItem(_SVGPathSegImpl newItem, int index) native;
+  SVGPathSegImpl replaceItem(SVGPathSegImpl newItem, int index) native;
 }
 
-class _SVGPathSegMovetoAbsImpl extends _SVGPathSegImpl implements SVGPathSegMovetoAbs native "*SVGPathSegMovetoAbs" {
+class SVGPathSegMovetoAbsImpl extends SVGPathSegImpl implements SVGPathSegMovetoAbs native "*SVGPathSegMovetoAbs" {
 
   num x;
 
   num y;
 }
 
-class _SVGPathSegMovetoRelImpl extends _SVGPathSegImpl implements SVGPathSegMovetoRel native "*SVGPathSegMovetoRel" {
+class SVGPathSegMovetoRelImpl extends SVGPathSegImpl implements SVGPathSegMovetoRel native "*SVGPathSegMovetoRel" {
 
   num x;
 
   num y;
 }
 
-class _SVGPatternElementImpl extends _SVGElementImpl implements SVGPatternElement native "*SVGPatternElement" {
+class SVGPatternElementImpl extends SVGElementImpl implements SVGPatternElement native "*SVGPatternElement" {
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedEnumerationImpl patternContentUnits;
+  final SVGAnimatedEnumerationImpl patternContentUnits;
 
-  final _SVGAnimatedTransformListImpl patternTransform;
+  final SVGAnimatedTransformListImpl patternTransform;
 
-  final _SVGAnimatedEnumerationImpl patternUnits;
+  final SVGAnimatedEnumerationImpl patternUnits;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -12985,65 +12985,65 @@ class _SVGPatternElementImpl extends _SVGElementImpl implements SVGPatternElemen
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGFitToViewBox
 
-  final _SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
+  final SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
 
-  final _SVGAnimatedRectImpl viewBox;
+  final SVGAnimatedRectImpl viewBox;
 }
 
-class _SVGPointImpl implements SVGPoint native "*SVGPoint" {
+class SVGPointImpl implements SVGPoint native "*SVGPoint" {
 
   num x;
 
   num y;
 
-  _SVGPointImpl matrixTransform(_SVGMatrixImpl matrix) native;
+  SVGPointImpl matrixTransform(SVGMatrixImpl matrix) native;
 }
 
-class _SVGPointListImpl implements SVGPointList native "*SVGPointList" {
+class SVGPointListImpl implements SVGPointList native "*SVGPointList" {
 
   final int numberOfItems;
 
-  _SVGPointImpl appendItem(_SVGPointImpl item) native;
+  SVGPointImpl appendItem(SVGPointImpl item) native;
 
   void clear() native;
 
-  _SVGPointImpl getItem(int index) native;
+  SVGPointImpl getItem(int index) native;
 
-  _SVGPointImpl initialize(_SVGPointImpl item) native;
+  SVGPointImpl initialize(SVGPointImpl item) native;
 
-  _SVGPointImpl insertItemBefore(_SVGPointImpl item, int index) native;
+  SVGPointImpl insertItemBefore(SVGPointImpl item, int index) native;
 
-  _SVGPointImpl removeItem(int index) native;
+  SVGPointImpl removeItem(int index) native;
 
-  _SVGPointImpl replaceItem(_SVGPointImpl item, int index) native;
+  SVGPointImpl replaceItem(SVGPointImpl item, int index) native;
 }
 
-class _SVGPolygonElementImpl extends _SVGElementImpl implements SVGPolygonElement native "*SVGPolygonElement" {
+class SVGPolygonElementImpl extends SVGElementImpl implements SVGPolygonElement native "*SVGPolygonElement" {
 
-  final _SVGPointListImpl animatedPoints;
+  final SVGPointListImpl animatedPoints;
 
-  final _SVGPointListImpl points;
+  final SVGPointListImpl points;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -13055,49 +13055,49 @@ class _SVGPolygonElementImpl extends _SVGElementImpl implements SVGPolygonElemen
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGPolylineElementImpl extends _SVGElementImpl implements SVGPolylineElement native "*SVGPolylineElement" {
+class SVGPolylineElementImpl extends SVGElementImpl implements SVGPolylineElement native "*SVGPolylineElement" {
 
-  final _SVGPointListImpl animatedPoints;
+  final SVGPointListImpl animatedPoints;
 
-  final _SVGPointListImpl points;
+  final SVGPointListImpl points;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -13109,37 +13109,37 @@ class _SVGPolylineElementImpl extends _SVGElementImpl implements SVGPolylineElem
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGPreserveAspectRatioImpl implements SVGPreserveAspectRatio native "*SVGPreserveAspectRatio" {
+class SVGPreserveAspectRatioImpl implements SVGPreserveAspectRatio native "*SVGPreserveAspectRatio" {
 
   static final int SVG_MEETORSLICE_MEET = 1;
 
@@ -13174,20 +13174,20 @@ class _SVGPreserveAspectRatioImpl implements SVGPreserveAspectRatio native "*SVG
   int meetOrSlice;
 }
 
-class _SVGRadialGradientElementImpl extends _SVGGradientElementImpl implements SVGRadialGradientElement native "*SVGRadialGradientElement" {
+class SVGRadialGradientElementImpl extends SVGGradientElementImpl implements SVGRadialGradientElement native "*SVGRadialGradientElement" {
 
-  final _SVGAnimatedLengthImpl cx;
+  final SVGAnimatedLengthImpl cx;
 
-  final _SVGAnimatedLengthImpl cy;
+  final SVGAnimatedLengthImpl cy;
 
-  final _SVGAnimatedLengthImpl fx;
+  final SVGAnimatedLengthImpl fx;
 
-  final _SVGAnimatedLengthImpl fy;
+  final SVGAnimatedLengthImpl fy;
 
-  final _SVGAnimatedLengthImpl r;
+  final SVGAnimatedLengthImpl r;
 }
 
-class _SVGRectImpl implements SVGRect native "*SVGRect" {
+class SVGRectImpl implements SVGRect native "*SVGRect" {
 
   num height;
 
@@ -13198,27 +13198,27 @@ class _SVGRectImpl implements SVGRect native "*SVGRect" {
   num y;
 }
 
-class _SVGRectElementImpl extends _SVGElementImpl implements SVGRectElement native "*SVGRectElement" {
+class SVGRectElementImpl extends SVGElementImpl implements SVGRectElement native "*SVGRectElement" {
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGAnimatedLengthImpl rx;
+  final SVGAnimatedLengthImpl rx;
 
-  final _SVGAnimatedLengthImpl ry;
+  final SVGAnimatedLengthImpl ry;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -13230,37 +13230,37 @@ class _SVGRectElementImpl extends _SVGElementImpl implements SVGRectElement nati
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGRenderingIntentImpl implements SVGRenderingIntent native "*SVGRenderingIntent" {
+class SVGRenderingIntentImpl implements SVGRenderingIntent native "*SVGRenderingIntent" {
 
   static final int RENDERING_INTENT_ABSOLUTE_COLORIMETRIC = 5;
 
@@ -13275,7 +13275,7 @@ class _SVGRenderingIntentImpl implements SVGRenderingIntent native "*SVGRenderin
   static final int RENDERING_INTENT_UNKNOWN = 0;
 }
 
-class _SVGSVGElementImpl extends _SVGElementImpl implements SVGSVGElement native "*SVGSVGElement" {
+class SVGSVGElementImpl extends SVGElementImpl implements SVGSVGElement native "*SVGSVGElement" {
 
   String contentScriptType;
 
@@ -13283,11 +13283,11 @@ class _SVGSVGElementImpl extends _SVGElementImpl implements SVGSVGElement native
 
   num currentScale;
 
-  final _SVGPointImpl currentTranslate;
+  final SVGPointImpl currentTranslate;
 
-  final _SVGViewSpecImpl currentView;
+  final SVGViewSpecImpl currentView;
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
   final num pixelUnitToMillimeterX;
 
@@ -13299,35 +13299,35 @@ class _SVGSVGElementImpl extends _SVGElementImpl implements SVGSVGElement native
 
   final bool useCurrentView;
 
-  final _SVGRectImpl viewport;
+  final SVGRectImpl viewport;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   bool animationsPaused() native;
 
-  bool checkEnclosure(_SVGElementImpl element, _SVGRectImpl rect) native;
+  bool checkEnclosure(SVGElementImpl element, SVGRectImpl rect) native;
 
-  bool checkIntersection(_SVGElementImpl element, _SVGRectImpl rect) native;
+  bool checkIntersection(SVGElementImpl element, SVGRectImpl rect) native;
 
-  _SVGAngleImpl createSVGAngle() native;
+  SVGAngleImpl createSVGAngle() native;
 
-  _SVGLengthImpl createSVGLength() native;
+  SVGLengthImpl createSVGLength() native;
 
-  _SVGMatrixImpl createSVGMatrix() native;
+  SVGMatrixImpl createSVGMatrix() native;
 
-  _SVGNumberImpl createSVGNumber() native;
+  SVGNumberImpl createSVGNumber() native;
 
-  _SVGPointImpl createSVGPoint() native;
+  SVGPointImpl createSVGPoint() native;
 
-  _SVGRectImpl createSVGRect() native;
+  SVGRectImpl createSVGRect() native;
 
-  _SVGTransformImpl createSVGTransform() native;
+  SVGTransformImpl createSVGTransform() native;
 
-  _SVGTransformImpl createSVGTransformFromMatrix(_SVGMatrixImpl matrix) native;
+  SVGTransformImpl createSVGTransformFromMatrix(SVGMatrixImpl matrix) native;
 
   void deselectAll() native;
 
@@ -13335,11 +13335,11 @@ class _SVGSVGElementImpl extends _SVGElementImpl implements SVGSVGElement native
 
   num getCurrentTime() native;
 
-  _ElementImpl getElementById(String elementId) native;
+  ElementImpl getElementById(String elementId) native;
 
-  _NodeListImpl getEnclosureList(_SVGRectImpl rect, _SVGElementImpl referenceElement) native;
+  NodeListImpl getEnclosureList(SVGRectImpl rect, SVGElementImpl referenceElement) native;
 
-  _NodeListImpl getIntersectionList(_SVGRectImpl rect, _SVGElementImpl referenceElement) native;
+  NodeListImpl getIntersectionList(SVGRectImpl rect, SVGElementImpl referenceElement) native;
 
   void pauseAnimations() native;
 
@@ -13355,11 +13355,11 @@ class _SVGSVGElementImpl extends _SVGElementImpl implements SVGSVGElement native
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -13371,73 +13371,73 @@ class _SVGSVGElementImpl extends _SVGElementImpl implements SVGSVGElement native
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 
   // From SVGFitToViewBox
 
-  final _SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
+  final SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
 
-  final _SVGAnimatedRectImpl viewBox;
+  final SVGAnimatedRectImpl viewBox;
 
   // From SVGZoomAndPan
 
   int zoomAndPan;
 }
 
-class _SVGScriptElementImpl extends _SVGElementImpl implements SVGScriptElement native "*SVGScriptElement" {
+class SVGScriptElementImpl extends SVGElementImpl implements SVGScriptElement native "*SVGScriptElement" {
 
   String type;
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 }
 
-class _SVGSetElementImpl extends _SVGAnimationElementImpl implements SVGSetElement native "*SVGSetElement" {
+class SVGSetElementImpl extends SVGAnimationElementImpl implements SVGSetElement native "*SVGSetElement" {
 }
 
-class _SVGStopElementImpl extends _SVGElementImpl implements SVGStopElement native "*SVGStopElement" {
+class SVGStopElementImpl extends SVGElementImpl implements SVGStopElement native "*SVGStopElement" {
 
-  final _SVGAnimatedNumberImpl offset;
+  final SVGAnimatedNumberImpl offset;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGStringListImpl implements SVGStringList native "*SVGStringList" {
+class SVGStringListImpl implements SVGStringList native "*SVGStringList" {
 
   final int numberOfItems;
 
@@ -13456,7 +13456,7 @@ class _SVGStringListImpl implements SVGStringList native "*SVGStringList" {
   String replaceItem(String item, int index) native;
 }
 
-class _SVGStyleElementImpl extends _SVGElementImpl implements SVGStyleElement native "*SVGStyleElement" {
+class SVGStyleElementImpl extends SVGElementImpl implements SVGStyleElement native "*SVGStyleElement" {
 
   bool disabled;
 
@@ -13476,15 +13476,15 @@ class _SVGStyleElementImpl extends _SVGElementImpl implements SVGStyleElement na
   String xmlspace;
 }
 
-class _SVGSwitchElementImpl extends _SVGElementImpl implements SVGSwitchElement native "*SVGSwitchElement" {
+class SVGSwitchElementImpl extends SVGElementImpl implements SVGSwitchElement native "*SVGSwitchElement" {
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -13496,37 +13496,37 @@ class _SVGSwitchElementImpl extends _SVGElementImpl implements SVGSwitchElement 
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGSymbolElementImpl extends _SVGElementImpl implements SVGSymbolElement native "*SVGSymbolElement" {
+class SVGSymbolElementImpl extends SVGElementImpl implements SVGSymbolElement native "*SVGSymbolElement" {
 
   // From SVGLangSpace
 
@@ -13536,35 +13536,35 @@ class _SVGSymbolElementImpl extends _SVGElementImpl implements SVGSymbolElement 
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGFitToViewBox
 
-  final _SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
+  final SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
 
-  final _SVGAnimatedRectImpl viewBox;
+  final SVGAnimatedRectImpl viewBox;
 }
 
-class _SVGTRefElementImpl extends _SVGTextPositioningElementImpl implements SVGTRefElement native "*SVGTRefElement" {
+class SVGTRefElementImpl extends SVGTextPositioningElementImpl implements SVGTRefElement native "*SVGTRefElement" {
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 }
 
-class _SVGTSpanElementImpl extends _SVGTextPositioningElementImpl implements SVGTSpanElement native "*SVGTSpanElement" {
+class SVGTSpanElementImpl extends SVGTextPositioningElementImpl implements SVGTSpanElement native "*SVGTSpanElement" {
 }
 
-class _SVGTextContentElementImpl extends _SVGElementImpl implements SVGTextContentElement native "*SVGTextContentElement" {
+class SVGTextContentElementImpl extends SVGElementImpl implements SVGTextContentElement native "*SVGTextContentElement" {
 
   static final int LENGTHADJUST_SPACING = 1;
 
@@ -13572,23 +13572,23 @@ class _SVGTextContentElementImpl extends _SVGElementImpl implements SVGTextConte
 
   static final int LENGTHADJUST_UNKNOWN = 0;
 
-  final _SVGAnimatedEnumerationImpl lengthAdjust;
+  final SVGAnimatedEnumerationImpl lengthAdjust;
 
-  final _SVGAnimatedLengthImpl textLength;
+  final SVGAnimatedLengthImpl textLength;
 
-  int getCharNumAtPosition(_SVGPointImpl point) native;
+  int getCharNumAtPosition(SVGPointImpl point) native;
 
   num getComputedTextLength() native;
 
-  _SVGPointImpl getEndPositionOfChar(int offset) native;
+  SVGPointImpl getEndPositionOfChar(int offset) native;
 
-  _SVGRectImpl getExtentOfChar(int offset) native;
+  SVGRectImpl getExtentOfChar(int offset) native;
 
   int getNumberOfChars() native;
 
   num getRotationOfChar(int offset) native;
 
-  _SVGPointImpl getStartPositionOfChar(int offset) native;
+  SVGPointImpl getStartPositionOfChar(int offset) native;
 
   num getSubStringLength(int offset, int length) native;
 
@@ -13596,11 +13596,11 @@ class _SVGTextContentElementImpl extends _SVGElementImpl implements SVGTextConte
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -13612,40 +13612,40 @@ class _SVGTextContentElementImpl extends _SVGElementImpl implements SVGTextConte
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGTextElementImpl extends _SVGTextPositioningElementImpl implements SVGTextElement native "*SVGTextElement" {
+class SVGTextElementImpl extends SVGTextPositioningElementImpl implements SVGTextElement native "*SVGTextElement" {
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGTextPathElementImpl extends _SVGTextContentElementImpl implements SVGTextPathElement native "*SVGTextPathElement" {
+class SVGTextPathElementImpl extends SVGTextContentElementImpl implements SVGTextPathElement native "*SVGTextPathElement" {
 
   static final int TEXTPATH_METHODTYPE_ALIGN = 1;
 
@@ -13659,31 +13659,31 @@ class _SVGTextPathElementImpl extends _SVGTextContentElementImpl implements SVGT
 
   static final int TEXTPATH_SPACINGTYPE_UNKNOWN = 0;
 
-  final _SVGAnimatedEnumerationImpl method;
+  final SVGAnimatedEnumerationImpl method;
 
-  final _SVGAnimatedEnumerationImpl spacing;
+  final SVGAnimatedEnumerationImpl spacing;
 
-  final _SVGAnimatedLengthImpl startOffset;
+  final SVGAnimatedLengthImpl startOffset;
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 }
 
-class _SVGTextPositioningElementImpl extends _SVGTextContentElementImpl implements SVGTextPositioningElement native "*SVGTextPositioningElement" {
+class SVGTextPositioningElementImpl extends SVGTextContentElementImpl implements SVGTextPositioningElement native "*SVGTextPositioningElement" {
 
-  final _SVGAnimatedLengthListImpl dx;
+  final SVGAnimatedLengthListImpl dx;
 
-  final _SVGAnimatedLengthListImpl dy;
+  final SVGAnimatedLengthListImpl dy;
 
-  final _SVGAnimatedNumberListImpl rotate;
+  final SVGAnimatedNumberListImpl rotate;
 
-  final _SVGAnimatedLengthListImpl x;
+  final SVGAnimatedLengthListImpl x;
 
-  final _SVGAnimatedLengthListImpl y;
+  final SVGAnimatedLengthListImpl y;
 }
 
-class _SVGTitleElementImpl extends _SVGElementImpl implements SVGTitleElement native "*SVGTitleElement" {
+class SVGTitleElementImpl extends SVGElementImpl implements SVGTitleElement native "*SVGTitleElement" {
 
   // From SVGLangSpace
 
@@ -13693,15 +13693,15 @@ class _SVGTitleElementImpl extends _SVGElementImpl implements SVGTitleElement na
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 }
 
-class _SVGTransformImpl implements SVGTransform native "*SVGTransform" {
+class SVGTransformImpl implements SVGTransform native "*SVGTransform" {
 
   static final int SVG_TRANSFORM_MATRIX = 1;
 
@@ -13719,11 +13719,11 @@ class _SVGTransformImpl implements SVGTransform native "*SVGTransform" {
 
   final num angle;
 
-  final _SVGMatrixImpl matrix;
+  final SVGMatrixImpl matrix;
 
   final int type;
 
-  void setMatrix(_SVGMatrixImpl matrix) native;
+  void setMatrix(SVGMatrixImpl matrix) native;
 
   void setRotate(num angle, num cx, num cy) native;
 
@@ -13736,30 +13736,30 @@ class _SVGTransformImpl implements SVGTransform native "*SVGTransform" {
   void setTranslate(num tx, num ty) native;
 }
 
-class _SVGTransformListImpl implements SVGTransformList native "*SVGTransformList" {
+class SVGTransformListImpl implements SVGTransformList native "*SVGTransformList" {
 
   final int numberOfItems;
 
-  _SVGTransformImpl appendItem(_SVGTransformImpl item) native;
+  SVGTransformImpl appendItem(SVGTransformImpl item) native;
 
   void clear() native;
 
-  _SVGTransformImpl consolidate() native;
+  SVGTransformImpl consolidate() native;
 
-  _SVGTransformImpl createSVGTransformFromMatrix(_SVGMatrixImpl matrix) native;
+  SVGTransformImpl createSVGTransformFromMatrix(SVGMatrixImpl matrix) native;
 
-  _SVGTransformImpl getItem(int index) native;
+  SVGTransformImpl getItem(int index) native;
 
-  _SVGTransformImpl initialize(_SVGTransformImpl item) native;
+  SVGTransformImpl initialize(SVGTransformImpl item) native;
 
-  _SVGTransformImpl insertItemBefore(_SVGTransformImpl item, int index) native;
+  SVGTransformImpl insertItemBefore(SVGTransformImpl item, int index) native;
 
-  _SVGTransformImpl removeItem(int index) native;
+  SVGTransformImpl removeItem(int index) native;
 
-  _SVGTransformImpl replaceItem(_SVGTransformImpl item, int index) native;
+  SVGTransformImpl replaceItem(SVGTransformImpl item, int index) native;
 }
 
-class _SVGUnitTypesImpl implements SVGUnitTypes native "*SVGUnitTypes" {
+class SVGUnitTypesImpl implements SVGUnitTypes native "*SVGUnitTypes" {
 
   static final int SVG_UNIT_TYPE_OBJECTBOUNDINGBOX = 2;
 
@@ -13768,31 +13768,31 @@ class _SVGUnitTypesImpl implements SVGUnitTypes native "*SVGUnitTypes" {
   static final int SVG_UNIT_TYPE_USERSPACEONUSE = 1;
 }
 
-class _SVGUseElementImpl extends _SVGElementImpl implements SVGUseElement native "*SVGUseElement" {
+class SVGUseElementImpl extends SVGElementImpl implements SVGUseElement native "*SVGUseElement" {
 
-  final _SVGElementInstanceImpl animatedInstanceRoot;
+  final SVGElementInstanceImpl animatedInstanceRoot;
 
-  final _SVGAnimatedLengthImpl height;
+  final SVGAnimatedLengthImpl height;
 
-  final _SVGElementInstanceImpl instanceRoot;
+  final SVGElementInstanceImpl instanceRoot;
 
-  final _SVGAnimatedLengthImpl width;
+  final SVGAnimatedLengthImpl width;
 
-  final _SVGAnimatedLengthImpl x;
+  final SVGAnimatedLengthImpl x;
 
-  final _SVGAnimatedLengthImpl y;
+  final SVGAnimatedLengthImpl y;
 
   // From SVGURIReference
 
-  final _SVGAnimatedStringImpl href;
+  final SVGAnimatedStringImpl href;
 
   // From SVGTests
 
-  final _SVGStringListImpl requiredExtensions;
+  final SVGStringListImpl requiredExtensions;
 
-  final _SVGStringListImpl requiredFeatures;
+  final SVGStringListImpl requiredFeatures;
 
-  final _SVGStringListImpl systemLanguage;
+  final SVGStringListImpl systemLanguage;
 
   bool hasExtension(String extension) native;
 
@@ -13804,93 +13804,93 @@ class _SVGUseElementImpl extends _SVGElementImpl implements SVGUseElement native
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGStylable
 
-  _SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
+  SVGAnimatedStringImpl get $dom_svgClassName() native "return this.className;";
 
   // Use implementation from Element.
-  // final _CSSStyleDeclarationImpl style;
+  // final CSSStyleDeclarationImpl style;
 
-  _CSSValueImpl getPresentationAttribute(String name) native;
+  CSSValueImpl getPresentationAttribute(String name) native;
 
   // From SVGTransformable
 
-  final _SVGAnimatedTransformListImpl transform;
+  final SVGAnimatedTransformListImpl transform;
 
   // From SVGLocatable
 
-  final _SVGElementImpl farthestViewportElement;
+  final SVGElementImpl farthestViewportElement;
 
-  final _SVGElementImpl nearestViewportElement;
+  final SVGElementImpl nearestViewportElement;
 
-  _SVGRectImpl getBBox() native;
+  SVGRectImpl getBBox() native;
 
-  _SVGMatrixImpl getCTM() native;
+  SVGMatrixImpl getCTM() native;
 
-  _SVGMatrixImpl getScreenCTM() native;
+  SVGMatrixImpl getScreenCTM() native;
 
-  _SVGMatrixImpl getTransformToElement(_SVGElementImpl element) native;
+  SVGMatrixImpl getTransformToElement(SVGElementImpl element) native;
 }
 
-class _SVGVKernElementImpl extends _SVGElementImpl implements SVGVKernElement native "*SVGVKernElement" {
+class SVGVKernElementImpl extends SVGElementImpl implements SVGVKernElement native "*SVGVKernElement" {
 }
 
-class _SVGViewElementImpl extends _SVGElementImpl implements SVGViewElement native "*SVGViewElement" {
+class SVGViewElementImpl extends SVGElementImpl implements SVGViewElement native "*SVGViewElement" {
 
-  final _SVGStringListImpl viewTarget;
+  final SVGStringListImpl viewTarget;
 
   // From SVGExternalResourcesRequired
 
-  final _SVGAnimatedBooleanImpl externalResourcesRequired;
+  final SVGAnimatedBooleanImpl externalResourcesRequired;
 
   // From SVGFitToViewBox
 
-  final _SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
+  final SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
 
-  final _SVGAnimatedRectImpl viewBox;
+  final SVGAnimatedRectImpl viewBox;
 
   // From SVGZoomAndPan
 
   int zoomAndPan;
 }
 
-class _SVGViewSpecImpl implements SVGViewSpec native "*SVGViewSpec" {
+class SVGViewSpecImpl implements SVGViewSpec native "*SVGViewSpec" {
 
-  final _SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
+  final SVGAnimatedPreserveAspectRatioImpl preserveAspectRatio;
 
   final String preserveAspectRatioString;
 
-  final _SVGTransformListImpl transform;
+  final SVGTransformListImpl transform;
 
   final String transformString;
 
-  final _SVGAnimatedRectImpl viewBox;
+  final SVGAnimatedRectImpl viewBox;
 
   final String viewBoxString;
 
-  final _SVGElementImpl viewTarget;
+  final SVGElementImpl viewTarget;
 
   final String viewTargetString;
 
   int zoomAndPan;
 }
 
-class _SVGZoomEventImpl extends _UIEventImpl implements SVGZoomEvent native "*SVGZoomEvent" {
+class SVGZoomEventImpl extends UIEventImpl implements SVGZoomEvent native "*SVGZoomEvent" {
 
   final num newScale;
 
-  final _SVGPointImpl newTranslate;
+  final SVGPointImpl newTranslate;
 
   final num previousScale;
 
-  final _SVGPointImpl previousTranslate;
+  final SVGPointImpl previousTranslate;
 
-  final _SVGRectImpl zoomRectScreen;
+  final SVGRectImpl zoomRectScreen;
 }
 
-class _ScreenImpl implements Screen native "*Screen" {
+class ScreenImpl implements Screen native "*Screen" {
 
   final int availHeight;
 
@@ -13909,7 +13909,7 @@ class _ScreenImpl implements Screen native "*Screen" {
   final int width;
 }
 
-class _ScriptElementImpl extends _ElementImpl implements ScriptElement native "*HTMLScriptElement" {
+class ScriptElementImpl extends ElementImpl implements ScriptElement native "*HTMLScriptElement" {
 
   bool async;
 
@@ -13928,16 +13928,16 @@ class _ScriptElementImpl extends _ElementImpl implements ScriptElement native "*
   String type;
 }
 
-class _ScriptProfileImpl implements ScriptProfile native "*ScriptProfile" {
+class ScriptProfileImpl implements ScriptProfile native "*ScriptProfile" {
 
-  final _ScriptProfileNodeImpl head;
+  final ScriptProfileNodeImpl head;
 
   final String title;
 
   final int uid;
 }
 
-class _ScriptProfileNodeImpl implements ScriptProfileNode native "*ScriptProfileNode" {
+class ScriptProfileNodeImpl implements ScriptProfileNode native "*ScriptProfileNode" {
 
   final int callUID;
 
@@ -13958,15 +13958,15 @@ class _ScriptProfileNodeImpl implements ScriptProfileNode native "*ScriptProfile
   List<ScriptProfileNode> children() native;
 }
 
-class _SelectElementImpl extends _ElementImpl implements SelectElement native "*HTMLSelectElement" {
+class SelectElementImpl extends ElementImpl implements SelectElement native "*HTMLSelectElement" {
 
   bool autofocus;
 
   bool disabled;
 
-  final _FormElementImpl form;
+  final FormElementImpl form;
 
-  final _NodeListImpl labels;
+  final NodeListImpl labels;
 
   int length;
 
@@ -13974,13 +13974,13 @@ class _SelectElementImpl extends _ElementImpl implements SelectElement native "*
 
   String name;
 
-  final _HTMLOptionsCollectionImpl options;
+  final HTMLOptionsCollectionImpl options;
 
   bool required;
 
   int selectedIndex;
 
-  final _HTMLCollectionImpl selectedOptions;
+  final HTMLCollectionImpl selectedOptions;
 
   int size;
 
@@ -13988,36 +13988,36 @@ class _SelectElementImpl extends _ElementImpl implements SelectElement native "*
 
   final String validationMessage;
 
-  final _ValidityStateImpl validity;
+  final ValidityStateImpl validity;
 
   String value;
 
   final bool willValidate;
 
-  void add(_ElementImpl element, _ElementImpl before) native;
+  void add(ElementImpl element, ElementImpl before) native;
 
   bool checkValidity() native;
 
-  _NodeImpl item(int index) native;
+  NodeImpl item(int index) native;
 
-  _NodeImpl namedItem(String name) native;
+  NodeImpl namedItem(String name) native;
 
   void setCustomValidity(String error) native;
 }
 
-class _SessionDescriptionImpl implements SessionDescription native "*SessionDescription" {
+class SessionDescriptionImpl implements SessionDescription native "*SessionDescription" {
 
-  void addCandidate(_IceCandidateImpl candidate) native;
+  void addCandidate(IceCandidateImpl candidate) native;
 
   String toSdp() native;
 }
 
-class _ShadowElementImpl extends _ElementImpl implements ShadowElement native "*HTMLShadowElement" {
+class ShadowElementImpl extends ElementImpl implements ShadowElement native "*HTMLShadowElement" {
 }
 
-class _ShadowRootImpl extends _DocumentFragmentImpl implements ShadowRoot native "*ShadowRoot" {
+class ShadowRootImpl extends DocumentFragmentImpl implements ShadowRoot native "*ShadowRoot" {
 
-  final _ElementImpl activeElement;
+  final ElementImpl activeElement;
 
   bool applyAuthorStyles;
 
@@ -14025,59 +14025,59 @@ class _ShadowRootImpl extends _DocumentFragmentImpl implements ShadowRoot native
 
   bool resetStyleInheritance;
 
-  _ElementImpl getElementById(String elementId) native;
+  ElementImpl getElementById(String elementId) native;
 
-  _NodeListImpl getElementsByClassName(String className) native;
+  NodeListImpl getElementsByClassName(String className) native;
 
-  _NodeListImpl getElementsByTagName(String tagName) native;
+  NodeListImpl getElementsByTagName(String tagName) native;
 
-  _NodeListImpl getElementsByTagNameNS(String namespaceURI, String localName) native;
+  NodeListImpl getElementsByTagNameNS(String namespaceURI, String localName) native;
 
-  _DOMSelectionImpl getSelection() native;
+  DOMSelectionImpl getSelection() native;
 }
 
-class _SharedWorkerImpl extends _AbstractWorkerImpl implements SharedWorker native "*SharedWorker" {
+class SharedWorkerImpl extends AbstractWorkerImpl implements SharedWorker native "*SharedWorker" {
 
-  final _MessagePortImpl port;
+  final MessagePortImpl port;
 }
 
-class _SharedWorkerContextImpl extends _WorkerContextImpl implements SharedWorkerContext native "*SharedWorkerContext" {
+class SharedWorkerContextImpl extends WorkerContextImpl implements SharedWorkerContext native "*SharedWorkerContext" {
 
-  _SharedWorkerContextEventsImpl get on() =>
-    new _SharedWorkerContextEventsImpl(this);
+  SharedWorkerContextEventsImpl get on() =>
+    new SharedWorkerContextEventsImpl(this);
 
   final String name;
 }
 
-class _SharedWorkerContextEventsImpl extends _WorkerContextEventsImpl implements SharedWorkerContextEvents {
-  _SharedWorkerContextEventsImpl(_ptr) : super(_ptr);
+class SharedWorkerContextEventsImpl extends WorkerContextEventsImpl implements SharedWorkerContextEvents {
+  SharedWorkerContextEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get connect() => this['connect'];
 }
 
-class _SourceBufferImpl implements SourceBuffer native "*SourceBuffer" {
+class SourceBufferImpl implements SourceBuffer native "*SourceBuffer" {
 
-  final _TimeRangesImpl buffered;
+  final TimeRangesImpl buffered;
 
   void abort() native;
 
-  void append(_Uint8ArrayImpl data) native;
+  void append(Uint8ArrayImpl data) native;
 }
 
-class _SourceBufferListImpl extends _EventTargetImpl implements SourceBufferList native "*SourceBufferList" {
+class SourceBufferListImpl extends EventTargetImpl implements SourceBufferList native "*SourceBufferList" {
 
   final int length;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
-  _SourceBufferImpl item(int index) native;
+  SourceBufferImpl item(int index) native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _SourceElementImpl extends _ElementImpl implements SourceElement native "*HTMLSourceElement" {
+class SourceElementImpl extends ElementImpl implements SourceElement native "*HTMLSourceElement" {
 
   String media;
 
@@ -14086,17 +14086,17 @@ class _SourceElementImpl extends _ElementImpl implements SourceElement native "*
   String type;
 }
 
-class _SpanElementImpl extends _ElementImpl implements SpanElement native "*HTMLSpanElement" {
+class SpanElementImpl extends ElementImpl implements SpanElement native "*HTMLSpanElement" {
 }
 
-class _SpeechGrammarImpl implements SpeechGrammar native "*SpeechGrammar" {
+class SpeechGrammarImpl implements SpeechGrammar native "*SpeechGrammar" {
 
   String src;
 
   num weight;
 }
 
-class _SpeechGrammarListImpl implements SpeechGrammarList native "*SpeechGrammarList" {
+class SpeechGrammarListImpl implements SpeechGrammarList native "*SpeechGrammarList" {
 
   final int length;
 
@@ -14104,36 +14104,36 @@ class _SpeechGrammarListImpl implements SpeechGrammarList native "*SpeechGrammar
 
   void addFromUri(String src, [num weight]) native;
 
-  _SpeechGrammarImpl item(int index) native;
+  SpeechGrammarImpl item(int index) native;
 }
 
-class _SpeechInputEventImpl extends _EventImpl implements SpeechInputEvent native "*SpeechInputEvent" {
+class SpeechInputEventImpl extends EventImpl implements SpeechInputEvent native "*SpeechInputEvent" {
 
-  final _SpeechInputResultListImpl results;
+  final SpeechInputResultListImpl results;
 }
 
-class _SpeechInputResultImpl implements SpeechInputResult native "*SpeechInputResult" {
+class SpeechInputResultImpl implements SpeechInputResult native "*SpeechInputResult" {
 
   final num confidence;
 
   final String utterance;
 }
 
-class _SpeechInputResultListImpl implements SpeechInputResultList native "*SpeechInputResultList" {
+class SpeechInputResultListImpl implements SpeechInputResultList native "*SpeechInputResultList" {
 
   final int length;
 
-  _SpeechInputResultImpl item(int index) native;
+  SpeechInputResultImpl item(int index) native;
 }
 
-class _SpeechRecognitionImpl extends _EventTargetImpl implements SpeechRecognition native "*SpeechRecognition" {
+class SpeechRecognitionImpl extends EventTargetImpl implements SpeechRecognition native "*SpeechRecognition" {
 
-  _SpeechRecognitionEventsImpl get on() =>
-    new _SpeechRecognitionEventsImpl(this);
+  SpeechRecognitionEventsImpl get on() =>
+    new SpeechRecognitionEventsImpl(this);
 
   bool continuous;
 
-  _SpeechGrammarListImpl grammars;
+  SpeechGrammarListImpl grammars;
 
   String lang;
 
@@ -14143,7 +14143,7 @@ class _SpeechRecognitionImpl extends _EventTargetImpl implements SpeechRecogniti
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
@@ -14152,8 +14152,8 @@ class _SpeechRecognitionImpl extends _EventTargetImpl implements SpeechRecogniti
   void stop() native;
 }
 
-class _SpeechRecognitionEventsImpl extends _EventsImpl implements SpeechRecognitionEvents {
-  _SpeechRecognitionEventsImpl(_ptr) : super(_ptr);
+class SpeechRecognitionEventsImpl extends EventsImpl implements SpeechRecognitionEvents {
+  SpeechRecognitionEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get audioEnd() => this['audioend'];
 
@@ -14180,14 +14180,14 @@ class _SpeechRecognitionEventsImpl extends _EventsImpl implements SpeechRecognit
   EventListenerList get start() => this['start'];
 }
 
-class _SpeechRecognitionAlternativeImpl implements SpeechRecognitionAlternative native "*SpeechRecognitionAlternative" {
+class SpeechRecognitionAlternativeImpl implements SpeechRecognitionAlternative native "*SpeechRecognitionAlternative" {
 
   final num confidence;
 
   final String transcript;
 }
 
-class _SpeechRecognitionErrorImpl extends _EventImpl implements SpeechRecognitionError native "*SpeechRecognitionError" {
+class SpeechRecognitionErrorImpl extends EventImpl implements SpeechRecognitionError native "*SpeechRecognitionError" {
 
   static final int ABORTED = 2;
 
@@ -14212,37 +14212,37 @@ class _SpeechRecognitionErrorImpl extends _EventImpl implements SpeechRecognitio
   final String message;
 }
 
-class _SpeechRecognitionEventImpl extends _EventImpl implements SpeechRecognitionEvent native "*SpeechRecognitionEvent" {
+class SpeechRecognitionEventImpl extends EventImpl implements SpeechRecognitionEvent native "*SpeechRecognitionEvent" {
 
-  final _SpeechRecognitionResultImpl result;
+  final SpeechRecognitionResultImpl result;
 
-  final _SpeechRecognitionResultListImpl resultHistory;
+  final SpeechRecognitionResultListImpl resultHistory;
 
   final int resultIndex;
 }
 
-class _SpeechRecognitionResultImpl implements SpeechRecognitionResult native "*SpeechRecognitionResult" {
+class SpeechRecognitionResultImpl implements SpeechRecognitionResult native "*SpeechRecognitionResult" {
 
-  final _DocumentImpl emma;
+  final DocumentImpl emma;
 
   bool get finalValue() native "return this.final;";
 
   final int length;
 
-  _SpeechRecognitionAlternativeImpl item(int index) native;
+  SpeechRecognitionAlternativeImpl item(int index) native;
 }
 
-class _SpeechRecognitionResultListImpl implements SpeechRecognitionResultList native "*SpeechRecognitionResultList" {
+class SpeechRecognitionResultListImpl implements SpeechRecognitionResultList native "*SpeechRecognitionResultList" {
 
   final int length;
 
-  _SpeechRecognitionResultImpl item(int index) native;
+  SpeechRecognitionResultImpl item(int index) native;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-class _StorageImpl implements Storage native "*Storage" {
+class StorageImpl implements Storage native "*Storage" {
 
   // TODO(nweiz): update this when maps support lazy iteration
   bool containsValue(String value) => getValues().some((e) => e == value);
@@ -14305,7 +14305,7 @@ class _StorageImpl implements Storage native "*Storage" {
 
 }
 
-class _StorageEventImpl extends _EventImpl implements StorageEvent native "*StorageEvent" {
+class StorageEventImpl extends EventImpl implements StorageEvent native "*StorageEvent" {
 
   final String key;
 
@@ -14313,14 +14313,14 @@ class _StorageEventImpl extends _EventImpl implements StorageEvent native "*Stor
 
   final String oldValue;
 
-  final _StorageImpl storageArea;
+  final StorageImpl storageArea;
 
   final String url;
 
-  void initStorageEvent(String typeArg, bool canBubbleArg, bool cancelableArg, String keyArg, String oldValueArg, String newValueArg, String urlArg, _StorageImpl storageAreaArg) native;
+  void initStorageEvent(String typeArg, bool canBubbleArg, bool cancelableArg, String keyArg, String oldValueArg, String newValueArg, String urlArg, StorageImpl storageAreaArg) native;
 }
 
-class _StorageInfoImpl implements StorageInfo native "*StorageInfo" {
+class StorageInfoImpl implements StorageInfo native "*StorageInfo" {
 
   static final int PERSISTENT = 1;
 
@@ -14331,7 +14331,7 @@ class _StorageInfoImpl implements StorageInfo native "*StorageInfo" {
   void requestQuota(int storageType, int newQuotaInBytes, [StorageInfoQuotaCallback quotaCallback, StorageInfoErrorCallback errorCallback]) native;
 }
 
-class _StyleElementImpl extends _ElementImpl implements StyleElement native "*HTMLStyleElement" {
+class StyleElementImpl extends ElementImpl implements StyleElement native "*HTMLStyleElement" {
 
   bool disabled;
 
@@ -14339,42 +14339,42 @@ class _StyleElementImpl extends _ElementImpl implements StyleElement native "*HT
 
   bool scoped;
 
-  final _StyleSheetImpl sheet;
+  final StyleSheetImpl sheet;
 
   String type;
 }
 
-class _StyleMediaImpl implements StyleMedia native "*StyleMedia" {
+class StyleMediaImpl implements StyleMedia native "*StyleMedia" {
 
   final String type;
 
   bool matchMedium(String mediaquery) native;
 }
 
-class _StyleSheetImpl implements StyleSheet native "*StyleSheet" {
+class StyleSheetImpl implements StyleSheet native "*StyleSheet" {
 
   bool disabled;
 
   final String href;
 
-  final _MediaListImpl media;
+  final MediaListImpl media;
 
-  final _NodeImpl ownerNode;
+  final NodeImpl ownerNode;
 
-  final _StyleSheetImpl parentStyleSheet;
+  final StyleSheetImpl parentStyleSheet;
 
   final String title;
 
   final String type;
 }
 
-class _StyleSheetListImpl implements StyleSheetList, JavaScriptIndexingBehavior native "*StyleSheetList" {
+class StyleSheetListImpl implements StyleSheetList, JavaScriptIndexingBehavior native "*StyleSheetList" {
 
   final int length;
 
-  _StyleSheetImpl operator[](int index) native "return this[index];";
+  StyleSheetImpl operator[](int index) native "return this[index];";
 
-  void operator[]=(int index, _StyleSheetImpl value) {
+  void operator[]=(int index, StyleSheetImpl value) {
     throw new UnsupportedOperationException("Cannot assign element of immutable List.");
   }
   // -- start List<StyleSheet> mixins.
@@ -14454,15 +14454,15 @@ class _StyleSheetListImpl implements StyleSheetList, JavaScriptIndexingBehavior 
 
   // -- end List<StyleSheet> mixins.
 
-  _StyleSheetImpl item(int index) native;
+  StyleSheetImpl item(int index) native;
 }
 
-class _TableCaptionElementImpl extends _ElementImpl implements TableCaptionElement native "*HTMLTableCaptionElement" {
+class TableCaptionElementImpl extends ElementImpl implements TableCaptionElement native "*HTMLTableCaptionElement" {
 
   String align;
 }
 
-class _TableCellElementImpl extends _ElementImpl implements TableCellElement native "*HTMLTableCellElement" {
+class TableCellElementImpl extends ElementImpl implements TableCellElement native "*HTMLTableCellElement" {
 
   String abbr;
 
@@ -14495,7 +14495,7 @@ class _TableCellElementImpl extends _ElementImpl implements TableCellElement nat
   String width;
 }
 
-class _TableColElementImpl extends _ElementImpl implements TableColElement native "*HTMLTableColElement" {
+class TableColElementImpl extends ElementImpl implements TableColElement native "*HTMLTableColElement" {
 
   String align;
 
@@ -14510,7 +14510,7 @@ class _TableColElementImpl extends _ElementImpl implements TableColElement nativ
   String width;
 }
 
-class _TableElementImpl extends _ElementImpl implements TableElement native "*HTMLTableElement" {
+class TableElementImpl extends ElementImpl implements TableElement native "*HTMLTableElement" {
 
   String align;
 
@@ -14518,7 +14518,7 @@ class _TableElementImpl extends _ElementImpl implements TableElement native "*HT
 
   String border;
 
-  _TableCaptionElementImpl caption;
+  TableCaptionElementImpl caption;
 
   String cellPadding;
 
@@ -14526,27 +14526,27 @@ class _TableElementImpl extends _ElementImpl implements TableElement native "*HT
 
   String frame;
 
-  final _HTMLCollectionImpl rows;
+  final HTMLCollectionImpl rows;
 
   String rules;
 
   String summary;
 
-  final _HTMLCollectionImpl tBodies;
+  final HTMLCollectionImpl tBodies;
 
-  _TableSectionElementImpl tFoot;
+  TableSectionElementImpl tFoot;
 
-  _TableSectionElementImpl tHead;
+  TableSectionElementImpl tHead;
 
   String width;
 
-  _ElementImpl createCaption() native;
+  ElementImpl createCaption() native;
 
-  _ElementImpl createTBody() native;
+  ElementImpl createTBody() native;
 
-  _ElementImpl createTFoot() native;
+  ElementImpl createTFoot() native;
 
-  _ElementImpl createTHead() native;
+  ElementImpl createTHead() native;
 
   void deleteCaption() native;
 
@@ -14556,16 +14556,16 @@ class _TableElementImpl extends _ElementImpl implements TableElement native "*HT
 
   void deleteTHead() native;
 
-  _ElementImpl insertRow(int index) native;
+  ElementImpl insertRow(int index) native;
 }
 
-class _TableRowElementImpl extends _ElementImpl implements TableRowElement native "*HTMLTableRowElement" {
+class TableRowElementImpl extends ElementImpl implements TableRowElement native "*HTMLTableRowElement" {
 
   String align;
 
   String bgColor;
 
-  final _HTMLCollectionImpl cells;
+  final HTMLCollectionImpl cells;
 
   String ch;
 
@@ -14579,10 +14579,10 @@ class _TableRowElementImpl extends _ElementImpl implements TableRowElement nativ
 
   void deleteCell(int index) native;
 
-  _ElementImpl insertCell(int index) native;
+  ElementImpl insertCell(int index) native;
 }
 
-class _TableSectionElementImpl extends _ElementImpl implements TableSectionElement native "*HTMLTableSectionElement" {
+class TableSectionElementImpl extends ElementImpl implements TableSectionElement native "*HTMLTableSectionElement" {
 
   String align;
 
@@ -14590,25 +14590,25 @@ class _TableSectionElementImpl extends _ElementImpl implements TableSectionEleme
 
   String chOff;
 
-  final _HTMLCollectionImpl rows;
+  final HTMLCollectionImpl rows;
 
   String vAlign;
 
   void deleteRow(int index) native;
 
-  _ElementImpl insertRow(int index) native;
+  ElementImpl insertRow(int index) native;
 }
 
-class _TextImpl extends _CharacterDataImpl implements Text native "*Text" {
+class TextImpl extends CharacterDataImpl implements Text native "*Text" {
 
   final String wholeText;
 
-  _TextImpl replaceWholeText(String content) native;
+  TextImpl replaceWholeText(String content) native;
 
-  _TextImpl splitText(int offset) native;
+  TextImpl splitText(int offset) native;
 }
 
-class _TextAreaElementImpl extends _ElementImpl implements TextAreaElement native "*HTMLTextAreaElement" {
+class TextAreaElementImpl extends ElementImpl implements TextAreaElement native "*HTMLTextAreaElement" {
 
   bool autofocus;
 
@@ -14618,9 +14618,9 @@ class _TextAreaElementImpl extends _ElementImpl implements TextAreaElement nativ
 
   bool disabled;
 
-  final _FormElementImpl form;
+  final FormElementImpl form;
 
-  final _NodeListImpl labels;
+  final NodeListImpl labels;
 
   int maxLength;
 
@@ -14646,7 +14646,7 @@ class _TextAreaElementImpl extends _ElementImpl implements TextAreaElement nativ
 
   final String validationMessage;
 
-  final _ValidityStateImpl validity;
+  final ValidityStateImpl validity;
 
   String value;
 
@@ -14663,22 +14663,22 @@ class _TextAreaElementImpl extends _ElementImpl implements TextAreaElement nativ
   void setSelectionRange(int start, int end, [String direction]) native;
 }
 
-class _TextEventImpl extends _UIEventImpl implements TextEvent native "*TextEvent" {
+class TextEventImpl extends UIEventImpl implements TextEvent native "*TextEvent" {
 
   final String data;
 
-  void initTextEvent(String typeArg, bool canBubbleArg, bool cancelableArg, _WindowImpl viewArg, String dataArg) native;
+  void initTextEvent(String typeArg, bool canBubbleArg, bool cancelableArg, WindowImpl viewArg, String dataArg) native;
 }
 
-class _TextMetricsImpl implements TextMetrics native "*TextMetrics" {
+class TextMetricsImpl implements TextMetrics native "*TextMetrics" {
 
   final num width;
 }
 
-class _TextTrackImpl extends _EventTargetImpl implements TextTrack native "*TextTrack" {
+class TextTrackImpl extends EventTargetImpl implements TextTrack native "*TextTrack" {
 
-  _TextTrackEventsImpl get on() =>
-    new _TextTrackEventsImpl(this);
+  TextTrackEventsImpl get on() =>
+    new TextTrackEventsImpl(this);
 
   static final int DISABLED = 0;
 
@@ -14686,9 +14686,9 @@ class _TextTrackImpl extends _EventTargetImpl implements TextTrack native "*Text
 
   static final int SHOWING = 2;
 
-  final _TextTrackCueListImpl activeCues;
+  final TextTrackCueListImpl activeCues;
 
-  final _TextTrackCueListImpl cues;
+  final TextTrackCueListImpl cues;
 
   final String kind;
 
@@ -14698,27 +14698,27 @@ class _TextTrackImpl extends _EventTargetImpl implements TextTrack native "*Text
 
   int mode;
 
-  void addCue(_TextTrackCueImpl cue) native;
+  void addCue(TextTrackCueImpl cue) native;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
-  void removeCue(_TextTrackCueImpl cue) native;
+  void removeCue(TextTrackCueImpl cue) native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _TextTrackEventsImpl extends _EventsImpl implements TextTrackEvents {
-  _TextTrackEventsImpl(_ptr) : super(_ptr);
+class TextTrackEventsImpl extends EventsImpl implements TextTrackEvents {
+  TextTrackEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get cueChange() => this['cuechange'];
 }
 
-class _TextTrackCueImpl extends _EventTargetImpl implements TextTrackCue native "*TextTrackCue" {
+class TextTrackCueImpl extends EventTargetImpl implements TextTrackCue native "*TextTrackCue" {
 
-  _TextTrackCueEventsImpl get on() =>
-    new _TextTrackCueEventsImpl(this);
+  TextTrackCueEventsImpl get on() =>
+    new TextTrackCueEventsImpl(this);
 
   String align;
 
@@ -14740,59 +14740,59 @@ class _TextTrackCueImpl extends _EventTargetImpl implements TextTrackCue native 
 
   String text;
 
-  final _TextTrackImpl track;
+  final TextTrackImpl track;
 
   String vertical;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
-  _DocumentFragmentImpl getCueAsHTML() native;
+  DocumentFragmentImpl getCueAsHTML() native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _TextTrackCueEventsImpl extends _EventsImpl implements TextTrackCueEvents {
-  _TextTrackCueEventsImpl(_ptr) : super(_ptr);
+class TextTrackCueEventsImpl extends EventsImpl implements TextTrackCueEvents {
+  TextTrackCueEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get enter() => this['enter'];
 
   EventListenerList get exit() => this['exit'];
 }
 
-class _TextTrackCueListImpl implements TextTrackCueList native "*TextTrackCueList" {
+class TextTrackCueListImpl implements TextTrackCueList native "*TextTrackCueList" {
 
   final int length;
 
-  _TextTrackCueImpl getCueById(String id) native;
+  TextTrackCueImpl getCueById(String id) native;
 
-  _TextTrackCueImpl item(int index) native;
+  TextTrackCueImpl item(int index) native;
 }
 
-class _TextTrackListImpl extends _EventTargetImpl implements TextTrackList native "*TextTrackList" {
+class TextTrackListImpl extends EventTargetImpl implements TextTrackList native "*TextTrackList" {
 
-  _TextTrackListEventsImpl get on() =>
-    new _TextTrackListEventsImpl(this);
+  TextTrackListEventsImpl get on() =>
+    new TextTrackListEventsImpl(this);
 
   final int length;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
-  _TextTrackImpl item(int index) native;
+  TextTrackImpl item(int index) native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _TextTrackListEventsImpl extends _EventsImpl implements TextTrackListEvents {
-  _TextTrackListEventsImpl(_ptr) : super(_ptr);
+class TextTrackListEventsImpl extends EventsImpl implements TextTrackListEvents {
+  TextTrackListEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get addTrack() => this['addtrack'];
 }
 
-class _TimeRangesImpl implements TimeRanges native "*TimeRanges" {
+class TimeRangesImpl implements TimeRanges native "*TimeRanges" {
 
   final int length;
 
@@ -14801,10 +14801,10 @@ class _TimeRangesImpl implements TimeRanges native "*TimeRanges" {
   num start(int index) native;
 }
 
-class _TitleElementImpl extends _ElementImpl implements TitleElement native "*HTMLTitleElement" {
+class TitleElementImpl extends ElementImpl implements TitleElement native "*HTMLTitleElement" {
 }
 
-class _TouchImpl implements Touch native "*Touch" {
+class TouchImpl implements Touch native "*Touch" {
 
   final int clientX;
 
@@ -14820,7 +14820,7 @@ class _TouchImpl implements Touch native "*Touch" {
 
   final int screenY;
 
-  final _EventTargetImpl target;
+  final EventTargetImpl target;
 
   final num webkitForce;
 
@@ -14831,11 +14831,11 @@ class _TouchImpl implements Touch native "*Touch" {
   final num webkitRotationAngle;
 }
 
-class _TouchEventImpl extends _UIEventImpl implements TouchEvent native "*TouchEvent" {
+class TouchEventImpl extends UIEventImpl implements TouchEvent native "*TouchEvent" {
 
   final bool altKey;
 
-  final _TouchListImpl changedTouches;
+  final TouchListImpl changedTouches;
 
   final bool ctrlKey;
 
@@ -14843,20 +14843,20 @@ class _TouchEventImpl extends _UIEventImpl implements TouchEvent native "*TouchE
 
   final bool shiftKey;
 
-  final _TouchListImpl targetTouches;
+  final TouchListImpl targetTouches;
 
-  final _TouchListImpl touches;
+  final TouchListImpl touches;
 
-  void initTouchEvent(_TouchListImpl touches, _TouchListImpl targetTouches, _TouchListImpl changedTouches, String type, _WindowImpl view, int screenX, int screenY, int clientX, int clientY, bool ctrlKey, bool altKey, bool shiftKey, bool metaKey) native;
+  void initTouchEvent(TouchListImpl touches, TouchListImpl targetTouches, TouchListImpl changedTouches, String type, WindowImpl view, int screenX, int screenY, int clientX, int clientY, bool ctrlKey, bool altKey, bool shiftKey, bool metaKey) native;
 }
 
-class _TouchListImpl implements TouchList, JavaScriptIndexingBehavior native "*TouchList" {
+class TouchListImpl implements TouchList, JavaScriptIndexingBehavior native "*TouchList" {
 
   final int length;
 
-  _TouchImpl operator[](int index) native "return this[index];";
+  TouchImpl operator[](int index) native "return this[index];";
 
-  void operator[]=(int index, _TouchImpl value) {
+  void operator[]=(int index, TouchImpl value) {
     throw new UnsupportedOperationException("Cannot assign element of immutable List.");
   }
   // -- start List<Touch> mixins.
@@ -14936,10 +14936,10 @@ class _TouchListImpl implements TouchList, JavaScriptIndexingBehavior native "*T
 
   // -- end List<Touch> mixins.
 
-  _TouchImpl item(int index) native;
+  TouchImpl item(int index) native;
 }
 
-class _TrackElementImpl extends _ElementImpl implements TrackElement native "*HTMLTrackElement" {
+class TrackElementImpl extends ElementImpl implements TrackElement native "*HTMLTrackElement" {
 
   static final int ERROR = 3;
 
@@ -14963,49 +14963,49 @@ class _TrackElementImpl extends _ElementImpl implements TrackElement native "*HT
 
   String srclang;
 
-  final _TextTrackImpl track;
+  final TextTrackImpl track;
 }
 
-class _TrackEventImpl extends _EventImpl implements TrackEvent native "*TrackEvent" {
+class TrackEventImpl extends EventImpl implements TrackEvent native "*TrackEvent" {
 
   final Object track;
 }
 
-class _TransitionEventImpl extends _EventImpl implements TransitionEvent native "*WebKitTransitionEvent" {
+class TransitionEventImpl extends EventImpl implements TransitionEvent native "*WebKitTransitionEvent" {
 
   final num elapsedTime;
 
   final String propertyName;
 }
 
-class _TreeWalkerImpl implements TreeWalker native "*TreeWalker" {
+class TreeWalkerImpl implements TreeWalker native "*TreeWalker" {
 
-  _NodeImpl currentNode;
+  NodeImpl currentNode;
 
   final bool expandEntityReferences;
 
-  final _NodeFilterImpl filter;
+  final NodeFilterImpl filter;
 
-  final _NodeImpl root;
+  final NodeImpl root;
 
   final int whatToShow;
 
-  _NodeImpl firstChild() native;
+  NodeImpl firstChild() native;
 
-  _NodeImpl lastChild() native;
+  NodeImpl lastChild() native;
 
-  _NodeImpl nextNode() native;
+  NodeImpl nextNode() native;
 
-  _NodeImpl nextSibling() native;
+  NodeImpl nextSibling() native;
 
-  _NodeImpl parentNode() native;
+  NodeImpl parentNode() native;
 
-  _NodeImpl previousNode() native;
+  NodeImpl previousNode() native;
 
-  _NodeImpl previousSibling() native;
+  NodeImpl previousSibling() native;
 }
 
-class _UIEventImpl extends _EventImpl implements UIEvent native "*UIEvent" {
+class UIEventImpl extends EventImpl implements UIEvent native "*UIEvent" {
 
   final int charCode;
 
@@ -15021,21 +15021,21 @@ class _UIEventImpl extends _EventImpl implements UIEvent native "*UIEvent" {
 
   final int pageY;
 
-  final _WindowImpl view;
+  final WindowImpl view;
 
   final int which;
 
-  void initUIEvent(String type, bool canBubble, bool cancelable, _WindowImpl view, int detail) native;
+  void initUIEvent(String type, bool canBubble, bool cancelable, WindowImpl view, int detail) native;
 }
 
-class _UListElementImpl extends _ElementImpl implements UListElement native "*HTMLUListElement" {
+class UListElementImpl extends ElementImpl implements UListElement native "*HTMLUListElement" {
 
   bool compact;
 
   String type;
 }
 
-class _Uint16ArrayImpl extends _ArrayBufferViewImpl implements Uint16Array, List<int>, JavaScriptIndexingBehavior native "*Uint16Array" {
+class Uint16ArrayImpl extends ArrayBufferViewImpl implements Uint16Array, List<int>, JavaScriptIndexingBehavior native "*Uint16Array" {
 
   static final int BYTES_PER_ELEMENT = 2;
 
@@ -15123,10 +15123,10 @@ class _Uint16ArrayImpl extends _ArrayBufferViewImpl implements Uint16Array, List
 
   void setElements(Object array, [int offset]) native "set";
 
-  _Uint16ArrayImpl subarray(int start, [int end]) native;
+  Uint16ArrayImpl subarray(int start, [int end]) native;
 }
 
-class _Uint32ArrayImpl extends _ArrayBufferViewImpl implements Uint32Array, List<int>, JavaScriptIndexingBehavior native "*Uint32Array" {
+class Uint32ArrayImpl extends ArrayBufferViewImpl implements Uint32Array, List<int>, JavaScriptIndexingBehavior native "*Uint32Array" {
 
   static final int BYTES_PER_ELEMENT = 4;
 
@@ -15214,10 +15214,10 @@ class _Uint32ArrayImpl extends _ArrayBufferViewImpl implements Uint32Array, List
 
   void setElements(Object array, [int offset]) native "set";
 
-  _Uint32ArrayImpl subarray(int start, [int end]) native;
+  Uint32ArrayImpl subarray(int start, [int end]) native;
 }
 
-class _Uint8ArrayImpl extends _ArrayBufferViewImpl implements Uint8Array, List<int>, JavaScriptIndexingBehavior native "*Uint8Array" {
+class Uint8ArrayImpl extends ArrayBufferViewImpl implements Uint8Array, List<int>, JavaScriptIndexingBehavior native "*Uint8Array" {
 
   static final int BYTES_PER_ELEMENT = 1;
 
@@ -15305,23 +15305,23 @@ class _Uint8ArrayImpl extends _ArrayBufferViewImpl implements Uint8Array, List<i
 
   void setElements(Object array, [int offset]) native "set";
 
-  _Uint8ArrayImpl subarray(int start, [int end]) native;
+  Uint8ArrayImpl subarray(int start, [int end]) native;
 }
 
-class _Uint8ClampedArrayImpl extends _Uint8ArrayImpl implements Uint8ClampedArray native "*Uint8ClampedArray" {
+class Uint8ClampedArrayImpl extends Uint8ArrayImpl implements Uint8ClampedArray native "*Uint8ClampedArray" {
 
   // Use implementation from Uint8Array.
   // final int length;
 
   void setElements(Object array, [int offset]) native "set";
 
-  _Uint8ClampedArrayImpl subarray(int start, [int end]) native;
+  Uint8ClampedArrayImpl subarray(int start, [int end]) native;
 }
 
-class _UnknownElementImpl extends _ElementImpl implements UnknownElement native "*HTMLUnknownElement" {
+class UnknownElementImpl extends ElementImpl implements UnknownElement native "*HTMLUnknownElement" {
 }
 
-class _ValidityStateImpl implements ValidityState native "*ValidityState" {
+class ValidityStateImpl implements ValidityState native "*ValidityState" {
 
   final bool customError;
 
@@ -15342,7 +15342,7 @@ class _ValidityStateImpl implements ValidityState native "*ValidityState" {
   final bool valueMissing;
 }
 
-class _VideoElementImpl extends _MediaElementImpl implements VideoElement native "*HTMLVideoElement" {
+class VideoElementImpl extends MediaElementImpl implements VideoElement native "*HTMLVideoElement" {
 
   int height;
 
@@ -15371,15 +15371,15 @@ class _VideoElementImpl extends _MediaElementImpl implements VideoElement native
   void webkitExitFullscreen() native;
 }
 
-class _WaveShaperNodeImpl extends _AudioNodeImpl implements WaveShaperNode native "*WaveShaperNode" {
+class WaveShaperNodeImpl extends AudioNodeImpl implements WaveShaperNode native "*WaveShaperNode" {
 
-  _Float32ArrayImpl curve;
+  Float32ArrayImpl curve;
 }
 
-class _WaveTableImpl implements WaveTable native "*WaveTable" {
+class WaveTableImpl implements WaveTable native "*WaveTable" {
 }
 
-class _WebGLActiveInfoImpl implements WebGLActiveInfo native "*WebGLActiveInfo" {
+class WebGLActiveInfoImpl implements WebGLActiveInfo native "*WebGLActiveInfo" {
 
   final String name;
 
@@ -15388,10 +15388,10 @@ class _WebGLActiveInfoImpl implements WebGLActiveInfo native "*WebGLActiveInfo" 
   final int type;
 }
 
-class _WebGLBufferImpl implements WebGLBuffer native "*WebGLBuffer" {
+class WebGLBufferImpl implements WebGLBuffer native "*WebGLBuffer" {
 }
 
-class _WebGLCompressedTextureS3TCImpl implements WebGLCompressedTextureS3TC native "*WebGLCompressedTextureS3TC" {
+class WebGLCompressedTextureS3TCImpl implements WebGLCompressedTextureS3TC native "*WebGLCompressedTextureS3TC" {
 
   static final int COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1;
 
@@ -15402,7 +15402,7 @@ class _WebGLCompressedTextureS3TCImpl implements WebGLCompressedTextureS3TC nati
   static final int COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0;
 }
 
-class _WebGLContextAttributesImpl implements WebGLContextAttributes native "*WebGLContextAttributes" {
+class WebGLContextAttributesImpl implements WebGLContextAttributes native "*WebGLContextAttributes" {
 
   bool alpha;
 
@@ -15417,45 +15417,45 @@ class _WebGLContextAttributesImpl implements WebGLContextAttributes native "*Web
   bool stencil;
 }
 
-class _WebGLContextEventImpl extends _EventImpl implements WebGLContextEvent native "*WebGLContextEvent" {
+class WebGLContextEventImpl extends EventImpl implements WebGLContextEvent native "*WebGLContextEvent" {
 
   final String statusMessage;
 }
 
-class _WebGLDebugRendererInfoImpl implements WebGLDebugRendererInfo native "*WebGLDebugRendererInfo" {
+class WebGLDebugRendererInfoImpl implements WebGLDebugRendererInfo native "*WebGLDebugRendererInfo" {
 
   static final int UNMASKED_RENDERER_WEBGL = 0x9246;
 
   static final int UNMASKED_VENDOR_WEBGL = 0x9245;
 }
 
-class _WebGLDebugShadersImpl implements WebGLDebugShaders native "*WebGLDebugShaders" {
+class WebGLDebugShadersImpl implements WebGLDebugShaders native "*WebGLDebugShaders" {
 
-  String getTranslatedShaderSource(_WebGLShaderImpl shader) native;
+  String getTranslatedShaderSource(WebGLShaderImpl shader) native;
 }
 
-class _WebGLDepthTextureImpl implements WebGLDepthTexture native "*WebGLDepthTexture" {
+class WebGLDepthTextureImpl implements WebGLDepthTexture native "*WebGLDepthTexture" {
 
   static final int UNSIGNED_INT_24_8_WEBGL = 0x84FA;
 }
 
-class _WebGLFramebufferImpl implements WebGLFramebuffer native "*WebGLFramebuffer" {
+class WebGLFramebufferImpl implements WebGLFramebuffer native "*WebGLFramebuffer" {
 }
 
-class _WebGLLoseContextImpl implements WebGLLoseContext native "*WebGLLoseContext" {
+class WebGLLoseContextImpl implements WebGLLoseContext native "*WebGLLoseContext" {
 
   void loseContext() native;
 
   void restoreContext() native;
 }
 
-class _WebGLProgramImpl implements WebGLProgram native "*WebGLProgram" {
+class WebGLProgramImpl implements WebGLProgram native "*WebGLProgram" {
 }
 
-class _WebGLRenderbufferImpl implements WebGLRenderbuffer native "*WebGLRenderbuffer" {
+class WebGLRenderbufferImpl implements WebGLRenderbuffer native "*WebGLRenderbuffer" {
 }
 
-class _WebGLRenderingContextImpl extends _CanvasRenderingContextImpl implements WebGLRenderingContext native "*WebGLRenderingContext" {
+class WebGLRenderingContextImpl extends CanvasRenderingContextImpl implements WebGLRenderingContext native "*WebGLRenderingContext" {
 
   static final int ACTIVE_ATTRIBUTES = 0x8B89;
 
@@ -16053,17 +16053,17 @@ class _WebGLRenderingContextImpl extends _CanvasRenderingContextImpl implements 
 
   void activeTexture(int texture) native;
 
-  void attachShader(_WebGLProgramImpl program, _WebGLShaderImpl shader) native;
+  void attachShader(WebGLProgramImpl program, WebGLShaderImpl shader) native;
 
-  void bindAttribLocation(_WebGLProgramImpl program, int index, String name) native;
+  void bindAttribLocation(WebGLProgramImpl program, int index, String name) native;
 
-  void bindBuffer(int target, _WebGLBufferImpl buffer) native;
+  void bindBuffer(int target, WebGLBufferImpl buffer) native;
 
-  void bindFramebuffer(int target, _WebGLFramebufferImpl framebuffer) native;
+  void bindFramebuffer(int target, WebGLFramebufferImpl framebuffer) native;
 
-  void bindRenderbuffer(int target, _WebGLRenderbufferImpl renderbuffer) native;
+  void bindRenderbuffer(int target, WebGLRenderbufferImpl renderbuffer) native;
 
-  void bindTexture(int target, _WebGLTextureImpl texture) native;
+  void bindTexture(int target, WebGLTextureImpl texture) native;
 
   void blendColor(num red, num green, num blue, num alpha) native;
 
@@ -16091,41 +16091,41 @@ class _WebGLRenderingContextImpl extends _CanvasRenderingContextImpl implements 
 
   void colorMask(bool red, bool green, bool blue, bool alpha) native;
 
-  void compileShader(_WebGLShaderImpl shader) native;
+  void compileShader(WebGLShaderImpl shader) native;
 
-  void compressedTexImage2D(int target, int level, int internalformat, int width, int height, int border, _ArrayBufferViewImpl data) native;
+  void compressedTexImage2D(int target, int level, int internalformat, int width, int height, int border, ArrayBufferViewImpl data) native;
 
-  void compressedTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format, _ArrayBufferViewImpl data) native;
+  void compressedTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format, ArrayBufferViewImpl data) native;
 
   void copyTexImage2D(int target, int level, int internalformat, int x, int y, int width, int height, int border) native;
 
   void copyTexSubImage2D(int target, int level, int xoffset, int yoffset, int x, int y, int width, int height) native;
 
-  _WebGLBufferImpl createBuffer() native;
+  WebGLBufferImpl createBuffer() native;
 
-  _WebGLFramebufferImpl createFramebuffer() native;
+  WebGLFramebufferImpl createFramebuffer() native;
 
-  _WebGLProgramImpl createProgram() native;
+  WebGLProgramImpl createProgram() native;
 
-  _WebGLRenderbufferImpl createRenderbuffer() native;
+  WebGLRenderbufferImpl createRenderbuffer() native;
 
-  _WebGLShaderImpl createShader(int type) native;
+  WebGLShaderImpl createShader(int type) native;
 
-  _WebGLTextureImpl createTexture() native;
+  WebGLTextureImpl createTexture() native;
 
   void cullFace(int mode) native;
 
-  void deleteBuffer(_WebGLBufferImpl buffer) native;
+  void deleteBuffer(WebGLBufferImpl buffer) native;
 
-  void deleteFramebuffer(_WebGLFramebufferImpl framebuffer) native;
+  void deleteFramebuffer(WebGLFramebufferImpl framebuffer) native;
 
-  void deleteProgram(_WebGLProgramImpl program) native;
+  void deleteProgram(WebGLProgramImpl program) native;
 
-  void deleteRenderbuffer(_WebGLRenderbufferImpl renderbuffer) native;
+  void deleteRenderbuffer(WebGLRenderbufferImpl renderbuffer) native;
 
-  void deleteShader(_WebGLShaderImpl shader) native;
+  void deleteShader(WebGLShaderImpl shader) native;
 
-  void deleteTexture(_WebGLTextureImpl texture) native;
+  void deleteTexture(WebGLTextureImpl texture) native;
 
   void depthFunc(int func) native;
 
@@ -16133,7 +16133,7 @@ class _WebGLRenderingContextImpl extends _CanvasRenderingContextImpl implements 
 
   void depthRange(num zNear, num zFar) native;
 
-  void detachShader(_WebGLProgramImpl program, _WebGLShaderImpl shader) native;
+  void detachShader(WebGLProgramImpl program, WebGLShaderImpl shader) native;
 
   void disable(int cap) native;
 
@@ -16151,25 +16151,25 @@ class _WebGLRenderingContextImpl extends _CanvasRenderingContextImpl implements 
 
   void flush() native;
 
-  void framebufferRenderbuffer(int target, int attachment, int renderbuffertarget, _WebGLRenderbufferImpl renderbuffer) native;
+  void framebufferRenderbuffer(int target, int attachment, int renderbuffertarget, WebGLRenderbufferImpl renderbuffer) native;
 
-  void framebufferTexture2D(int target, int attachment, int textarget, _WebGLTextureImpl texture, int level) native;
+  void framebufferTexture2D(int target, int attachment, int textarget, WebGLTextureImpl texture, int level) native;
 
   void frontFace(int mode) native;
 
   void generateMipmap(int target) native;
 
-  _WebGLActiveInfoImpl getActiveAttrib(_WebGLProgramImpl program, int index) native;
+  WebGLActiveInfoImpl getActiveAttrib(WebGLProgramImpl program, int index) native;
 
-  _WebGLActiveInfoImpl getActiveUniform(_WebGLProgramImpl program, int index) native;
+  WebGLActiveInfoImpl getActiveUniform(WebGLProgramImpl program, int index) native;
 
-  List<Object> getAttachedShaders(_WebGLProgramImpl program) native;
+  List<Object> getAttachedShaders(WebGLProgramImpl program) native;
 
-  int getAttribLocation(_WebGLProgramImpl program, String name) native;
+  int getAttribLocation(WebGLProgramImpl program, String name) native;
 
   Object getBufferParameter(int target, int pname) native;
 
-  _WebGLContextAttributesImpl getContextAttributes() native;
+  WebGLContextAttributesImpl getContextAttributes() native;
 
   int getError() native;
 
@@ -16179,27 +16179,27 @@ class _WebGLRenderingContextImpl extends _CanvasRenderingContextImpl implements 
 
   Object getParameter(int pname) native;
 
-  String getProgramInfoLog(_WebGLProgramImpl program) native;
+  String getProgramInfoLog(WebGLProgramImpl program) native;
 
-  Object getProgramParameter(_WebGLProgramImpl program, int pname) native;
+  Object getProgramParameter(WebGLProgramImpl program, int pname) native;
 
   Object getRenderbufferParameter(int target, int pname) native;
 
-  String getShaderInfoLog(_WebGLShaderImpl shader) native;
+  String getShaderInfoLog(WebGLShaderImpl shader) native;
 
-  Object getShaderParameter(_WebGLShaderImpl shader, int pname) native;
+  Object getShaderParameter(WebGLShaderImpl shader, int pname) native;
 
-  _WebGLShaderPrecisionFormatImpl getShaderPrecisionFormat(int shadertype, int precisiontype) native;
+  WebGLShaderPrecisionFormatImpl getShaderPrecisionFormat(int shadertype, int precisiontype) native;
 
-  String getShaderSource(_WebGLShaderImpl shader) native;
+  String getShaderSource(WebGLShaderImpl shader) native;
 
   List<String> getSupportedExtensions() native;
 
   Object getTexParameter(int target, int pname) native;
 
-  Object getUniform(_WebGLProgramImpl program, _WebGLUniformLocationImpl location) native;
+  Object getUniform(WebGLProgramImpl program, WebGLUniformLocationImpl location) native;
 
-  _WebGLUniformLocationImpl getUniformLocation(_WebGLProgramImpl program, String name) native;
+  WebGLUniformLocationImpl getUniformLocation(WebGLProgramImpl program, String name) native;
 
   Object getVertexAttrib(int index, int pname) native;
 
@@ -16207,31 +16207,31 @@ class _WebGLRenderingContextImpl extends _CanvasRenderingContextImpl implements 
 
   void hint(int target, int mode) native;
 
-  bool isBuffer(_WebGLBufferImpl buffer) native;
+  bool isBuffer(WebGLBufferImpl buffer) native;
 
   bool isContextLost() native;
 
   bool isEnabled(int cap) native;
 
-  bool isFramebuffer(_WebGLFramebufferImpl framebuffer) native;
+  bool isFramebuffer(WebGLFramebufferImpl framebuffer) native;
 
-  bool isProgram(_WebGLProgramImpl program) native;
+  bool isProgram(WebGLProgramImpl program) native;
 
-  bool isRenderbuffer(_WebGLRenderbufferImpl renderbuffer) native;
+  bool isRenderbuffer(WebGLRenderbufferImpl renderbuffer) native;
 
-  bool isShader(_WebGLShaderImpl shader) native;
+  bool isShader(WebGLShaderImpl shader) native;
 
-  bool isTexture(_WebGLTextureImpl texture) native;
+  bool isTexture(WebGLTextureImpl texture) native;
 
   void lineWidth(num width) native;
 
-  void linkProgram(_WebGLProgramImpl program) native;
+  void linkProgram(WebGLProgramImpl program) native;
 
   void pixelStorei(int pname, int param) native;
 
   void polygonOffset(num factor, num units) native;
 
-  void readPixels(int x, int y, int width, int height, int format, int type, _ArrayBufferViewImpl pixels) native;
+  void readPixels(int x, int y, int width, int height, int format, int type, ArrayBufferViewImpl pixels) native;
 
   void releaseShaderCompiler() native;
 
@@ -16241,7 +16241,7 @@ class _WebGLRenderingContextImpl extends _CanvasRenderingContextImpl implements 
 
   void scissor(int x, int y, int width, int height) native;
 
-  void shaderSource(_WebGLShaderImpl shader, String string) native;
+  void shaderSource(WebGLShaderImpl shader, String string) native;
 
   void stencilFunc(int func, int ref, int mask) native;
 
@@ -16255,81 +16255,81 @@ class _WebGLRenderingContextImpl extends _CanvasRenderingContextImpl implements 
 
   void stencilOpSeparate(int face, int fail, int zfail, int zpass) native;
 
-  void texImage2D(int target, int level, int internalformat, int format_OR_width, int height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video, [int format, int type, _ArrayBufferViewImpl pixels]) native;
+  void texImage2D(int target, int level, int internalformat, int format_OR_width, int height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video, [int format, int type, ArrayBufferViewImpl pixels]) native;
 
   void texParameterf(int target, int pname, num param) native;
 
   void texParameteri(int target, int pname, int param) native;
 
-  void texSubImage2D(int target, int level, int xoffset, int yoffset, int format_OR_width, int height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video, [int type, _ArrayBufferViewImpl pixels]) native;
+  void texSubImage2D(int target, int level, int xoffset, int yoffset, int format_OR_width, int height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video, [int type, ArrayBufferViewImpl pixels]) native;
 
-  void uniform1f(_WebGLUniformLocationImpl location, num x) native;
+  void uniform1f(WebGLUniformLocationImpl location, num x) native;
 
-  void uniform1fv(_WebGLUniformLocationImpl location, _Float32ArrayImpl v) native;
+  void uniform1fv(WebGLUniformLocationImpl location, Float32ArrayImpl v) native;
 
-  void uniform1i(_WebGLUniformLocationImpl location, int x) native;
+  void uniform1i(WebGLUniformLocationImpl location, int x) native;
 
-  void uniform1iv(_WebGLUniformLocationImpl location, _Int32ArrayImpl v) native;
+  void uniform1iv(WebGLUniformLocationImpl location, Int32ArrayImpl v) native;
 
-  void uniform2f(_WebGLUniformLocationImpl location, num x, num y) native;
+  void uniform2f(WebGLUniformLocationImpl location, num x, num y) native;
 
-  void uniform2fv(_WebGLUniformLocationImpl location, _Float32ArrayImpl v) native;
+  void uniform2fv(WebGLUniformLocationImpl location, Float32ArrayImpl v) native;
 
-  void uniform2i(_WebGLUniformLocationImpl location, int x, int y) native;
+  void uniform2i(WebGLUniformLocationImpl location, int x, int y) native;
 
-  void uniform2iv(_WebGLUniformLocationImpl location, _Int32ArrayImpl v) native;
+  void uniform2iv(WebGLUniformLocationImpl location, Int32ArrayImpl v) native;
 
-  void uniform3f(_WebGLUniformLocationImpl location, num x, num y, num z) native;
+  void uniform3f(WebGLUniformLocationImpl location, num x, num y, num z) native;
 
-  void uniform3fv(_WebGLUniformLocationImpl location, _Float32ArrayImpl v) native;
+  void uniform3fv(WebGLUniformLocationImpl location, Float32ArrayImpl v) native;
 
-  void uniform3i(_WebGLUniformLocationImpl location, int x, int y, int z) native;
+  void uniform3i(WebGLUniformLocationImpl location, int x, int y, int z) native;
 
-  void uniform3iv(_WebGLUniformLocationImpl location, _Int32ArrayImpl v) native;
+  void uniform3iv(WebGLUniformLocationImpl location, Int32ArrayImpl v) native;
 
-  void uniform4f(_WebGLUniformLocationImpl location, num x, num y, num z, num w) native;
+  void uniform4f(WebGLUniformLocationImpl location, num x, num y, num z, num w) native;
 
-  void uniform4fv(_WebGLUniformLocationImpl location, _Float32ArrayImpl v) native;
+  void uniform4fv(WebGLUniformLocationImpl location, Float32ArrayImpl v) native;
 
-  void uniform4i(_WebGLUniformLocationImpl location, int x, int y, int z, int w) native;
+  void uniform4i(WebGLUniformLocationImpl location, int x, int y, int z, int w) native;
 
-  void uniform4iv(_WebGLUniformLocationImpl location, _Int32ArrayImpl v) native;
+  void uniform4iv(WebGLUniformLocationImpl location, Int32ArrayImpl v) native;
 
-  void uniformMatrix2fv(_WebGLUniformLocationImpl location, bool transpose, _Float32ArrayImpl array) native;
+  void uniformMatrix2fv(WebGLUniformLocationImpl location, bool transpose, Float32ArrayImpl array) native;
 
-  void uniformMatrix3fv(_WebGLUniformLocationImpl location, bool transpose, _Float32ArrayImpl array) native;
+  void uniformMatrix3fv(WebGLUniformLocationImpl location, bool transpose, Float32ArrayImpl array) native;
 
-  void uniformMatrix4fv(_WebGLUniformLocationImpl location, bool transpose, _Float32ArrayImpl array) native;
+  void uniformMatrix4fv(WebGLUniformLocationImpl location, bool transpose, Float32ArrayImpl array) native;
 
-  void useProgram(_WebGLProgramImpl program) native;
+  void useProgram(WebGLProgramImpl program) native;
 
-  void validateProgram(_WebGLProgramImpl program) native;
+  void validateProgram(WebGLProgramImpl program) native;
 
   void vertexAttrib1f(int indx, num x) native;
 
-  void vertexAttrib1fv(int indx, _Float32ArrayImpl values) native;
+  void vertexAttrib1fv(int indx, Float32ArrayImpl values) native;
 
   void vertexAttrib2f(int indx, num x, num y) native;
 
-  void vertexAttrib2fv(int indx, _Float32ArrayImpl values) native;
+  void vertexAttrib2fv(int indx, Float32ArrayImpl values) native;
 
   void vertexAttrib3f(int indx, num x, num y, num z) native;
 
-  void vertexAttrib3fv(int indx, _Float32ArrayImpl values) native;
+  void vertexAttrib3fv(int indx, Float32ArrayImpl values) native;
 
   void vertexAttrib4f(int indx, num x, num y, num z, num w) native;
 
-  void vertexAttrib4fv(int indx, _Float32ArrayImpl values) native;
+  void vertexAttrib4fv(int indx, Float32ArrayImpl values) native;
 
   void vertexAttribPointer(int indx, int size, int type, bool normalized, int stride, int offset) native;
 
   void viewport(int x, int y, int width, int height) native;
 }
 
-class _WebGLShaderImpl implements WebGLShader native "*WebGLShader" {
+class WebGLShaderImpl implements WebGLShader native "*WebGLShader" {
 }
 
-class _WebGLShaderPrecisionFormatImpl implements WebGLShaderPrecisionFormat native "*WebGLShaderPrecisionFormat" {
+class WebGLShaderPrecisionFormatImpl implements WebGLShaderPrecisionFormat native "*WebGLShaderPrecisionFormat" {
 
   final int precision;
 
@@ -16338,16 +16338,16 @@ class _WebGLShaderPrecisionFormatImpl implements WebGLShaderPrecisionFormat nati
   final int rangeMin;
 }
 
-class _WebGLTextureImpl implements WebGLTexture native "*WebGLTexture" {
+class WebGLTextureImpl implements WebGLTexture native "*WebGLTexture" {
 }
 
-class _WebGLUniformLocationImpl implements WebGLUniformLocation native "*WebGLUniformLocation" {
+class WebGLUniformLocationImpl implements WebGLUniformLocation native "*WebGLUniformLocation" {
 }
 
-class _WebGLVertexArrayObjectOESImpl implements WebGLVertexArrayObjectOES native "*WebGLVertexArrayObjectOES" {
+class WebGLVertexArrayObjectOESImpl implements WebGLVertexArrayObjectOES native "*WebGLVertexArrayObjectOES" {
 }
 
-class _WebKitCSSFilterValueImpl extends _CSSValueListImpl implements WebKitCSSFilterValue native "*WebKitCSSFilterValue" {
+class WebKitCSSFilterValueImpl extends CSSValueListImpl implements WebKitCSSFilterValue native "*WebKitCSSFilterValue" {
 
   static final int CSS_FILTER_BLUR = 10;
 
@@ -16376,7 +16376,7 @@ class _WebKitCSSFilterValueImpl extends _CSSValueListImpl implements WebKitCSSFi
   final int operationType;
 }
 
-class _WebKitNamedFlowImpl extends _EventTargetImpl implements WebKitNamedFlow native "*WebKitNamedFlow" {
+class WebKitNamedFlowImpl extends EventTargetImpl implements WebKitNamedFlow native "*WebKitNamedFlow" {
 
   final int firstEmptyRegionIndex;
 
@@ -16386,21 +16386,21 @@ class _WebKitNamedFlowImpl extends _EventTargetImpl implements WebKitNamedFlow n
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl event) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
-  _NodeListImpl getContent() native;
+  NodeListImpl getContent() native;
 
-  _NodeListImpl getRegions() native;
+  NodeListImpl getRegions() native;
 
-  _NodeListImpl getRegionsByContent(_NodeImpl contentNode) native;
+  NodeListImpl getRegionsByContent(NodeImpl contentNode) native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _WebSocketImpl extends _EventTargetImpl implements WebSocket native "*WebSocket" {
+class WebSocketImpl extends EventTargetImpl implements WebSocket native "*WebSocket" {
 
-  _WebSocketEventsImpl get on() =>
-    new _WebSocketEventsImpl(this);
+  WebSocketEventsImpl get on() =>
+    new WebSocketEventsImpl(this);
 
   static final int CLOSED = 3;
 
@@ -16428,15 +16428,15 @@ class _WebSocketImpl extends _EventTargetImpl implements WebSocket native "*WebS
 
   void close([int code, String reason]) native;
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
   bool send(String data) native;
 }
 
-class _WebSocketEventsImpl extends _EventsImpl implements WebSocketEvents {
-  _WebSocketEventsImpl(_ptr) : super(_ptr);
+class WebSocketEventsImpl extends EventsImpl implements WebSocketEvents {
+  WebSocketEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get close() => this['close'];
 
@@ -16447,7 +16447,7 @@ class _WebSocketEventsImpl extends _EventsImpl implements WebSocketEvents {
   EventListenerList get open() => this['open'];
 }
 
-class _WheelEventImpl extends _MouseEventImpl implements WheelEvent native "*WheelEvent" {
+class WheelEventImpl extends MouseEventImpl implements WheelEvent native "*WheelEvent" {
 
   final bool webkitDirectionInvertedFromDevice;
 
@@ -16457,20 +16457,20 @@ class _WheelEventImpl extends _MouseEventImpl implements WheelEvent native "*Whe
 
   final int wheelDeltaY;
 
-  void initWebKitWheelEvent(int wheelDeltaX, int wheelDeltaY, _WindowImpl view, int screenX, int screenY, int clientX, int clientY, bool ctrlKey, bool altKey, bool shiftKey, bool metaKey) native;
+  void initWebKitWheelEvent(int wheelDeltaX, int wheelDeltaY, WindowImpl view, int screenX, int screenY, int clientX, int clientY, bool ctrlKey, bool altKey, bool shiftKey, bool metaKey) native;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-class _WindowImpl extends _EventTargetImpl implements Window native "@*DOMWindow" {
+class WindowImpl extends EventTargetImpl implements Window native "@*DOMWindow" {
 
-  _DocumentImpl get document() native "return this.document;";
+  DocumentImpl get document() native "return this.document;";
 
   Window get _top() native "return this.top;";
 
   // Override top to return secure wrapper.
-  Window get top() => _DOMWindowCrossFrameImpl._createSafe(_top);
+  Window get top() => DOMWindowCrossFrameImpl._createSafe(_top);
 
   Window _open2(url, name) native "return this.open(url, name);";
 
@@ -16478,9 +16478,9 @@ class _WindowImpl extends _EventTargetImpl implements Window native "@*DOMWindow
 
   Window open(String url, String name, [String options]) {
     if (options == null) {
-      return _DOMWindowCrossFrameImpl._createSafe(_open2(url, name));
+      return DOMWindowCrossFrameImpl._createSafe(_open2(url, name));
     } else {
-      return _DOMWindowCrossFrameImpl._createSafe(_open3(url, name, options));
+      return DOMWindowCrossFrameImpl._createSafe(_open3(url, name, options));
     }
   }
 
@@ -16574,9 +16574,9 @@ class _WindowImpl extends _EventTargetImpl implements Window native "@*DOMWindow
 ''';
 
 
-  _IDBFactoryImpl get indexedDB() => _get_indexedDB();
+  IDBFactoryImpl get indexedDB() => _get_indexedDB();
 
-  _IDBFactoryImpl _get_indexedDB() native
+  IDBFactoryImpl _get_indexedDB() native
       'return this.indexedDB || this.webkitIndexedDB || this.mozIndexedDB';
 
   // TODO(kasperl): Document these.
@@ -16591,22 +16591,22 @@ class _WindowImpl extends _EventTargetImpl implements Window native "@*DOMWindow
   }
 
 
-  _WindowEventsImpl get on() =>
-    new _WindowEventsImpl(this);
+  WindowEventsImpl get on() =>
+    new WindowEventsImpl(this);
 
   static final int PERSISTENT = 1;
 
   static final int TEMPORARY = 0;
 
-  final _DOMApplicationCacheImpl applicationCache;
+  final DOMApplicationCacheImpl applicationCache;
 
-  final _NavigatorImpl clientInformation;
+  final NavigatorImpl clientInformation;
 
   final bool closed;
 
-  final _ConsoleImpl console;
+  final ConsoleImpl console;
 
-  final _CryptoImpl crypto;
+  final CryptoImpl crypto;
 
   String defaultStatus;
 
@@ -16614,11 +16614,11 @@ class _WindowImpl extends _EventTargetImpl implements Window native "@*DOMWindow
 
   final num devicePixelRatio;
 
-  final _EventImpl event;
+  final EventImpl event;
 
-  final _WindowImpl frames;
+  final WindowImpl frames;
 
-  final _HistoryImpl history;
+  final HistoryImpl history;
 
   final int innerHeight;
 
@@ -16626,37 +16626,37 @@ class _WindowImpl extends _EventTargetImpl implements Window native "@*DOMWindow
 
   final int length;
 
-  final _StorageImpl localStorage;
+  final StorageImpl localStorage;
 
-  final _BarInfoImpl locationbar;
+  final BarInfoImpl locationbar;
 
-  final _BarInfoImpl menubar;
+  final BarInfoImpl menubar;
 
   String name;
 
-  final _NavigatorImpl navigator;
+  final NavigatorImpl navigator;
 
   final bool offscreenBuffering;
 
-  final _WindowImpl opener;
+  final WindowImpl opener;
 
   final int outerHeight;
 
   final int outerWidth;
 
-  final _PagePopupControllerImpl pagePopupController;
+  final PagePopupControllerImpl pagePopupController;
 
   final int pageXOffset;
 
   final int pageYOffset;
 
-  final _WindowImpl parent;
+  final WindowImpl parent;
 
-  final _PerformanceImpl performance;
+  final PerformanceImpl performance;
 
-  final _BarInfoImpl personalbar;
+  final BarInfoImpl personalbar;
 
-  final _ScreenImpl screen;
+  final ScreenImpl screen;
 
   final int screenLeft;
 
@@ -16670,27 +16670,27 @@ class _WindowImpl extends _EventTargetImpl implements Window native "@*DOMWindow
 
   final int scrollY;
 
-  final _BarInfoImpl scrollbars;
+  final BarInfoImpl scrollbars;
 
-  final _WindowImpl self;
+  final WindowImpl self;
 
-  final _StorageImpl sessionStorage;
+  final StorageImpl sessionStorage;
 
   String status;
 
-  final _BarInfoImpl statusbar;
+  final BarInfoImpl statusbar;
 
-  final _StyleMediaImpl styleMedia;
+  final StyleMediaImpl styleMedia;
 
-  final _BarInfoImpl toolbar;
+  final BarInfoImpl toolbar;
 
-  final _IDBFactoryImpl webkitIndexedDB;
+  final IDBFactoryImpl webkitIndexedDB;
 
-  final _NotificationCenterImpl webkitNotifications;
+  final NotificationCenterImpl webkitNotifications;
 
-  final _StorageInfoImpl webkitStorageInfo;
+  final StorageInfoImpl webkitStorageInfo;
 
-  final _WindowImpl window;
+  final WindowImpl window;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
@@ -16712,25 +16712,25 @@ class _WindowImpl extends _EventTargetImpl implements Window native "@*DOMWindow
 
   bool confirm(String message) native;
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   bool find(String string, bool caseSensitive, bool backwards, bool wrap, bool wholeWord, bool searchInFrames, bool showDialog) native;
 
   void focus() native;
 
-  _CSSStyleDeclarationImpl $dom_getComputedStyle(_ElementImpl element, String pseudoElement) native "getComputedStyle";
+  CSSStyleDeclarationImpl $dom_getComputedStyle(ElementImpl element, String pseudoElement) native "getComputedStyle";
 
-  _CSSRuleListImpl getMatchedCSSRules(_ElementImpl element, String pseudoElement) native;
+  CSSRuleListImpl getMatchedCSSRules(ElementImpl element, String pseudoElement) native;
 
-  _DOMSelectionImpl getSelection() native;
+  DOMSelectionImpl getSelection() native;
 
-  _MediaQueryListImpl matchMedia(String query) native;
+  MediaQueryListImpl matchMedia(String query) native;
 
   void moveBy(num x, num y) native;
 
   void moveTo(num x, num y) native;
 
-  _DatabaseImpl openDatabase(String name, String version, String displayName, int estimatedSize, [DatabaseCallback creationCallback]) native;
+  DatabaseImpl openDatabase(String name, String version, String displayName, int estimatedSize, [DatabaseCallback creationCallback]) native;
 
   void postMessage(message, String targetOrigin, [List messagePorts]) native;
 
@@ -16764,9 +16764,9 @@ class _WindowImpl extends _EventTargetImpl implements Window native "@*DOMWindow
 
   void webkitCancelRequestAnimationFrame(int id) native;
 
-  _PointImpl webkitConvertPointFromNodeToPage(_NodeImpl node, _PointImpl p) native;
+  PointImpl webkitConvertPointFromNodeToPage(NodeImpl node, PointImpl p) native;
 
-  _PointImpl webkitConvertPointFromPageToNode(_NodeImpl node, _PointImpl p) native;
+  PointImpl webkitConvertPointFromPageToNode(NodeImpl node, PointImpl p) native;
 
   void webkitPostMessage(message, String targetOrigin, [List transferList]) native;
 
@@ -16778,8 +16778,8 @@ class _WindowImpl extends _EventTargetImpl implements Window native "@*DOMWindow
 
 }
 
-class _WindowEventsImpl extends _EventsImpl implements WindowEvents {
-  _WindowEventsImpl(_ptr) : super(_ptr);
+class WindowEventsImpl extends EventsImpl implements WindowEvents {
+  WindowEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get abort() => this['abort'];
 
@@ -16930,10 +16930,10 @@ class _WindowEventsImpl extends _EventsImpl implements WindowEvents {
   EventListenerList get waiting() => this['waiting'];
 }
 
-class _WorkerImpl extends _AbstractWorkerImpl implements Worker native "*Worker" {
+class WorkerImpl extends AbstractWorkerImpl implements Worker native "*Worker" {
 
-  _WorkerEventsImpl get on() =>
-    new _WorkerEventsImpl(this);
+  WorkerEventsImpl get on() =>
+    new WorkerEventsImpl(this);
 
   void postMessage(message, [List messagePorts]) native;
 
@@ -16942,30 +16942,30 @@ class _WorkerImpl extends _AbstractWorkerImpl implements Worker native "*Worker"
   void webkitPostMessage(message, [List messagePorts]) native;
 }
 
-class _WorkerEventsImpl extends _AbstractWorkerEventsImpl implements WorkerEvents {
-  _WorkerEventsImpl(_ptr) : super(_ptr);
+class WorkerEventsImpl extends AbstractWorkerEventsImpl implements WorkerEvents {
+  WorkerEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get message() => this['message'];
 }
 
-class _WorkerContextImpl extends _EventTargetImpl implements WorkerContext native "*WorkerContext" {
+class WorkerContextImpl extends EventTargetImpl implements WorkerContext native "*WorkerContext" {
 
-  _WorkerContextEventsImpl get on() =>
-    new _WorkerContextEventsImpl(this);
+  WorkerContextEventsImpl get on() =>
+    new WorkerContextEventsImpl(this);
 
   static final int PERSISTENT = 1;
 
   static final int TEMPORARY = 0;
 
-  final _WorkerLocationImpl location;
+  final WorkerLocationImpl location;
 
-  final _WorkerNavigatorImpl navigator;
+  final WorkerNavigatorImpl navigator;
 
-  final _WorkerContextImpl self;
+  final WorkerContextImpl self;
 
-  final _IDBFactoryImpl webkitIndexedDB;
+  final IDBFactoryImpl webkitIndexedDB;
 
-  final _NotificationCenterImpl webkitNotifications;
+  final NotificationCenterImpl webkitNotifications;
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
@@ -16975,13 +16975,13 @@ class _WorkerContextImpl extends _EventTargetImpl implements WorkerContext nativ
 
   void close() native;
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void importScripts() native;
 
-  _DatabaseImpl openDatabase(String name, String version, String displayName, int estimatedSize, [DatabaseCallback creationCallback]) native;
+  DatabaseImpl openDatabase(String name, String version, String displayName, int estimatedSize, [DatabaseCallback creationCallback]) native;
 
-  _DatabaseSyncImpl openDatabaseSync(String name, String version, String displayName, int estimatedSize, [DatabaseCallback creationCallback]) native;
+  DatabaseSyncImpl openDatabaseSync(String name, String version, String displayName, int estimatedSize, [DatabaseCallback creationCallback]) native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
@@ -16991,20 +16991,20 @@ class _WorkerContextImpl extends _EventTargetImpl implements WorkerContext nativ
 
   void webkitRequestFileSystem(int type, int size, [FileSystemCallback successCallback, ErrorCallback errorCallback]) native;
 
-  _DOMFileSystemSyncImpl webkitRequestFileSystemSync(int type, int size) native;
+  DOMFileSystemSyncImpl webkitRequestFileSystemSync(int type, int size) native;
 
-  _EntrySyncImpl webkitResolveLocalFileSystemSyncURL(String url) native;
+  EntrySyncImpl webkitResolveLocalFileSystemSyncURL(String url) native;
 
   void webkitResolveLocalFileSystemURL(String url, [EntryCallback successCallback, ErrorCallback errorCallback]) native;
 }
 
-class _WorkerContextEventsImpl extends _EventsImpl implements WorkerContextEvents {
-  _WorkerContextEventsImpl(_ptr) : super(_ptr);
+class WorkerContextEventsImpl extends EventsImpl implements WorkerContextEvents {
+  WorkerContextEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get error() => this['error'];
 }
 
-class _WorkerLocationImpl implements WorkerLocation native "*WorkerLocation" {
+class WorkerLocationImpl implements WorkerLocation native "*WorkerLocation" {
 
   final String hash;
 
@@ -17025,7 +17025,7 @@ class _WorkerLocationImpl implements WorkerLocation native "*WorkerLocation" {
   String toString() native;
 }
 
-class _WorkerNavigatorImpl implements WorkerNavigator native "*WorkerNavigator" {
+class WorkerNavigatorImpl implements WorkerNavigator native "*WorkerNavigator" {
 
   final String appName;
 
@@ -17038,10 +17038,10 @@ class _WorkerNavigatorImpl implements WorkerNavigator native "*WorkerNavigator" 
   final String userAgent;
 }
 
-class _XMLHttpRequestImpl extends _EventTargetImpl implements XMLHttpRequest native "*XMLHttpRequest" {
+class XMLHttpRequestImpl extends EventTargetImpl implements XMLHttpRequest native "*XMLHttpRequest" {
 
-  _XMLHttpRequestEventsImpl get on() =>
-    new _XMLHttpRequestEventsImpl(this);
+  XMLHttpRequestEventsImpl get on() =>
+    new XMLHttpRequestEventsImpl(this);
 
   static final int DONE = 4;
 
@@ -17061,13 +17061,13 @@ class _XMLHttpRequestImpl extends _EventTargetImpl implements XMLHttpRequest nat
 
   String responseType;
 
-  final _DocumentImpl responseXML;
+  final DocumentImpl responseXML;
 
   final int status;
 
   final String statusText;
 
-  final _XMLHttpRequestUploadImpl upload;
+  final XMLHttpRequestUploadImpl upload;
 
   bool withCredentials;
 
@@ -17075,7 +17075,7 @@ class _XMLHttpRequestImpl extends _EventTargetImpl implements XMLHttpRequest nat
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   String getAllResponseHeaders() native;
 
@@ -17092,8 +17092,8 @@ class _XMLHttpRequestImpl extends _EventTargetImpl implements XMLHttpRequest nat
   void setRequestHeader(String header, String value) native;
 }
 
-class _XMLHttpRequestEventsImpl extends _EventsImpl implements XMLHttpRequestEvents {
-  _XMLHttpRequestEventsImpl(_ptr) : super(_ptr);
+class XMLHttpRequestEventsImpl extends EventsImpl implements XMLHttpRequestEvents {
+  XMLHttpRequestEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get abort() => this['abort'];
 
@@ -17110,7 +17110,7 @@ class _XMLHttpRequestEventsImpl extends _EventsImpl implements XMLHttpRequestEve
   EventListenerList get readyStateChange() => this['readystatechange'];
 }
 
-class _XMLHttpRequestExceptionImpl implements XMLHttpRequestException native "*XMLHttpRequestException" {
+class XMLHttpRequestExceptionImpl implements XMLHttpRequestException native "*XMLHttpRequestException" {
 
   static final int ABORT_ERR = 102;
 
@@ -17125,27 +17125,27 @@ class _XMLHttpRequestExceptionImpl implements XMLHttpRequestException native "*X
   String toString() native;
 }
 
-class _XMLHttpRequestProgressEventImpl extends _ProgressEventImpl implements XMLHttpRequestProgressEvent native "*XMLHttpRequestProgressEvent" {
+class XMLHttpRequestProgressEventImpl extends ProgressEventImpl implements XMLHttpRequestProgressEvent native "*XMLHttpRequestProgressEvent" {
 
   final int position;
 
   final int totalSize;
 }
 
-class _XMLHttpRequestUploadImpl extends _EventTargetImpl implements XMLHttpRequestUpload native "*XMLHttpRequestUpload" {
+class XMLHttpRequestUploadImpl extends EventTargetImpl implements XMLHttpRequestUpload native "*XMLHttpRequestUpload" {
 
-  _XMLHttpRequestUploadEventsImpl get on() =>
-    new _XMLHttpRequestUploadEventsImpl(this);
+  XMLHttpRequestUploadEventsImpl get on() =>
+    new XMLHttpRequestUploadEventsImpl(this);
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(_EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
 
-class _XMLHttpRequestUploadEventsImpl extends _EventsImpl implements XMLHttpRequestUploadEvents {
-  _XMLHttpRequestUploadEventsImpl(_ptr) : super(_ptr);
+class XMLHttpRequestUploadEventsImpl extends EventsImpl implements XMLHttpRequestUploadEvents {
+  XMLHttpRequestUploadEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get abort() => this['abort'];
 
@@ -17160,21 +17160,21 @@ class _XMLHttpRequestUploadEventsImpl extends _EventsImpl implements XMLHttpRequ
   EventListenerList get progress() => this['progress'];
 }
 
-class _XMLSerializerImpl implements XMLSerializer native "*XMLSerializer" {
+class XMLSerializerImpl implements XMLSerializer native "*XMLSerializer" {
 
-  String serializeToString(_NodeImpl node) native;
+  String serializeToString(NodeImpl node) native;
 }
 
-class _XPathEvaluatorImpl implements XPathEvaluator native "*XPathEvaluator" {
+class XPathEvaluatorImpl implements XPathEvaluator native "*XPathEvaluator" {
 
-  _XPathExpressionImpl createExpression(String expression, _XPathNSResolverImpl resolver) native;
+  XPathExpressionImpl createExpression(String expression, XPathNSResolverImpl resolver) native;
 
-  _XPathNSResolverImpl createNSResolver(_NodeImpl nodeResolver) native;
+  XPathNSResolverImpl createNSResolver(NodeImpl nodeResolver) native;
 
-  _XPathResultImpl evaluate(String expression, _NodeImpl contextNode, _XPathNSResolverImpl resolver, int type, _XPathResultImpl inResult) native;
+  XPathResultImpl evaluate(String expression, NodeImpl contextNode, XPathNSResolverImpl resolver, int type, XPathResultImpl inResult) native;
 }
 
-class _XPathExceptionImpl implements XPathException native "*XPathException" {
+class XPathExceptionImpl implements XPathException native "*XPathException" {
 
   static final int INVALID_EXPRESSION_ERR = 51;
 
@@ -17189,17 +17189,17 @@ class _XPathExceptionImpl implements XPathException native "*XPathException" {
   String toString() native;
 }
 
-class _XPathExpressionImpl implements XPathExpression native "*XPathExpression" {
+class XPathExpressionImpl implements XPathExpression native "*XPathExpression" {
 
-  _XPathResultImpl evaluate(_NodeImpl contextNode, int type, _XPathResultImpl inResult) native;
+  XPathResultImpl evaluate(NodeImpl contextNode, int type, XPathResultImpl inResult) native;
 }
 
-class _XPathNSResolverImpl implements XPathNSResolver native "*XPathNSResolver" {
+class XPathNSResolverImpl implements XPathNSResolver native "*XPathNSResolver" {
 
   String lookupNamespaceURI(String prefix) native;
 }
 
-class _XPathResultImpl implements XPathResult native "*XPathResult" {
+class XPathResultImpl implements XPathResult native "*XPathResult" {
 
   static final int ANY_TYPE = 0;
 
@@ -17229,24 +17229,24 @@ class _XPathResultImpl implements XPathResult native "*XPathResult" {
 
   final int resultType;
 
-  final _NodeImpl singleNodeValue;
+  final NodeImpl singleNodeValue;
 
   final int snapshotLength;
 
   final String stringValue;
 
-  _NodeImpl iterateNext() native;
+  NodeImpl iterateNext() native;
 
-  _NodeImpl snapshotItem(int index) native;
+  NodeImpl snapshotItem(int index) native;
 }
 
-class _XSLTProcessorImpl implements XSLTProcessor native "*XSLTProcessor" {
+class XSLTProcessorImpl implements XSLTProcessor native "*XSLTProcessor" {
 
   void clearParameters() native;
 
   String getParameter(String namespaceURI, String localName) native;
 
-  void importStylesheet(_NodeImpl stylesheet) native;
+  void importStylesheet(NodeImpl stylesheet) native;
 
   void removeParameter(String namespaceURI, String localName) native;
 
@@ -17254,9 +17254,9 @@ class _XSLTProcessorImpl implements XSLTProcessor native "*XSLTProcessor" {
 
   void setParameter(String namespaceURI, String localName, String value) native;
 
-  _DocumentImpl transformToDocument(_NodeImpl source) native;
+  DocumentImpl transformToDocument(NodeImpl source) native;
 
-  _DocumentFragmentImpl transformToFragment(_NodeImpl source, _DocumentImpl docVal) native;
+  DocumentFragmentImpl transformToFragment(NodeImpl source, DocumentImpl docVal) native;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -17345,120 +17345,120 @@ class _Elements {
 
 
   factory AnchorElement([String href]) {
-    _AnchorElementImpl _e = _document.$dom_createElement("a");
+    AnchorElementImpl _e = _document.$dom_createElement("a");
     if (href != null) _e.href = href;
     return _e;
   }
 
   factory AreaElement() {
-    _AreaElementImpl _e = _document.$dom_createElement("area");
+    AreaElementImpl _e = _document.$dom_createElement("area");
     return _e;
   }
 
   factory BRElement() {
-    _BRElementImpl _e = _document.$dom_createElement("br");
+    BRElementImpl _e = _document.$dom_createElement("br");
     return _e;
   }
 
   factory BaseElement() {
-    _BaseElementImpl _e = _document.$dom_createElement("base");
+    BaseElementImpl _e = _document.$dom_createElement("base");
     return _e;
   }
 
   factory BodyElement() {
-    _BodyElementImpl _e = _document.$dom_createElement("body");
+    BodyElementImpl _e = _document.$dom_createElement("body");
     return _e;
   }
 
   factory ButtonElement() {
-    _ButtonElementImpl _e = _document.$dom_createElement("button");
+    ButtonElementImpl _e = _document.$dom_createElement("button");
     return _e;
   }
 
   factory CanvasElement([int width, int height]) {
-    _CanvasElementImpl _e = _document.$dom_createElement("canvas");
+    CanvasElementImpl _e = _document.$dom_createElement("canvas");
     if (width != null) _e.width = width;
     if (height != null) _e.height = height;
     return _e;
   }
 
   factory DListElement() {
-    _DListElementImpl _e = _document.$dom_createElement("dl");
+    DListElementImpl _e = _document.$dom_createElement("dl");
     return _e;
   }
 
   factory DetailsElement() {
-    _DetailsElementImpl _e = _document.$dom_createElement("details");
+    DetailsElementImpl _e = _document.$dom_createElement("details");
     return _e;
   }
 
   factory DivElement() {
-    _DivElementImpl _e = _document.$dom_createElement("div");
+    DivElementImpl _e = _document.$dom_createElement("div");
     return _e;
   }
 
   factory EmbedElement() {
-    _EmbedElementImpl _e = _document.$dom_createElement("embed");
+    EmbedElementImpl _e = _document.$dom_createElement("embed");
     return _e;
   }
 
   factory FieldSetElement() {
-    _FieldSetElementImpl _e = _document.$dom_createElement("fieldset");
+    FieldSetElementImpl _e = _document.$dom_createElement("fieldset");
     return _e;
   }
 
   factory HRElement() {
-    _HRElementImpl _e = _document.$dom_createElement("hr");
+    HRElementImpl _e = _document.$dom_createElement("hr");
     return _e;
   }
 
   factory HeadElement() {
-    _HeadElementImpl _e = _document.$dom_createElement("head");
+    HeadElementImpl _e = _document.$dom_createElement("head");
     return _e;
   }
 
   factory HeadingElement.h1() {
-    _HeadingElementImpl _e = _document.$dom_createElement("h1");
+    HeadingElementImpl _e = _document.$dom_createElement("h1");
     return _e;
   }
 
   factory HeadingElement.h2() {
-    _HeadingElementImpl _e = _document.$dom_createElement("h2");
+    HeadingElementImpl _e = _document.$dom_createElement("h2");
     return _e;
   }
 
   factory HeadingElement.h3() {
-    _HeadingElementImpl _e = _document.$dom_createElement("h3");
+    HeadingElementImpl _e = _document.$dom_createElement("h3");
     return _e;
   }
 
   factory HeadingElement.h4() {
-    _HeadingElementImpl _e = _document.$dom_createElement("h4");
+    HeadingElementImpl _e = _document.$dom_createElement("h4");
     return _e;
   }
 
   factory HeadingElement.h5() {
-    _HeadingElementImpl _e = _document.$dom_createElement("h5");
+    HeadingElementImpl _e = _document.$dom_createElement("h5");
     return _e;
   }
 
   factory HeadingElement.h6() {
-    _HeadingElementImpl _e = _document.$dom_createElement("h6");
+    HeadingElementImpl _e = _document.$dom_createElement("h6");
     return _e;
   }
 
   factory HtmlElement() {
-    _HtmlElementImpl _e = _document.$dom_createElement("html");
+    HtmlElementImpl _e = _document.$dom_createElement("html");
     return _e;
   }
 
   factory IFrameElement() {
-    _IFrameElementImpl _e = _document.$dom_createElement("iframe");
+    IFrameElementImpl _e = _document.$dom_createElement("iframe");
     return _e;
   }
 
   factory ImageElement([String src, int width, int height]) {
-    _ImageElementImpl _e = _document.$dom_createElement("img");
+    ImageElementImpl _e = _document.$dom_createElement("img");
     if (src != null) _e.src = src;
     if (width != null) _e.width = width;
     if (height != null) _e.height = height;
@@ -17466,158 +17466,158 @@ class _Elements {
   }
 
   factory InputElement([String type]) {
-    _InputElementImpl _e = _document.$dom_createElement("input");
+    InputElementImpl _e = _document.$dom_createElement("input");
     if (type != null) _e.type = type;
     return _e;
   }
 
   factory KeygenElement() {
-    _KeygenElementImpl _e = _document.$dom_createElement("keygen");
+    KeygenElementImpl _e = _document.$dom_createElement("keygen");
     return _e;
   }
 
   factory LIElement() {
-    _LIElementImpl _e = _document.$dom_createElement("li");
+    LIElementImpl _e = _document.$dom_createElement("li");
     return _e;
   }
 
   factory LabelElement() {
-    _LabelElementImpl _e = _document.$dom_createElement("label");
+    LabelElementImpl _e = _document.$dom_createElement("label");
     return _e;
   }
 
   factory LegendElement() {
-    _LegendElementImpl _e = _document.$dom_createElement("legend");
+    LegendElementImpl _e = _document.$dom_createElement("legend");
     return _e;
   }
 
   factory LinkElement() {
-    _LinkElementImpl _e = _document.$dom_createElement("link");
+    LinkElementImpl _e = _document.$dom_createElement("link");
     return _e;
   }
 
   factory MapElement() {
-    _MapElementImpl _e = _document.$dom_createElement("map");
+    MapElementImpl _e = _document.$dom_createElement("map");
     return _e;
   }
 
   factory MenuElement() {
-    _MenuElementImpl _e = _document.$dom_createElement("menu");
+    MenuElementImpl _e = _document.$dom_createElement("menu");
     return _e;
   }
 
   factory MeterElement() {
-    _MeterElementImpl _e = _document.$dom_createElement("meter");
+    MeterElementImpl _e = _document.$dom_createElement("meter");
     return _e;
   }
 
   factory OListElement() {
-    _OListElementImpl _e = _document.$dom_createElement("ol");
+    OListElementImpl _e = _document.$dom_createElement("ol");
     return _e;
   }
 
   factory ObjectElement() {
-    _ObjectElementImpl _e = _document.$dom_createElement("object");
+    ObjectElementImpl _e = _document.$dom_createElement("object");
     return _e;
   }
 
   factory OptGroupElement() {
-    _OptGroupElementImpl _e = _document.$dom_createElement("optgroup");
+    OptGroupElementImpl _e = _document.$dom_createElement("optgroup");
     return _e;
   }
 
   factory OutputElement() {
-    _OutputElementImpl _e = _document.$dom_createElement("output");
+    OutputElementImpl _e = _document.$dom_createElement("output");
     return _e;
   }
 
   factory ParagraphElement() {
-    _ParagraphElementImpl _e = _document.$dom_createElement("p");
+    ParagraphElementImpl _e = _document.$dom_createElement("p");
     return _e;
   }
 
   factory ParamElement() {
-    _ParamElementImpl _e = _document.$dom_createElement("param");
+    ParamElementImpl _e = _document.$dom_createElement("param");
     return _e;
   }
 
   factory PreElement() {
-    _PreElementImpl _e = _document.$dom_createElement("pre");
+    PreElementImpl _e = _document.$dom_createElement("pre");
     return _e;
   }
 
   factory ProgressElement() {
-    _ProgressElementImpl _e = _document.$dom_createElement("progress");
+    ProgressElementImpl _e = _document.$dom_createElement("progress");
     return _e;
   }
 
   factory ScriptElement() {
-    _ScriptElementImpl _e = _document.$dom_createElement("script");
+    ScriptElementImpl _e = _document.$dom_createElement("script");
     return _e;
   }
 
   factory SourceElement() {
-    _SourceElementImpl _e = _document.$dom_createElement("source");
+    SourceElementImpl _e = _document.$dom_createElement("source");
     return _e;
   }
 
   factory SpanElement() {
-    _SpanElementImpl _e = _document.$dom_createElement("span");
+    SpanElementImpl _e = _document.$dom_createElement("span");
     return _e;
   }
 
   factory StyleElement() {
-    _StyleElementImpl _e = _document.$dom_createElement("style");
+    StyleElementImpl _e = _document.$dom_createElement("style");
     return _e;
   }
 
   factory TableCaptionElement() {
-    _TableCaptionElementImpl _e = _document.$dom_createElement("caption");
+    TableCaptionElementImpl _e = _document.$dom_createElement("caption");
     return _e;
   }
 
   factory TableCellElement() {
-    _TableCellElementImpl _e = _document.$dom_createElement("td");
+    TableCellElementImpl _e = _document.$dom_createElement("td");
     return _e;
   }
 
   factory TableColElement() {
-    _TableColElementImpl _e = _document.$dom_createElement("col");
+    TableColElementImpl _e = _document.$dom_createElement("col");
     return _e;
   }
 
   factory TableElement() {
-    _TableElementImpl _e = _document.$dom_createElement("table");
+    TableElementImpl _e = _document.$dom_createElement("table");
     return _e;
   }
 
   factory TableRowElement() {
-    _TableRowElementImpl _e = _document.$dom_createElement("tr");
+    TableRowElementImpl _e = _document.$dom_createElement("tr");
     return _e;
   }
 
   factory TextAreaElement() {
-    _TextAreaElementImpl _e = _document.$dom_createElement("textarea");
+    TextAreaElementImpl _e = _document.$dom_createElement("textarea");
     return _e;
   }
 
   factory TitleElement() {
-    _TitleElementImpl _e = _document.$dom_createElement("title");
+    TitleElementImpl _e = _document.$dom_createElement("title");
     return _e;
   }
 
   factory TrackElement() {
-    _TrackElementImpl _e = _document.$dom_createElement("track");
+    TrackElementImpl _e = _document.$dom_createElement("track");
     return _e;
   }
 
   factory UListElement() {
-    _UListElementImpl _e = _document.$dom_createElement("ul");
+    UListElementImpl _e = _document.$dom_createElement("ul");
     return _e;
   }
 
   factory VideoElement() {
-    _VideoElementImpl _e = _document.$dom_createElement("video");
+    VideoElementImpl _e = _document.$dom_createElement("video");
     return _e;
   }
 }
@@ -37043,7 +37043,58 @@ class _JsSerializer extends _Serializer {
     return [ 'sendport', 'dart',
              x._receivePort._isolateId, x._receivePort._portId ];
   }
+
+  visitFunction(Function func) {
+    return [ 'funcref',
+              _makeFunctionRef(func), visitSendPortSync(_sendPort()), null ];
+  }
 }
+
+// Leaking implementation.  Later will be backend specific and hopefully
+// not leaking (at least in most of the cases.)
+// TODO: provide better, backend specific implementation.
+class _FunctionRegistry {
+  final ReceivePortSync _port;
+  int _nextId;
+  final Map<String, Function> _registry;
+
+  _FunctionRegistry() :
+      _port = new ReceivePortSync(),
+      _nextId = 0,
+      _registry = <Function>{} {
+    _port.receive((msg) {
+      final id = msg[0];
+      final args = msg[1];
+      final f = _registry[id];
+      switch (args.length) {
+        case 0: return f();
+        case 1: return f(args[0]);
+        case 2: return f(args[0], args[1]);
+        case 3: return f(args[0], args[1], args[2]);
+        case 4: return f(args[0], args[1], args[2], args[3]);
+        default: throw 'Unsupported number of arguments.';
+      }
+    });
+  }
+
+  String _add(Function f) {
+    final id = 'func-ref-${_nextId++}';
+    _registry[id] = f;
+    return id;
+  }
+
+  get _sendPort() => _port.toSendPort();
+}
+
+_FunctionRegistry __functionRegistry;
+get _functionRegistry() {
+  if (__functionRegistry === null) __functionRegistry = new _FunctionRegistry();
+  return __functionRegistry;
+}
+
+_makeFunctionRef(f) => _functionRegistry._add(f);
+_sendPort() => _functionRegistry._sendPort;
+/// End of function serialization implementation.
 
 _deserialize(var message) {
   return new _JsDeserializer().deserialize(message);
@@ -37335,7 +37386,7 @@ void _completeMeasurementFutures() {
 class _EventFactoryProvider {
   factory Event(String type, [bool canBubble = true,
       bool cancelable = true]) {
-    final _EventImpl e = _document.$dom_createEvent("Event");
+    final EventImpl e = _document.$dom_createEvent("Event");
     e.$dom_initEvent(type, canBubble, cancelable);
     return e;
   }
@@ -37439,9 +37490,9 @@ class _SVGSVGElementFactoryProvider {
 // BSD-style license that can be found in the LICENSE file.
 
 // TODO(vsm): Unify with Dartium version.
-class _DOMWindowCrossFrameImpl implements Window {
+class DOMWindowCrossFrameImpl implements Window {
   // Private window.
-  _WindowImpl _window;
+  WindowImpl _window;
 
   // Fields.
   // TODO(vsm): Implement history and location getters.
@@ -37492,14 +37543,14 @@ class _DOMWindowCrossFrameImpl implements Window {
 """;
 
   // Implementation support.
-  _DOMWindowCrossFrameImpl(this._window);
+  DOMWindowCrossFrameImpl(this._window);
 
   static Window _createSafe(w) {
     if (w === window) {
       return w;
     } else {
       // TODO(vsm): Cache or implement equality.
-      return new _DOMWindowCrossFrameImpl(w);
+      return new DOMWindowCrossFrameImpl(w);
     }
   }
 }
@@ -37562,16 +37613,16 @@ class _IDBKeyRangeFactoryProvider {
 
   static _translateKey(idbkey) => idbkey;  // TODO: fixme.
 
-  static _IDBKeyRangeImpl _only(cls, value) native
+  static IDBKeyRangeImpl _only(cls, value) native
       '''return cls.only(value);''';
 
-  static _IDBKeyRangeImpl _lowerBound(cls, bound, open) native
+  static IDBKeyRangeImpl _lowerBound(cls, bound, open) native
       '''return cls.lowerBound(bound, open);''';
 
-  static _IDBKeyRangeImpl _upperBound(cls, bound, open) native
+  static IDBKeyRangeImpl _upperBound(cls, bound, open) native
       '''return cls.upperBound(bound, open);''';
 
-  static _IDBKeyRangeImpl _bound(cls, lower, upper, lowerOpen, upperOpen) native
+  static IDBKeyRangeImpl _bound(cls, lower, upper, lowerOpen, upperOpen) native
       '''return cls.bound(lower, upper, lowerOpen, upperOpen);''';
 
 }
@@ -37588,15 +37639,15 @@ class _IDBKeyRangeFactoryProvider {
 // http://www.w3.org/TR/IndexedDB/#request-api
 // http://dvcs.w3.org/hg/IndexedDB/raw-file/tip/Overview.html#request-api
 
-class _IDBOpenDBRequestImpl extends _IDBRequestImpl implements IDBOpenDBRequest
+class IDBOpenDBRequestImpl extends IDBRequestImpl implements IDBOpenDBRequest
     native "*IDBOpenDBRequest" {
 
-  _IDBOpenDBRequestEventsImpl get on() =>
-    new _IDBOpenDBRequestEventsImpl(this);
+  IDBOpenDBRequestEventsImpl get on() =>
+    new IDBOpenDBRequestEventsImpl(this);
 }
 
-class _IDBOpenDBRequestEventsImpl extends _IDBRequestEventsImpl implements IDBOpenDBRequestEvents {
-  _IDBOpenDBRequestEventsImpl(_ptr) : super(_ptr);
+class IDBOpenDBRequestEventsImpl extends IDBRequestEventsImpl implements IDBOpenDBRequestEvents {
+  IDBOpenDBRequestEventsImpl(_ptr) : super(_ptr);
 
   EventListenerList get blocked() => _get('blocked');
 
@@ -37966,6 +38017,7 @@ class _MessageTraverser {
     if (x is Map) return visitMap(x);
     if (x is SendPort) return visitSendPort(x);
     if (x is SendPortSync) return visitSendPortSync(x);
+    if (x is Function) return visitFunction(x);
 
     // TODO(floitsch): make this a real exception. (which one)?
     throw "Message serialization: Illegal value $x passed";
@@ -37976,6 +38028,10 @@ class _MessageTraverser {
   abstract visitMap(Map x);
   abstract visitSendPort(SendPort x);
   abstract visitSendPortSync(SendPortSync x);
+
+  visitFunction(Function func) {
+    throw "Serialization of functions is not allowed.";
+  }
 
   static bool isPrimitive(x) {
     return (x === null) || (x is String) || (x is num) || (x is bool);
@@ -38124,4 +38180,78 @@ class _Deserializer {
 
   abstract deserializeSendPort(List x);
 
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// This is a temporary file in which to store code that gets patched in to
+// html_dart2js in a post-processing step to enable webcomponents
+// functionality.
+
+/**
+ * _ListMap class so that we have a dictionary usable with non-hashable keys.
+ * Note: this class does NOT yet have full Map functionality
+ */
+class _ListMap<K, V> {
+
+  List<_Pair<K, V>> _list;
+
+  _ListMap()
+    : _list = new List<_Pair<K, V>>() { }
+
+  void operator []=(K key, V value) {
+    for (var pair in _list) {
+      if (pair._key == key) {
+        pair._value = value;
+        return;
+      }
+    }
+    _list.add(new _Pair<K,V>(key, value));
+  }
+
+  V operator [](K key) {
+    for (var pair in _list) {
+      if (pair._key == key)
+        return pair._value;
+    }
+    return null;
+  }
+}
+
+class _Pair<K, V> {
+  final K _key;
+  V _value;
+
+  _Pair(this._key, this._value);
+}
+
+// TODO(samhop): add some types
+
+get _componentsMetadata() {
+  if (JS('var', 'typeof(\$componentsMetadata)') === 'undefined') {
+    _componentsMetadata = new _ListMap();
+  }
+  return JS('var', '\$componentsMetadata');
+}
+
+void set _componentsMetadata(m) {
+  JS('void', '\$componentsMetadata = #', m);
+}
+
+void rewirePrototypeChain(nativeElement, closure) {
+  // TODO(samhop): worry about field initialization
+  // TODO(samhop): worry about perf -- should probably make componentsMetadata
+  // a native type.
+  // TODO(samhop): worry about IE9
+  // TODO(samhop): worry about inheriting transitively from a native (may
+  // currently work)
+  var componentPrototype = _componentsMetadata[closure];
+  if (componentPrototype == null) {
+    componentPrototype = JS('var', 'Object.getPrototypeOf(#)', closure());
+    _componentsMetadata[closure] = componentPrototype;
+    JS('void', '#.__proto__ = Object.getPrototypeOf(#)',
+        componentPrototype, nativeElement);
+  }
+  JS('void', '#.__proto__ = #', nativeElement, componentPrototype);
 }

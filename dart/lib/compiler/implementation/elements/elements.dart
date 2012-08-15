@@ -1004,6 +1004,8 @@ class ClassElement extends ScopeContainerElement
   Type defaultClass;
   Link<Type> interfaces;
   SourceString nativeName;
+  // specifies transitive inheritence from a native class
+  bool inheritsFromNative = false;
 
   int _supertypeLoadState = STATE_NOT_STARTED;
   int get supertypeLoadState() => _supertypeLoadState;

@@ -46,8 +46,10 @@ fi
 if [[ $CACHED ]] ; then
   reset &&
   ./dartdomgenerator.py --use-database-cache --systems="$SYSTEMS"
+  ./webcomponents_shim.py
 else
   reset &&
   ./fremontcutbuilder.py &&
   ./dartdomgenerator.py --systems="$SYSTEMS"
+  ./webcomponents_shim.py
 fi

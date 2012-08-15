@@ -1939,6 +1939,12 @@ class ClassResolverVisitor extends TypeDefinitionVisitor {
     if (cls.allSupertypes !== null) return;
     final Type supertype = cls.supertype;
     if (supertype != null) {
+      // TODO(samhop): I assume here that the supertype has already been
+      // resolved -- is that always true?
+      if (supertype.element.isNative() ||
+          supertype.element.inheritsFromNative) {
+        cls.inheritsFromNative = true;
+      }
       Link<Type> superSupertypes = supertype.element.allSupertypes;
       assert(superSupertypes !== null);
       Link<Type> supertypes = new Link<Type>(supertype, superSupertypes);
