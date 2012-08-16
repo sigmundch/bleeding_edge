@@ -355,10 +355,10 @@ CLASS_LIST_NO_OBJECT(DEFINE_CLASS_TESTER);
                                               const Script& script,
                                               const Library& lib);
   static void RegisterClass(const Class& cls,
-                            const char* cname,
+                            const String& name,
                             const Library& lib);
   static void RegisterPrivateClass(const Class& cls,
-                                   const char* cname,
+                                   const String& name,
                                    const Library& lib);
 
   cpp_vtable* vtable_address() const {
@@ -674,7 +674,7 @@ class Class : public Object {
 
   void Finalize() const;
 
-  void ApplyPatch(const Class& patch) const;
+  const char* ApplyPatch(const Class& patch) const;
 
   // Allocate a class used for VM internal objects.
   template <class FakeObject> static RawClass* New();

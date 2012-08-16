@@ -197,7 +197,7 @@ class SsaBuilderTask extends CompilerTask {
         } else {
           name = "${element.name.slowToString()}";
         }
-        compiler.tracer.traceCompilation(name);
+        compiler.tracer.traceCompilation(name, work.compilationContext);
         compiler.tracer.traceGraph('builder', graph);
       }
       return graph;
@@ -2165,7 +2165,7 @@ class SsaBuilder extends ResolvedVisitor implements Visitor {
       // If the isolate library is not used, we just invoke the
       // closure.
       visit(link.tail.head);
-      Selector selector = new Selector.callAny(0);
+      Selector selector = new Selector.callClosure(0);
       push(new HInvokeClosure(selector, <HInstruction>[pop()]));
     } else {
       // Call a helper method from the isolate library.
@@ -2205,7 +2205,7 @@ class SsaBuilder extends ResolvedVisitor implements Visitor {
     visit(closure);
     List<HInstruction> inputs = <HInstruction>[pop()];
     String invocationName = compiler.namer.closureInvocationName(
-        new Selector.callAny(params.requiredParameterCount));
+        new Selector.callClosure(params.requiredParameterCount));
     push(new HForeign(new DartString.literal('#.$invocationName'),
                       const LiteralDartString('var'),
                       inputs));
@@ -2421,7 +2421,11 @@ class SsaBuilder extends ResolvedVisitor implements Visitor {
       add(target);
       var inputs = <HInstruction>[target, context];
       addDynamicSendArgumentsToList(node, inputs);
-      push(new HInvokeSuper(inputs));
+      if (node.assignmentOperator.source.stringValue !== '=') {
+        compiler.unimplemented('complex super assignment',
+                               node: node.assignmentOperator);
+      }
+      push(new HInvokeSuper(inputs, isSetter: true));
     } else if (node.isIndex) {
       if (!methodInterceptionEnabled) {
         assert(op.source.stringValue === '=');

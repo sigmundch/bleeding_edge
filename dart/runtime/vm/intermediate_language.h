@@ -156,6 +156,7 @@ class Computation : public ZoneAllocated {
   // Compile time type of the computation, which typically depends on the
   // compile time types (and possibly propagated types) of its inputs.
   virtual RawAbstractType* CompileType() const = 0;
+  virtual intptr_t ResultCid() const { return kDynamicCid; }
 
   // Mutate assigned_vars to add the local variable index for all
   // frame-allocated locals assigned to by the computation.
@@ -296,6 +297,17 @@ class Value : public TemplateComputation<0> {
  public:
   Value() { }
 
+  // Returns true if the value represents a constant.
+  virtual bool BindsToConstant() const = 0;
+
+  // Returns true if the value represents constant null.
+  virtual bool BindsToConstantNull() const = 0;
+
+  // Assert if BindsToConstant() is false, otherwise returns constant.
+  virtual const Object& BoundConstant() const = 0;
+
+  // Reminder: The type of the constant null is the bottom type, which is more
+  // specific than any type.
   bool CompileTypeIsMoreSpecificThan(const AbstractType& dst_type) const;
 
   virtual void RemoveFromUseList() = 0;
@@ -347,12 +359,21 @@ class UseVal : public Value {
   inline Definition* definition() const;
   void SetDefinition(Definition* definition);
 
+  // Returns true if the value represents a constant.
+  virtual bool BindsToConstant() const;
+  virtual const Object& BoundConstant() const;
+
+  // Returns true if the value represents constant null.
+  virtual bool BindsToConstantNull() const;
+
   virtual bool CanDeoptimize() const { return false; }
 
   UseVal* next_use() const { return next_use_; }
   UseVal* previous_use() const { return previous_use_; }
   virtual void RemoveFromUseList();
   virtual void RemoveInputUses() { RemoveFromUseList(); }
+
+  virtual intptr_t ResultCid() const;
 
  private:
   void AddToUseList();
@@ -366,7 +387,7 @@ class UseVal : public Value {
 };
 
 
-class ConstantVal: public Value {
+class ConstantVal : public Value {
  public:
   explicit ConstantVal(const Object& value)
       : value_(value) {
@@ -378,9 +399,18 @@ class ConstantVal: public Value {
 
   const Object& value() const { return value_; }
 
+  // Returns true if the value represents a constant.
+  virtual bool BindsToConstant() const { return true; }
+  virtual const Object& BoundConstant() const { return value(); }
+
+  // Returns true if the value represents constant null.
+  virtual bool BindsToConstantNull() const { return value().IsNull(); }
+
   virtual bool CanDeoptimize() const { return false; }
 
   virtual void RemoveFromUseList() { }
+
+  virtual intptr_t ResultCid() const;
 
  private:
   const Object& value_;
@@ -478,6 +508,7 @@ class AssertBooleanComp : public TemplateComputation<1> {
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
   virtual bool CanDeoptimize() const { return false; }
+  virtual intptr_t ResultCid() const { return kBoolCid; }
 
  private:
   const intptr_t token_pos_;
@@ -672,6 +703,7 @@ class StrictCompareComp : public ComparisonComp {
   virtual bool CanDeoptimize() const { return false; }
 
   virtual Definition* TryReplace(BindInstr* instr);
+  virtual intptr_t ResultCid() const { return kBoolCid; }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(StrictCompareComp);
@@ -704,6 +736,7 @@ class EqualityCompareComp : public ComparisonComp {
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
   virtual bool CanDeoptimize() const { return true; }
+  virtual intptr_t ResultCid() const;
 
  private:
   const intptr_t token_pos_;
@@ -744,6 +777,7 @@ class RelationalOpComp : public ComparisonComp {
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
   virtual bool CanDeoptimize() const { return true; }
+  virtual intptr_t ResultCid() const;
 
  private:
   const intptr_t token_pos_;
@@ -1129,6 +1163,7 @@ class InstanceOfComp : public TemplateComputation<3> {
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
   virtual bool CanDeoptimize() const { return false; }
+  virtual intptr_t ResultCid() const { return kBoolCid; }
 
  private:
   const intptr_t token_pos_;
@@ -1581,6 +1616,7 @@ class BinaryOpComp : public TemplateComputation<2> {
   DECLARE_COMPUTATION(BinaryOp)
 
   virtual bool CanDeoptimize() const { return true; }
+  virtual intptr_t ResultCid() const;
 
  private:
   const Token::Kind op_kind_;
@@ -1607,6 +1643,7 @@ class DoubleBinaryOpComp : public TemplateComputation<0> {
   virtual intptr_t ArgumentCount() const { return 2; }
 
   virtual bool CanDeoptimize() const { return true; }
+  virtual intptr_t ResultCid() const;
 
  private:
   const Token::Kind op_kind_;
@@ -1637,6 +1674,7 @@ class UnarySmiOpComp : public TemplateComputation<1> {
   DECLARE_COMPUTATION(UnarySmiOp)
 
   virtual bool CanDeoptimize() const { return true; }
+  virtual intptr_t ResultCid() const { return kSmiCid; }
 
  private:
   const Token::Kind op_kind_;
@@ -1706,6 +1744,7 @@ class DoubleToDoubleComp : public TemplateComputation<1> {
   DECLARE_COMPUTATION(DoubleToDouble)
 
   virtual bool CanDeoptimize() const { return true; }
+  virtual intptr_t ResultCid() const { return kDoubleCid; }
 
  private:
   InstanceCallComp* instance_call_;
@@ -1726,6 +1765,7 @@ class SmiToDoubleComp : public TemplateComputation<0> {
   virtual intptr_t ArgumentCount() const { return 1; }
 
   virtual bool CanDeoptimize() const { return true; }
+  virtual intptr_t ResultCid() const { return kDoubleCid; }
 
  private:
   InstanceCallComp* instance_call_;
@@ -2355,6 +2395,7 @@ class Definition : public Instruction {
       : temp_index_(-1),
         ssa_temp_index_(-1),
         propagated_type_(AbstractType::Handle()),
+        propagated_cid_(kIllegalCid),
         use_list_(NULL) { }
 
   virtual bool IsDefinition() const { return true; }
@@ -2393,6 +2434,14 @@ class Definition : public Instruction {
     return changed;
   }
 
+  bool has_propagated_cid() const { return propagated_cid_ != kIllegalCid; }
+  intptr_t propagated_cid() const { return propagated_cid_; }
+  // May compute and set propagated cid.
+  virtual intptr_t GetPropagatedCid() = 0;
+
+  // Returns true if the propagated cid has changed.
+  bool SetPropagatedCid(intptr_t cid);
+
   UseVal* use_list() { return use_list_; }
   void set_use_list(UseVal* head) {
     ASSERT(head == NULL || head->previous_use() == NULL);
@@ -2407,6 +2456,7 @@ class Definition : public Instruction {
   // TODO(regis): GrowableArray<const AbstractType*> propagated_types_;
   // For now:
   AbstractType& propagated_type_;
+  intptr_t propagated_cid_;
   UseVal* use_list_;
 
   DISALLOW_COPY_AND_ASSIGN(Definition);
@@ -2449,6 +2499,7 @@ class BindInstr : public Definition {
   bool is_used() const { return is_used_; }
 
   virtual RawAbstractType* CompileType() const;
+  virtual intptr_t GetPropagatedCid();
 
   virtual void RecordAssignedVars(BitVector* assigned_vars,
                                   intptr_t fixed_parameter_count);
@@ -2479,6 +2530,7 @@ class PhiInstr : public Definition {
   }
 
   virtual RawAbstractType* CompileType() const;
+  virtual intptr_t GetPropagatedCid() { return propagated_cid(); }
 
   virtual intptr_t ArgumentCount() const { return 0; }
 
@@ -2524,6 +2576,8 @@ class ParameterInstr : public Definition {
 
   // Compile type of the passed-in parameter.
   virtual RawAbstractType* CompileType() const;
+  // No known propagated cid for parameters.
+  virtual intptr_t GetPropagatedCid() { return propagated_cid(); }
 
   virtual intptr_t ArgumentCount() const { return 0; }
 
@@ -2566,6 +2620,7 @@ class PushArgumentInstr : public Definition {
   virtual intptr_t ArgumentCount() const { return 0; }
 
   virtual RawAbstractType* CompileType() const;
+  virtual intptr_t GetPropagatedCid() { return propagated_cid(); }
 
   Value* value() const { return value_; }
 
@@ -2880,8 +2935,12 @@ class Environment : public ZoneAllocated {
 class FlowGraphVisitor : public ValueObject {
  public:
   explicit FlowGraphVisitor(const GrowableArray<BlockEntryInstr*>& block_order)
-      : block_order_(block_order) { }
+      : block_order_(block_order), current_iterator_(NULL) { }
   virtual ~FlowGraphVisitor() { }
+
+  ForwardInstructionIterator* current_iterator() const {
+    return current_iterator_;
+  }
 
   // Visit each block in the block order, and for each block its
   // instructions in order from the block entry to exit.
@@ -2903,6 +2962,7 @@ class FlowGraphVisitor : public ValueObject {
 
  protected:
   const GrowableArray<BlockEntryInstr*>& block_order_;
+  ForwardInstructionIterator* current_iterator_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(FlowGraphVisitor);

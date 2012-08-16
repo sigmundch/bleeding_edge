@@ -20,7 +20,7 @@ import com.google.dart.compiler.ast.DartFunctionExpression;
 import com.google.dart.compiler.ast.DartFunctionTypeAlias;
 import com.google.dart.compiler.ast.DartIdentifier;
 import com.google.dart.compiler.ast.DartLabel;
-import com.google.dart.compiler.ast.DartMetadata;
+import com.google.dart.compiler.ast.DartObsoleteMetadata;
 import com.google.dart.compiler.ast.DartMethodDefinition;
 import com.google.dart.compiler.ast.DartNativeBlock;
 import com.google.dart.compiler.ast.DartNode;
@@ -100,6 +100,10 @@ public class Elements {
 
   public static LibraryElement libraryElement(LibraryUnit libraryUnit) {
     return new LibraryElementImplementation(libraryUnit);
+  }
+  
+  public static void addExportedElement(LibraryElement libraryElement, Element element) {
+    ((LibraryElementImplementation) libraryElement).addExportedElements(element);
   }
 
   public static LibraryElement getLibraryElement(Element element) {
@@ -217,7 +221,7 @@ public class Elements {
 
 static FieldElementImplementation fieldFromNode(DartField node,
                                                   EnclosingElement holder,
-                                                  DartMetadata metadata,
+                                                  DartObsoleteMetadata metadata,
                                                   Modifiers modifiers) {
     return FieldElementImplementation.fromNode(node, holder, metadata, modifiers);
   }

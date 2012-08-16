@@ -30,6 +30,7 @@ import com.google.dart.compiler.ast.DartTypeExpression;
 import com.google.dart.compiler.ast.DartTypeNode;
 import com.google.dart.compiler.ast.DartUnaryExpression;
 import com.google.dart.compiler.ast.DartUnit;
+import com.google.dart.compiler.ast.DartVariable;
 import com.google.dart.compiler.ast.DartVariableStatement;
 
 import java.util.List;
@@ -915,6 +916,18 @@ public class SyntaxTest extends AbstractParserTest {
             ParserErrorCode.DISALLOWED_ABSTRACT_KEYWORD, 3, 3);
   }
 
+  public void test_localVariable_const() {
+    DartUnit unit = parseUnit("constVar.dart", makeCode(
+        "main() {",
+        "  const v = 1;",
+        "}"));
+    assertNotNull(unit);
+    DartNode firstNode = unit.getTopLevelNodes().get(0);
+    assertTrue(firstNode instanceof DartMethodDefinition);
+    DartStatement statement = ((DartMethodDefinition) firstNode).getFunction().getBody().getStatements().get(0);
+    assertTrue(((DartVariableStatement) statement).getModifiers().isConstant());
+  }
+
   public void test_metadata_deprecated() {
     String code = makeCode(
         "// filler filler filler filler filler filler filler filler filler filler",
@@ -1066,6 +1079,15 @@ public class SyntaxTest extends AbstractParserTest {
             ParserErrorCode.VOID_FIELD, 5, 3);
   }
 
+  public void test_topLevelVariable_const() {
+    DartUnit unit = parseUnit("constVar.dart", "const v = 1;");
+    assertNotNull(unit);
+    DartNode firstNode = unit.getTopLevelNodes().get(0);
+    assertTrue(firstNode instanceof DartFieldDefinition);
+    DartField field = ((DartFieldDefinition) firstNode).getFields().get(0);
+    assertTrue(field.getModifiers().isConstant());
+  }
+
   public void test_unexpectedTypeArgument() throws Exception {
     // This is valid code that was previously rejected.
     // Invoking a named constructor in a prefixed library should work.
@@ -1142,6 +1164,73 @@ public class SyntaxTest extends AbstractParserTest {
             "  for (var foo, bar in a) { }",
             "}"),
             ParserErrorCode.FOR_IN_WITH_MULTIPLE_VARIABLES, 2, 17);
+  }
+
+  public void test_formalParameters_named() throws Exception {
+    parseUnit("formalParameters.dart",
+        Joiner.on("\n").join(
+            "method({var a : 1, var b : 2}) {",
+            "}"));
+  }
+
+  public void test_formalParameters_named_missingRightBracket() throws Exception {
+    parseUnit("formalParameters.dart",
+        Joiner.on("\n").join(
+            "method({var a : 1) {",
+            "}"),
+            ParserErrorCode.MISSING_NAMED_PARAMETER_END, 1, 18);
+  }
+
+  public void test_formalParameters_named_wrongSeparator() throws Exception {
+    parseUnit("formalParameters.dart",
+        Joiner.on("\n").join(
+            "method({var a = 1}) {",
+            "}"),
+            ParserErrorCode.INVALID_SEPARATOR_FOR_NAMED, 1, 13);
+  }
+
+  public void test_formalParameters_optional() throws Exception {
+    parseUnit("formalParameters.dart",
+        Joiner.on("\n").join(
+            "method([var a = 1, var b = 2]) {",
+            "}"));
+  }
+
+  public void test_formalParameters_optional_missingRightBrace() throws Exception {
+    parseUnit("formalParameters.dart",
+        Joiner.on("\n").join(
+            "method([var a = 1) {",
+            "}"),
+            ParserErrorCode.MISSING_OPTIONAL_PARAMETER_END, 1, 18);
+  }
+
+  public void test_formalParameters_optional_wrongSeparator() throws Exception {
+    parseUnit("formalParameters.dart",
+        Joiner.on("\n").join(
+            "method([var a : 1]) {",
+            "}"),
+            ParserErrorCode.INVALID_SEPARATOR_FOR_OPTIONAL, 1, 13);
+  }
+
+  public void test_formalParameters_positional() throws Exception {
+    parseUnit("formalParameters.dart",
+        Joiner.on("\n").join(
+            "method(var a, var b) {",
+            "}"));
+  }
+
+  public void test_formalParameters_positional_named() throws Exception {
+    parseUnit("formalParameters.dart",
+        Joiner.on("\n").join(
+            "method(var a, var b, {var c : 3, var d : 4}) {",
+            "}"));
+  }
+
+  public void test_formalParameters_positional_optional() throws Exception {
+    parseUnit("formalParameters.dart",
+        Joiner.on("\n").join(
+            "method(var a, var b, [var c = 3, var d = 4]) {",
+            "}"));
   }
 
   public void test_forVariableInitializer() throws Exception {

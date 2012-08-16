@@ -4,17 +4,17 @@
 
 #library('mirrors.dart2js');
 
-#import('../../compiler/compiler.dart', prefix: 'diagnostics');
-#import('../../compiler/implementation/elements/elements.dart');
-#import('../../compiler/implementation/apiimpl.dart', prefix: 'api');
-#import('../../compiler/implementation/scanner/scannerlib.dart');
-#import('../../compiler/implementation/leg.dart');
-#import('../../compiler/implementation/filenames.dart');
-#import('../../compiler/implementation/source_file.dart');
-#import('../../compiler/implementation/tree/tree.dart');
-#import('../../compiler/implementation/util/util.dart');
-#import('../../compiler/implementation/util/uri_extras.dart');
-#import('../../compiler/implementation/dart2js.dart');
+#import('../../../lib/compiler/compiler.dart', prefix: 'diagnostics');
+#import('../../../lib/compiler/implementation/elements/elements.dart');
+#import('../../../lib/compiler/implementation/apiimpl.dart', prefix: 'api');
+#import('../../../lib/compiler/implementation/scanner/scannerlib.dart');
+#import('../../../lib/compiler/implementation/leg.dart');
+#import('../../../lib/compiler/implementation/filenames.dart');
+#import('../../../lib/compiler/implementation/source_file.dart');
+#import('../../../lib/compiler/implementation/tree/tree.dart');
+#import('../../../lib/compiler/implementation/util/util.dart');
+#import('../../../lib/compiler/implementation/util/uri_extras.dart');
+#import('../../../lib/compiler/implementation/dart2js.dart');
 #import('mirrors.dart');
 #import('util.dart');
 #import('dart:io');
@@ -246,7 +246,6 @@ class LibraryCompiler extends api.Compiler {
     });
     //world.queueIsClosed = true;
     assert(world.checkNoEnqueuedInvokedInstanceMethods());
-    world.registerFieldClosureInvocations();
   }
 
   String codegen(WorkItem work, Enqueuer world) {
@@ -318,7 +317,7 @@ class Dart2JsCompilation implements Compilation {
 
   Dart2JsCompilation(Path script, Path libraryRoot,
                      [Path packageRoot, List<String> opts = const <String>[]])
-      : cwd = getCurrentDirectory(), sourceFiles = <SourceFile>{} {
+      : cwd = getCurrentDirectory(), sourceFiles = <String, SourceFile>{} {
     var libraryUri = cwd.resolve(libraryRoot.toString());
     var packageUri;
     if (packageRoot !== null) {
@@ -335,7 +334,7 @@ class Dart2JsCompilation implements Compilation {
 
   Dart2JsCompilation.library(List<Path> libraries, Path libraryRoot,
                      [Path packageRoot, List<String> opts = const <String>[]])
-      : cwd = getCurrentDirectory(), sourceFiles = <SourceFile>{} {
+      : cwd = getCurrentDirectory(), sourceFiles = <String, SourceFile>{} {
     var libraryUri = cwd.resolve(libraryRoot.toString());
     var packageUri;
     if (packageRoot !== null) {
@@ -427,7 +426,7 @@ class Dart2JsMirrorSystem implements MirrorSystem, Dart2JsMirror {
 
   void _ensureLibraries() {
     if (_libraries == null) {
-      _libraries = <Dart2JsLibraryMirror>{};
+      _libraries = <String, Dart2JsLibraryMirror>{};
       compiler.libraries.forEach((_, LibraryElement v) {
         var mirror = new Dart2JsLibraryMirror(system, v);
         _libraries[mirror.canonicalName] = mirror;
@@ -495,7 +494,7 @@ class Dart2JsLibraryMirror extends Dart2JsObjectMirror
 
   void _ensureTypes() {
     if (_types == null) {
-      _types = <InterfaceMirror>{};
+      _types = <String, InterfaceMirror>{};
       _library.forEachExport((Element e) {
         if (e.getLibrary() == _library) {
           if (e.isClass()) {
@@ -513,7 +512,7 @@ class Dart2JsLibraryMirror extends Dart2JsObjectMirror
 
   void _ensureMembers() {
     if (_members == null) {
-      _members = <MemberMirror>{};
+      _members = <String, MemberMirror>{};
       _library.forEachExport((Element e) {
         if (!e.isClass() && !e.isTypedef()) {
           for (var member in _convertElementMemberToMemberMirrors(this, e)) {
@@ -683,7 +682,7 @@ class Dart2JsInterfaceMirror extends Dart2JsObjectMirror
 
   void _ensureMembers() {
     if (_members == null) {
-      _members = <Dart2JsMemberMirror>{};
+      _members = <String, Dart2JsMemberMirror>{};
       _class.localMembers.forEach((e) {
         for (var member in _convertElementMemberToMemberMirrors(this, e)) {
           _members[member.canonicalName] = member;
@@ -855,14 +854,16 @@ class Dart2JsTypedefMirror extends Dart2JsElementMirror
     return _definition;
   }
 
-  Map<Object, MemberMirror> get declaredMembers() => const <MemberMirror>{};
+  Map<Object, MemberMirror> get declaredMembers() =>
+      const <String, MemberMirror>{};
 
   InterfaceMirror get declaration() => this;
 
   // TODO(johnniwinther): How should a typedef respond to these?
   InterfaceMirror get superclass() => null;
 
-  Map<Object, InterfaceMirror> get interfaces() => const <InterfaceMirror>{};
+  Map<Object, InterfaceMirror> get interfaces() =>
+      const <String, InterfaceMirror>{};
 
   bool get isClass() => false;
 
@@ -872,7 +873,8 @@ class Dart2JsTypedefMirror extends Dart2JsElementMirror
 
   bool get isDeclaration() => true;
 
-  Map<Object, MethodMirror> get constructors() => const <MethodMirror>{};
+  Map<Object, MethodMirror> get constructors() =>
+      const <String, MethodMirror>{};
 
   InterfaceMirror get defaultType() => null;
 }
@@ -1124,7 +1126,8 @@ class Dart2JsFunctionTypeMirror extends Dart2JsTypeElementMirror
 
   List<TypeVariableMirror> get typeVariables() => declaration.typeVariables;
 
-  Map<Object, MethodMirror> get constructors() => <MethodMirror>{};
+  Map<Object, MethodMirror> get constructors() =>
+      <String, MethodMirror>{};
 
   InterfaceMirror get defaultType() => null;
 

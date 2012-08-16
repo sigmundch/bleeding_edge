@@ -509,14 +509,6 @@ static void EmitGenericEqualityCompare(FlowGraphCompiler* compiler,
 }
 
 
-static intptr_t GetCid(const Value& v) {
-  // TODO(srdjan): CompileType does not give us correct type for optimizations.
-  // const AbstractType& type = AbstractType::Handle(v.CompileType());
-  // return Class::Handle(type.type_class()).id();
-  return kIllegalCid;
-}
-
-
 static void EmitSmiComparisonOp(FlowGraphCompiler* compiler,
                                 const LocationSummary& locs,
                                 Token::Kind kind,
@@ -527,9 +519,9 @@ static void EmitSmiComparisonOp(FlowGraphCompiler* compiler,
   Register left = locs.in(0).reg();
   Register right = locs.in(1).reg();
   const bool left_is_smi = (branch == NULL) ?
-      false : (GetCid(*branch->left()) == kSmiCid);
+      false : (branch->left()->ResultCid() == kSmiCid);
   const bool right_is_smi = (branch == NULL) ?
-      false : (GetCid(*branch->right()) == kSmiCid);
+      false : (branch->right()->ResultCid() == kSmiCid);
   if (!left_is_smi || !right_is_smi) {
     Register temp = locs.temp(0).reg();
     Label* deopt = compiler->AddDeoptStub(deopt_id,
@@ -638,8 +630,8 @@ void EqualityCompareComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 
 
 LocationSummary* RelationalOpComp::MakeLocationSummary() const {
+  const intptr_t kNumInputs = 2;
   if (operands_class_id() == kSmiCid || operands_class_id() == kDoubleCid) {
-    const intptr_t kNumInputs = 2;
     const intptr_t kNumTemps = 1;
     LocationSummary* summary =
         new LocationSummary(kNumInputs, kNumTemps, LocationSummary::kNoCall);
@@ -649,7 +641,14 @@ LocationSummary* RelationalOpComp::MakeLocationSummary() const {
     summary->set_temp(0, Location::RequiresRegister());
     return summary;
   }
-  return MakeCallSummary();
+  const intptr_t kNumTemps = 0;
+  LocationSummary* locs =
+      new LocationSummary(kNumInputs, kNumTemps, LocationSummary::kCall);
+  // Pick arbitrary fixed input registers because this is a call.
+  locs->set_in(0, Location::RegisterLocation(RAX));
+  locs->set_in(1, Location::RegisterLocation(RCX));
+  locs->set_out(Location::RegisterLocation(RAX));
+  return locs;
 }
 
 
@@ -664,19 +663,29 @@ void RelationalOpComp::EmitNativeCode(FlowGraphCompiler* compiler) {
                            deopt_id(), token_pos(), try_index());
     return;
   }
+
+  // Push arguments for the call.
+  // TODO(fschneider): Split this instruction into different types to avoid
+  // explicitly pushing arguments to the call here.
+  Register left = locs()->in(0).reg();
+  Register right = locs()->in(1).reg();
+  __ pushq(left);
+  __ pushq(right);
   if (HasICData() && (ic_data()->NumberOfChecks() > 0)) {
     Label* deopt = compiler->AddDeoptStub(deopt_id(),
                                           try_index(),
                                           kDeoptRelationalOp);
-    // Load receiver into RAX, class into RDI.
+
+    // Load class into RDI. Since this is a call, any register except
+    // the fixed input registers would be ok.
+    ASSERT((left != RDI) && (right != RDI));
     Label done;
-    const intptr_t kNumArguments = 2;
     __ movq(RDI, Immediate(kSmiCid));
-    __ movq(RAX, Address(RSP, (kNumArguments - 1) * kWordSize));
-    __ testq(RAX, Immediate(kSmiTagMask));
+    __ testq(left, Immediate(kSmiTagMask));
     __ j(ZERO, &done);
-    __ LoadClassId(RDI, RAX);
+    __ LoadClassId(RDI, left);
     __ Bind(&done);
+    const intptr_t kNumArguments = 2;
     compiler->EmitTestAndCall(ICData::Handle(ic_data()->AsUnaryClassChecks()),
                               RDI,  // Class id register.
                               kNumArguments,
@@ -687,6 +696,7 @@ void RelationalOpComp::EmitNativeCode(FlowGraphCompiler* compiler) {
                               token_pos(),
                               try_index(),
                               locs()->stack_bitmap());
+    ASSERT(locs()->out().reg() == RAX);
     return;
   }
   const String& function_name =
@@ -1447,8 +1457,8 @@ static void EmitSmiBinaryOp(FlowGraphCompiler* compiler, BinaryOpComp* comp) {
   Register result = comp->locs()->out().reg();
   Register temp = comp->locs()->temp(0).reg();
   ASSERT(left == result);
-  const bool left_is_smi = (GetCid(*comp->left()) == kSmiCid);
-  const bool right_is_smi = (GetCid(*comp->right()) == kSmiCid);
+  const bool left_is_smi = comp->left()->ResultCid() == kSmiCid;
+  const bool right_is_smi = comp->right()->ResultCid() == kSmiCid;
   bool can_deopt;
   switch (comp->op_kind()) {
     case Token::kBIT_AND:
@@ -1885,6 +1895,7 @@ void NumberNegateComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   } else {
     UNREACHABLE();
   }
+  ASSERT(ResultCid() == kDoubleCid);
 }
 
 

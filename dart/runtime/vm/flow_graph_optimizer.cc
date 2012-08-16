@@ -146,7 +146,14 @@ static bool HasOnlyTwoDouble(const ICData& ic_data) {
 static void RemovePushArguments(InstanceCallComp* comp) {
   // Remove original push arguments.
   for (intptr_t i = 0; i < comp->ArgumentCount(); ++i) {
-    comp->ArgumentAt(i)->RemoveFromGraph();
+    PushArgumentInstr* push = comp->ArgumentAt(i);
+    // TODO(zerny): Currently the register allocator replaces unused pushes with
+    // their definitions. To do so here, we need first to link uses to their
+    // instructions and input index. Here push->ReplaceUsesWith requires that
+    // push->value() is a UseVal.
+    // (See FlowGraphAllocator::EliminateEnvironmentUses).
+    push->set_use_list(NULL);
+    push->RemoveFromGraph();
   }
 }
 
@@ -596,9 +603,24 @@ void FlowGraphTypePropagator::VisitAssertAssignable(AssertAssignableComp* comp,
                                                     BindInstr* instr) {
   if (FLAG_eliminate_type_checks &&
       !comp->is_eliminated() &&
-      !comp->dst_type().IsMalformed() &&
       comp->value()->CompileTypeIsMoreSpecificThan(comp->dst_type())) {
+    // TODO(regis): Remove is_eliminated_ field and support.
     comp->eliminate();
+    if (is_ssa_) {
+      UseVal* use = comp->value()->AsUse();
+      ASSERT(use != NULL);
+      Definition* result = use->definition();
+      ASSERT(result != NULL);
+      // Replace uses and remove the current instructions via the iterator.
+      instr->ReplaceUsesWith(result);
+      ASSERT(current_iterator()->Current() == instr);
+      current_iterator()->RemoveCurrentFromGraph();
+      if (FLAG_trace_optimization) {
+        OS::Print("Replacing v%d with v%d\n",
+                  instr->ssa_temp_index(),
+                  result->ssa_temp_index());
+      }
+    }
     if (FLAG_trace_type_check_elimination) {
       FlowGraphPrinter::PrintTypeCheck(parsed_function(),
                                        comp->token_pos(),
@@ -613,11 +635,35 @@ void FlowGraphTypePropagator::VisitAssertAssignable(AssertAssignableComp* comp,
 
 void FlowGraphTypePropagator::VisitAssertBoolean(AssertBooleanComp* comp,
                                                  BindInstr* instr) {
+  // TODO(regis): Propagate NullType as well and revise the comment and code
+  // below to also eliminate the test for non-null and non-constant value.
+
+  // We can only eliminate an 'assert boolean' test when the checked value is
+  // a constant time constant. Indeed, a variable of the proper compile time
+  // type (bool) may still hold null at run time and therefore fail the test.
   if (FLAG_eliminate_type_checks &&
       !comp->is_eliminated() &&
+      comp->value()->BindsToConstant() &&
+      !comp->value()->BindsToConstantNull() &&
       comp->value()->CompileTypeIsMoreSpecificThan(
           Type::Handle(Type::BoolInterface()))) {
+    // TODO(regis): Remove is_eliminated_ field and support.
     comp->eliminate();
+    if (is_ssa_) {
+      UseVal* use = comp->value()->AsUse();
+      ASSERT(use != NULL);
+      Definition* result = use->definition();
+      ASSERT(result != NULL);
+      // Replace uses and remove the current instructions via the iterator.
+      instr->ReplaceUsesWith(result);
+      ASSERT(current_iterator()->Current() == instr);
+      current_iterator()->RemoveCurrentFromGraph();
+      if (FLAG_trace_optimization) {
+        OS::Print("Replacing v%d with v%d\n",
+                  instr->ssa_temp_index(),
+                  result->ssa_temp_index());
+      }
+    }
     if (FLAG_trace_type_check_elimination) {
       const String& name = String::Handle(Symbols::New("boolean expression"));
       FlowGraphPrinter::PrintTypeCheck(parsed_function(),
@@ -626,6 +672,48 @@ void FlowGraphTypePropagator::VisitAssertBoolean(AssertBooleanComp* comp,
                                        Type::Handle(Type::BoolInterface()),
                                        name,
                                        comp->is_eliminated());
+    }
+  }
+}
+
+
+void FlowGraphTypePropagator::VisitInstanceOf(InstanceOfComp* comp,
+                                              BindInstr* instr) {
+  // TODO(regis): Propagate NullType as well and revise the comment and code
+  // below to also eliminate the test for non-null and non-constant value.
+
+  // We can only eliminate an 'instance of' test when the checked value is
+  // a constant time constant. Indeed, a variable of the proper compile time
+  // type may still hold null at run time and therefore fail the test.
+  // We do not bother checking for Object destination type, since the graph
+  // builder did already.
+  if (FLAG_eliminate_type_checks &&
+      comp->value()->BindsToConstant() &&
+      !comp->value()->BindsToConstantNull() &&
+      comp->value()->CompileTypeIsMoreSpecificThan(comp->type())) {
+    if (is_ssa_) {
+      UseVal* use = comp->value()->AsUse();
+      ASSERT(use != NULL);
+      Definition* result = use->definition();
+      ASSERT(result != NULL);
+      // Replace uses and remove the current instructions via the iterator.
+      instr->ReplaceUsesWith(result);
+      ASSERT(current_iterator()->Current() == instr);
+      current_iterator()->RemoveCurrentFromGraph();
+      if (FLAG_trace_optimization) {
+        OS::Print("Replacing v%d with v%d\n",
+                  instr->ssa_temp_index(),
+                  result->ssa_temp_index());
+      }
+    }
+    if (FLAG_trace_type_check_elimination) {
+      const String& name = String::Handle(Symbols::New("InstanceOf"));
+      FlowGraphPrinter::PrintTypeCheck(parsed_function(),
+                                       comp->token_pos(),
+                                       comp->value(),
+                                       comp->type(),
+                                       name,
+                                       /* eliminated = */ true);
     }
   }
 }
@@ -661,16 +749,33 @@ void FlowGraphTypePropagator::VisitJoinEntry(JoinEntryInstr* join_entry) {
 }
 
 
+// TODO(srdjan): Investigate if the propagated cid should be more specific.
+void FlowGraphTypePropagator::VisitPushArgument(PushArgumentInstr* push) {
+  if (!push->has_propagated_cid()) push->SetPropagatedCid(kDynamicCid);
+}
+
+
 void FlowGraphTypePropagator::VisitBind(BindInstr* bind) {
   // No need to propagate the input types of the bound computation, as long as
   // PhiInstr's are handled as part of JoinEntryInstr.
   // Visit computation and possibly eliminate type check.
   bind->computation()->Accept(this, bind);
-  // Cache propagated computation type.
-  AbstractType& type = AbstractType::Handle(bind->computation()->CompileType());
-  bool changed = bind->SetPropagatedType(type);
-  if (changed) {
-    still_changing_ = true;
+  // The current bind may have been removed from the graph.
+  if (current_iterator()->Current() == bind) {
+    // Current bind was not removed.
+    // Cache propagated computation type.
+    AbstractType& computation_type =
+        AbstractType::Handle(bind->computation()->CompileType());
+    bool changed = bind->SetPropagatedType(computation_type);
+    if (changed) {
+      still_changing_ = true;
+    }
+    // Propagate class ids.
+    intptr_t cid = bind->computation()->ResultCid();
+    changed = bind->SetPropagatedCid(cid);
+    if (changed) {
+      still_changing_ = true;
+    }
   }
 }
 
@@ -683,6 +788,32 @@ void FlowGraphTypePropagator::VisitPhi(PhiInstr* phi) {
   // least specific of the input propagated types.
   AbstractType& type = AbstractType::Handle(phi->LeastSpecificInputType());
   bool changed = phi->SetPropagatedType(type);
+  if (changed) {
+    still_changing_ = true;
+  }
+
+  // Merge class ids: if any two inputs have different class ids then result
+  // is kDynamicCid.
+  intptr_t merged_cid = kIllegalCid;
+  for (intptr_t i = 0; i < phi->InputCount(); i++) {
+    // Result cid of UseVal can be kIllegalCid if the referred definition
+    // has not been visited yet.
+    intptr_t cid = phi->InputAt(i)->ResultCid();
+    if (cid == kIllegalCid) {
+      still_changing_ = true;
+      continue;
+    }
+    if (merged_cid == kIllegalCid) {
+      // First time set.
+      merged_cid = cid;
+    } else if (merged_cid != cid) {
+      merged_cid = kDynamicCid;
+    }
+  }
+  if (merged_cid == kIllegalCid) {
+    merged_cid = kDynamicCid;
+  }
+  changed = phi->SetPropagatedCid(merged_cid);
   if (changed) {
     still_changing_ = true;
   }
@@ -709,6 +840,7 @@ void FlowGraphTypePropagator::VisitParameter(ParameterInstr* param) {
   if (changed) {
     still_changing_ = true;
   }
+  param->SetPropagatedCid(kDynamicCid);
 }
 
 

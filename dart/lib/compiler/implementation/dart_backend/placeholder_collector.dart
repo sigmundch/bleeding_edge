@@ -40,7 +40,11 @@ class SendVisitor extends ResolvedVisitor {
     }
     // We don't want to rename non top-level element access
     // unless it's a local variable.
-    if (!element.isTopLevel()) {
+    if (element.isPrefix()) {
+      // Node is prefix part in case of source 'lib.somesetter = 5;'
+      collector.makeNullPlaceholder(node);
+      return;
+    } else if (!element.isTopLevel()) {
       // May get FunctionExpression here in selector
       // in case of A(int this.f());
       if (node.selector is Identifier) {
@@ -72,6 +76,10 @@ class SendVisitor extends ResolvedVisitor {
       // Hack: putting null into map overrides receiver of original node.
       collector.makeNullPlaceholder(node.receiver);
     }
+  }
+
+  internalError(String reason, [Node node]) {
+    collector.internalError(reason, node);
   }
 
   tryRenamePrivateSelector(Send node) {
@@ -175,9 +183,18 @@ class PlaceholderCollector extends AbstractVisitor {
           internalError('Unreachable case');
         }
       }
+    } else if (element.isTopLevel()) {
+      Node fieldNode = element.parseNode(compiler);
+      if (fieldNode is Identifier) {
+        makeElementPlaceholder(fieldNode, element);
+      } else if (fieldNode is SendSet) {
+        makeElementPlaceholder(fieldNode.selector, element);
+      } else {
+        internalError('Unreachable case');
+      }
     }
   }
-  
+
   void collect(Element element, TreeElements elements) {
     treeElements = elements;
     Node elementNode;
@@ -190,6 +207,8 @@ class PlaceholderCollector extends AbstractVisitor {
       // variable list element twice, better merge this with emitter logic.
       currentElement = (element as VariableElement).variables;
       elementNode = currentElement.parseNode(compiler);
+      // We don't collect other elements from the same variable lists
+      // if they are not used. http://dartbug.com/4536
       collectFieldDeclarationPlaceholders(element, elementNode);
     } else if (element is ClassElement || element is TypedefElement) {
       currentElement = element;
@@ -331,24 +350,26 @@ class PlaceholderCollector extends AbstractVisitor {
       }
     }
     final type = compiler.resolveTypeAnnotation(currentElement, node);
-    if (type is !InterfaceType) return null;
-    var target = node.typeName;
-    if (node.typeName is Send) {
-      final element = treeElements[node];
-      if (element !== null) {
-        final send = node.typeName.asSend();
-        Identifier receiver = send.receiver;
-        Identifier selector = send.selector;
-        final hasPrefix = element.lookupConstructor(
-            receiver.source, selector.source) === null;
-        if (!hasPrefix) target = send.receiver;
+    if (type is InterfaceType || type is FunctionType) {
+      var target = node.typeName;
+      if (node.typeName is Send) {
+        final element = treeElements[node];
+        if (element !== null) {
+          final send = node.typeName.asSend();
+          Identifier receiver = send.receiver;
+          Identifier selector = send.selector;
+          final hasPrefix = element is TypedefElement ||
+              element.lookupConstructor(receiver.source, selector.source)
+                  === null;
+          if (!hasPrefix) target = send.receiver;
+        }
       }
-    }
-    // TODO(antonm): is there a better way to detect unresolved types?
-    if (type !== compiler.types.dynamicType) {
-      makeTypePlaceholder(target, type);
-    } else {
-      if (!isDynamicType(node)) makeUnresolvedPlaceholder(target);
+      // TODO(antonm): is there a better way to detect unresolved types?
+      if (type !== compiler.types.dynamicType) {
+        makeTypePlaceholder(target, type);
+      } else {
+        if (!isDynamicType(node)) makeUnresolvedPlaceholder(target);
+      }
     }
     node.visitChildren(this);
   }
@@ -400,6 +421,12 @@ class PlaceholderCollector extends AbstractVisitor {
 
   visitClassNode(ClassNode node) {
     assert(currentElement is ClassElement);
+    makeElementPlaceholder(node.name, currentElement);
+    node.visitChildren(this);
+  }
+
+  visitTypedef(Typedef node) {
+    assert(currentElement is TypedefElement);
     makeElementPlaceholder(node.name, currentElement);
     node.visitChildren(this);
   }

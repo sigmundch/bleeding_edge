@@ -1061,13 +1061,22 @@ class ClassElement extends ScopeContainerElement
   }
 
   /**
-  * Lookup super members for the class. This will ignore constructors.
+   * Lookup super members for the class. This will ignore constructors.
    */
   Element lookupSuperMember(SourceString memberName) {
+    return lookupSuperMemberInLibrary(memberName, getLibrary());
+  }
+
+  /**
+   * Lookup super members for the class that is accessible in [library].
+   * This will ignore constructors.
+   */
+  Element lookupSuperMemberInLibrary(SourceString memberName,
+                                     LibraryElement library) {
     bool isPrivate = memberName.isPrivate();
     for (ClassElement s = superclass; s != null; s = s.superclass) {
       // Private members from a different library are not visible.
-      if (isPrivate && getLibrary() !== s.getLibrary()) continue;
+      if (isPrivate && library !== s.getLibrary()) continue;
       Element e = s.lookupLocalMember(memberName);
       if (e === null) continue;
       // Static members are not inherited.
@@ -1093,6 +1102,24 @@ class ClassElement extends ScopeContainerElement
       return e;
     }
     return null;
+  }
+
+  /**
+   * Find the first member in the class chain with the given [selector].
+   *
+   * This method is NOT to be used for resolving
+   * unqualified sends because it does not implement the scoping
+   * rules, where library scope comes before superclass scope.
+   */
+  Element lookupSelector(Selector selector) {
+    SourceString memberName = selector.name;
+    LibraryElement library = selector.library;
+    Element localMember = lookupLocalMember(memberName);
+    if (localMember != null &&
+        (!memberName.isPrivate() || getLibrary() == library)) {
+      return localMember;
+    }
+    return lookupSuperMemberInLibrary(memberName, library);
   }
 
   /**
@@ -1288,6 +1315,7 @@ class Elements {
   static bool isStaticOrTopLevel(Element element) {
     return (element != null)
            && !element.isInstanceMember()
+           && !element.isPrefix()
            && element.enclosingElement !== null
            && (element.enclosingElement.kind == ElementKind.CLASS ||
                element.enclosingElement.kind == ElementKind.COMPILATION_UNIT ||

@@ -14,13 +14,21 @@ final bool REPORT_EXCESS_RESOLUTION = false;
  */
 final bool REPORT_PASS2_OPTIMIZATIONS = false;
 
+/**
+ * Contains backend-specific data that is used throughout the compilation of
+ * one work item.
+ */
+class ItemCompilationContext {
+}
+
 class WorkItem {
+  final ItemCompilationContext compilationContext;
   final Element element;
   TreeElements resolutionTree;
   bool allowSpeculativeOptimization = true;
   List<HTypeGuard> guards = const <HTypeGuard>[];
 
-  WorkItem(this.element, this.resolutionTree);
+  WorkItem(this.element, this.resolutionTree, this.compilationContext);
 
   bool isAnalyzed() => resolutionTree !== null;
 
@@ -49,6 +57,10 @@ class Backend {
                                      Collection<LibraryElement> libraries);
   abstract void assembleProgram();
   abstract List<CompilerTask> get tasks();
+
+  ItemCompilationContext createItemCompilationContext() {
+    return new ItemCompilationContext();
+  }
 }
 
 class Compiler implements DiagnosticListener {
@@ -379,7 +391,7 @@ class Compiler implements DiagnosticListener {
     applyContainerPatch(original, patches);
 
     // Copy imports from patch to original library.
-    Map<String, LibraryElement> delayedPatches = <LibraryElement>{};
+    Map<String, LibraryElement> delayedPatches = <String, LibraryElement>{};
     Uri patchBase = patch.uri;
     for (ScriptTag tag in patch.tags.reverse()) {
       if (tag.isImport()) {
@@ -920,7 +932,7 @@ class Tracer {
 
   const Tracer();
 
-  void traceCompilation(String methodName) {
+  void traceCompilation(String methodName, ItemCompilationContext context) {
   }
 
   void traceGraph(String name, var graph) {

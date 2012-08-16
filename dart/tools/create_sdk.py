@@ -36,7 +36,6 @@
 # ........coreimpl_runtime.dart
 # ........runtime/
 # ......dart2js/
-# ......dartdoc/
 # ......isolate/
 # ........isolate_{frog, runtime}.dart
 # ........{frog, runtime}/
@@ -58,6 +57,7 @@
 # ......web/
 # ........web.dart
 # ....pkg/
+# ......dartdoc/
 # ......i18n/
 # ......logging/
 # ......(more will come here)
@@ -133,9 +133,6 @@ def CopyDart2Js(build_dir, sdk_root):
            ignore=ignore_patterns('.svn'))
   copytree(os.path.join('corelib', 'src'),
            os.path.join(sdk_root, 'lib', 'dart2js', 'corelib', 'src'),
-           ignore=ignore_patterns('.svn'))
-  copytree(os.path.join('corelib', 'unified'),
-           os.path.join(sdk_root, 'lib', 'dart2js', 'corelib', 'unified'),
            ignore=ignore_patterns('.svn'))
   copytree(os.path.join('runtime', 'lib'),
            os.path.join(sdk_root, 'lib', 'dart2js', 'runtime', 'lib'),
@@ -346,20 +343,6 @@ def Main(argv):
       if filename.endswith('.dart'):
         copyfile(join(src_dir, filename), join(dest_dir, filename))
 
-  # Create and populate lib/dartdoc.
-  dartdoc_src_dir = join(HOME, 'lib', 'dartdoc')
-  dartdoc_dest_dir = join(LIB, 'dartdoc')
-  copytree(dartdoc_src_dir, dartdoc_dest_dir,
-           ignore=ignore_patterns('.svn', 'docs'))
-
-  # Fixup dart2js dependencies.
-  ReplaceInFiles([
-      join(LIB, 'dartdoc', 'dartdoc.dart'),
-    ], [
-      ("final bool IN_SDK = false;",
-       "final bool IN_SDK = true;"),
-    ])
-
   # Create and populate lib/isolate
   copytree(join(HOME, 'lib', 'isolate'), join(LIB, 'isolate'),
            ignore=ignore_patterns('.svn'))
@@ -438,6 +421,21 @@ def Main(argv):
     for filename in os.listdir(src_dir):
       if filename.endswith('.dart'):
         copyfile(join(src_dir, filename), join(dest_dir, filename))
+
+  # Create and populate pkg/dartdoc.
+  dartdoc_src_dir = join(HOME, 'pkg', 'dartdoc')
+  dartdoc_dest_dir = join(PKG, 'dartdoc')
+  copytree(dartdoc_src_dir, dartdoc_dest_dir,
+           ignore=ignore_patterns('.svn', 'docs'))
+
+  # Fixup dart2js dependencies.
+  ReplaceInFiles([
+      join(PKG, 'dartdoc', 'dartdoc.dart'),
+    ], [
+      ("final bool IN_SDK = false;",
+       "final bool IN_SDK = true;"),
+    ])
+
 
   # Create and copy tools.
   UTIL = join(SDK_tmp, 'util')

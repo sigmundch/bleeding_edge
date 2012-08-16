@@ -28,8 +28,8 @@
 #import('dart:json');
 #import('dart:io');
 #import('html_diff.dart');
-#import('../../lib/dartdoc/mirrors/mirrors.dart');
-#import('../../lib/dartdoc/mirrors/mirrors_util.dart');
+#import('../../pkg/dartdoc/mirrors/mirrors.dart');
+#import('../../pkg/dartdoc/mirrors/mirrors_util.dart');
 
 HtmlDiff diff;
 
@@ -96,7 +96,7 @@ void main() {
   diff = new HtmlDiff();
   diff.run();
 
-  final renamed = <String>{};
+  final renamed = <String, String>{};
   diff.domToHtml.forEach((MemberMirror domMember,
                           Set<MemberMirror> htmlMembers) {
     maybeAddRename(renamed, domMember, htmlMembers);
