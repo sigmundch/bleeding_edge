@@ -939,6 +939,7 @@ class SsaBuilder extends ResolvedVisitor implements Visitor {
     buildInitializers(constructor, constructors, fieldValues);
     elements = oldElements;
   }
+
   /**
    * Run through the initializers and inline all field initializers. Recursively
    * inlines super initializers.
@@ -1033,8 +1034,6 @@ class SsaBuilder extends ResolvedVisitor implements Visitor {
       }
     });
 
-    final Map<FunctionElement, TreeElements> constructorElements =
-        compiler.resolver.constructorElements;
     List<FunctionElement> constructors = <FunctionElement>[functionElement];
 
     // Analyze the constructor and all referenced constructors and collect
@@ -2365,7 +2364,12 @@ class SsaBuilder extends ResolvedVisitor implements Visitor {
         // exception at runtime.
         compiler.cancel('Unimplemented non-matching static call', node: node);
       }
-      pushWithPosition(new HInvokeStatic(inputs), node);
+      HInvokeStatic instruction = new HInvokeStatic(inputs);
+      HType returnType =
+          builder.backend.optimisticReturnTypesWithRecompilationOnTypeChange(
+              work.element, element);
+      if (returnType != null) instruction.guaranteedType = returnType;
+      pushWithPosition(instruction, node);
     } else {
       if (element.kind == ElementKind.GETTER) {
         target = new HInvokeStatic(inputs);
@@ -3228,7 +3232,7 @@ class SsaBuilder extends ResolvedVisitor implements Visitor {
           } else {
             // TODO(aprelev@gmail.com): Once old catch syntax is removed
             // "if" condition above and this "else" branch should be deleted as
-            // type of declared variable won't matter for the catch 
+            // type of declared variable won't matter for the catch
             // condition
             Type type = elements.getType(declaration.type);
             if (type == null) {

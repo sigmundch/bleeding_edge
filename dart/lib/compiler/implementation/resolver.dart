@@ -36,13 +36,7 @@ class TreeElementMapping implements TreeElements {
 }
 
 class ResolverTask extends CompilerTask {
-  // Caches the elements of analyzed constructors to make them available
-  // for inlining in later tasks.
-  Map<FunctionElement, TreeElements> constructorElements;
-
-  ResolverTask(Compiler compiler)
-    : super(compiler),
-      constructorElements = new Map<FunctionElement, TreeElements>();
+  ResolverTask(Compiler compiler) : super(compiler);
 
   String get name() => 'Resolver';
 
@@ -112,10 +106,11 @@ class ResolverTask extends CompilerTask {
   TreeElements resolveMethodElement(FunctionElement element) {
     return compiler.withCurrentElement(element, () {
       bool isConstructor = element.kind === ElementKind.GENERATIVE_CONSTRUCTOR;
-      if (constructorElements.containsKey(element)) {
+      TreeElements elements =
+          compiler.enqueuer.resolution.getCachedElements(element);
+      if (elements !== null) {
         assert(isConstructor);
-        TreeElements elements = constructorElements[element];
-        if (elements !== null) return elements;
+        return elements;
       }
       FunctionExpression tree = element.parseNode(compiler);
       if (isConstructor) {
@@ -139,9 +134,6 @@ class ResolverTask extends CompilerTask {
       }
       visitBody(visitor, tree.body);
 
-      if (isConstructor) {
-        constructorElements[element] = visitor.mapping;
-      }
       return visitor.mapping;
     });
   }
@@ -376,12 +368,20 @@ class ResolverTask extends CompilerTask {
       compiler, node.parameters, node.returnType, element));
   }
 
-  FunctionSignature resolveTypedef(TypedefElement element) {
+  void resolveTypedef(TypedefElement element) {
+    if (element.isResolved || element.isBeingResolved) return;
+    element.isBeingResolved = true;
     return compiler.withCurrentElement(element, () {
-      Typedef node =
+      measure(() {
+        Typedef node =
           compiler.parser.measure(() => element.parseNode(compiler));
-      return measure(() => SignatureResolver.analyze(
-          compiler, node.formals, node.returnType, element));
+        TypedefResolverVisitor visitor =
+          new TypedefResolverVisitor(compiler, element);
+        visitor.visit(node);
+
+        element.isBeingResolved = false;
+        element.isResolved = true;
+      });
     });
   }
 
@@ -517,7 +517,7 @@ class InitializerResolver {
     ResolverTask resolver = visitor.compiler.resolver;
     final SourceString className = lookupTarget.name;
     result = lookupTarget.lookupConstructor(className, constructorName);
-    if (result === null) {
+    if (result === null || !result.isGenerativeConstructor()) {
       String classNameString = className.slowToString();
       String constructorNameString = constructorName.slowToString();
       String name = (constructorName === const SourceString(''))
@@ -817,7 +817,19 @@ class TypeResolver {
           type = new InterfaceType(cls, arguments);
         }
       } else if (element.isTypedef()) {
-        type = element.computeType(compiler);
+        TypedefElement typdef = element;
+        // TODO(ahe): Should be [ensureResolved].
+        compiler.resolveTypedef(typdef);
+        typdef.computeType(compiler);
+        Link<Type> arguments = resolveTypeArguments(
+            node, typdef.typeVariables,
+            scope, onFailure, whenResolved);
+        if (typdef.typeVariables.isEmpty() && arguments.isEmpty()) {
+          // Return the canonical type if it has no type parameters.
+          type = typdef.computeType(compiler);
+        } else {
+          type = new TypedefType(typdef, arguments);
+        }
       } else if (element.isTypeVariable()) {
         type = element.computeType(compiler);
       } else {
@@ -1787,6 +1799,27 @@ class TypeDefinitionVisitor extends CommonResolverVisitor<Type> {
       typeLink = typeLink.tail;
     }
     assert(typeLink.isEmpty());
+  }
+}
+
+class TypedefResolverVisitor extends TypeDefinitionVisitor {
+  TypedefElement get element() => super.element;
+
+  TypedefResolverVisitor(Compiler compiler, TypedefElement typedefElement)
+      : super(compiler, typedefElement);
+
+  visitTypedef(Typedef node) {
+    TypedefType type = element.computeType(compiler);
+    scope = new TypeDeclarationScope(scope, element);
+    resolveTypeVariableBounds(node.typeParameters);
+
+    element.functionSignature = SignatureResolver.analyze(
+        compiler, node.formals, node.returnType, element);
+
+    element.alias = compiler.computeFunctionType(
+        element, element.functionSignature);
+
+    // TODO(johnniwinther): Check for cyclic references in the typedef alias.
   }
 }
 

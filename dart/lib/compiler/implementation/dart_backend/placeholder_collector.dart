@@ -327,30 +327,18 @@ class PlaceholderCollector extends AbstractVisitor {
   visitTypeAnnotation(TypeAnnotation node) {
     // Poor man generic variables resolution.
     // TODO(antonm): get rid of it once resolver can deal with it.
-    if (isPlainTypeName(node)) {
-      String name = node.typeName.asIdentifier().source.slowToString();
-      if (currentElement is TypedefElement) {
-        TypedefElement typedefElement = currentElement;
-        NodeList typeParameters = typedefElement.cachedNode.typeParameters;
-        if (typeParameters !== null) {
-          for (TypeVariable typeVariable in typeParameters) {
-            Identifier typeVariableName = typeVariable.name;
-            // If names are equal, then it's a variable and sholdn't be renamed.
-            if (typeVariableName.source.slowToString() == name) return;
-          }
-        }
-      }
-      if (currentElement is ClassElement) {
-        ClassElement classElement = currentElement;
-        String typeName = node.typeName.asIdentifier().source.slowToString();
-        for (TypeVariableType argument in classElement.type.arguments) {
-          // If names are equal, then it's a variable and sholdn't be renamed.
-          if (argument.name.slowToString() == typeName) return;
+    if (isPlainTypeName(node) && currentElement is TypeDeclarationElement) {
+      SourceString name = node.typeName.asIdentifier().source;
+      TypeDeclarationElement typeElement = currentElement;
+      for (TypeVariableType parameter in typeElement.typeVariables) {
+        if (parameter.name == name) {
+          // type annotation matches one of parameters, shouldn't be renamed.
+          return;
         }
       }
     }
     final type = compiler.resolveTypeAnnotation(currentElement, node);
-    if (type is InterfaceType || type is FunctionType) {
+    if (type is InterfaceType || type is TypedefType) {
       var target = node.typeName;
       if (node.typeName is Send) {
         final element = treeElements[node];

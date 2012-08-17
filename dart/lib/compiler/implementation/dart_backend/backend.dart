@@ -4,33 +4,20 @@
 
 class DartBackend extends Backend {
   final List<CompilerTask> tasks;
-  final UnparseValidator unparseValidator;
 
   Map<Element, TreeElements> get resolvedElements() =>
       compiler.enqueuer.resolution.resolvedElements;
 
   DartBackend(Compiler compiler, [bool validateUnparse = false])
       : tasks = <CompilerTask>[],
-      unparseValidator = new UnparseValidator(compiler, validateUnparse),
-      super(compiler) {
-    tasks.add(unparseValidator);
-  }
+      super(compiler);
 
-  void enqueueHelpers(Enqueuer world) {
-    // TODO(antonm): Implement this method, if needed.
-  }
-
+  void enqueueHelpers(Enqueuer world) { }
   void codegen(WorkItem work) { }
-
   void processNativeClasses(Enqueuer world,
-                            Collection<LibraryElement> libraries) {
-  }
+                            Collection<LibraryElement> libraries) { }
 
   void assembleProgram() {
-    resolvedElements.forEach((element, treeElements) {
-      unparseValidator.check(element);
-    });
-
     /**
      * Tells whether we should output given element. Corelib classes like
      * Object should not be in the resulting code.
@@ -122,11 +109,9 @@ class DartBackend extends Backend {
       sortedClassMembers[classElement] = sortedMembers;
     });
 
-    Emitter emitter = new Emitter(compiler, renames, sortedClassMembers);
-    emitter.outputImports(imports);
-    sortedTopLevels.forEach(emitter.outputElement);
-
-    compiler.assembledCode = emitter.toString();
+    final unparser = new Unparser.withRenamer((Node node) => renames[node]);
+    compiler.assembledCode = emitCode(
+        compiler, unparser, imports, sortedTopLevels, sortedClassMembers);
   }
 
   log(String message) => compiler.log('[DartBackend] $message');

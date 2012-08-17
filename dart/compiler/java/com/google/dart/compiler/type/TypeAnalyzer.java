@@ -561,7 +561,7 @@ public class TypeAnalyzer implements DartCompilationPhase {
         return null;
       }
       Member member = itype.lookupMember(methodName);
-      if (member == null) {
+      if (member == null && problemTarget != null) {
         if (typeChecksForInferredTypes || !receiver.isInferred()) {
           typeError(problemTarget, TypeErrorCode.INTERFACE_HAS_NO_METHOD_NAMED, receiver,
               methodName);
@@ -987,6 +987,29 @@ public class TypeAnalyzer implements DartCompilationPhase {
         }
       }
 
+      // Check optional parameters.
+      // TODO(scheglov) currently this block does not work,
+      // because we handle all optional parameter as named
+      {
+        Map<String, Type> optionalParameterTypes = ftype.getOptionalParameterTypes();
+        Iterator<Entry<String, Type>> optionalParameterTypesIterator =
+            optionalParameterTypes.entrySet().iterator();
+        while (optionalParameterTypesIterator.hasNext()
+            && argumentTypes.hasNext()) {
+          Entry<String, Type> namedEntry = optionalParameterTypesIterator.next();
+          Type optionalType = namedEntry.getValue();
+          optionalType.getClass(); // quick null check
+          Type argumentType = argumentTypes.next();
+          argumentType.getClass(); // quick null check
+          DartExpression argumentNode = argumentNodes.get(argumentIndex);
+          argumentNode.setInvocationParameterId(argumentIndex);
+          if (checkAssignable(argumentNode, optionalType, argumentType)) {
+            inferFunctionLiteralParametersTypes(argumentNode, optionalType);
+          }
+          argumentIndex++;
+        }
+      }
+      
       // Check named parameters.
       {
         Set<String> usedNamedParametersPositional = Sets.newHashSet();
@@ -1021,6 +1044,7 @@ public class TypeAnalyzer implements DartCompilationPhase {
           DartExpression argumentNode = namedExpression.getExpression();
           // Prepare parameter name.
           String parameterName = namedExpression.getName().getName();
+          namedExpression.setInvocationParameterId(parameterName);
           argumentNode.setInvocationParameterId(parameterName);
           if (usedNamedParametersPositional.contains(parameterName)) {
             onError(namedExpression, TypeErrorCode.DUPLICATE_NAMED_ARGUMENT);
@@ -2164,11 +2188,6 @@ public class TypeAnalyzer implements DartCompilationPhase {
             continue;
           }
           Type caseType = nonVoidTypeOf(caseExpr);
-          // should be "int" or "String"
-          if (!Objects.equal(caseType, intType) && !Objects.equal(caseType, stringType)) {
-            onError(caseExpr, TypeErrorCode.CASE_EXPRESSION_SHOULD_BE_INT_STRING, caseType);
-            continue;
-          }
           // all "case expressions" should be same type
           if (sameCaseType == null) {
             sameCaseType = caseType;
@@ -2179,6 +2198,13 @@ public class TypeAnalyzer implements DartCompilationPhase {
           }
           // compatibility of "switch expression" and "case expression" types
           checkAssignable(caseExpr, switchType, caseType);
+          // should not have "operator =="
+          {
+            Member operator = lookupMember(caseType, methodNameForBinaryOperator(Token.EQ), null);
+            if (operator != null) {
+              onError(caseExpr, TypeErrorCode.CASE_EXPRESSION_TYPE_SHOULD_NOT_HAVE_EQUALS, caseType);
+            }
+          }
         }
       }
       return voidType;
