@@ -7,6 +7,7 @@ webgl_1_test: Skip  # Issue 1495
 xmldocument_test: Skip  # XML in dart:html is incomplete
 xmlelement_test: Skip  # XML in dart:html is incomplete
 measurement_test: Pass, Fail  # Issue 1940
+subclass_dom_elements_2_test: Fail # subclassing of dom elements is incomplete
 
 [ $runtime == drt ]
 xhr_cross_origin_test: Skip  # Issue 4502: Passes with --allow-external-pages.
