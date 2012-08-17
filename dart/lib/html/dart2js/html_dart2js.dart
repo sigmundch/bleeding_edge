@@ -38279,8 +38279,51 @@ void rewirePrototypeChain(nativeElement, closure) {
   if (componentPrototype == null) {
     componentPrototype = JS('var', 'Object.getPrototypeOf(#)', closure());
     _componentsMetadata[closure] = componentPrototype;
-    JS('void', '#.__proto__ = Object.getPrototypeOf(#)',
-        componentPrototype, nativeElement);
+    if (_supportsProto) {
+      JS('void', '#.__proto__ = Object.getPrototypeOf(#)',
+          componentPrototype, nativeElement);
+    }
   }
-  JS('void', '#.__proto__ = #', nativeElement, componentPrototype);
+  if (_supportsProto) {
+    JS('void', '#.__proto__ = #', nativeElement, componentPrototype);
+  } else {
+    // TODO(samhop): worry about multiple levels of inheritance.
+    _copyProperties(componentPrototype, nativeElement);
+  }
 }
+
+// TODO(samhop): This functionality is duplicated in
+// compiler/implementation/js_backend/emitter.dart. There should
+// be a way to refactor to get it into a shared library (although it will
+// be tricky, since the functionality there is needed at initialization time).
+// (See documentation in emitter.dart)
+bool get _supportsProto() {
+  var supportsProto = false;
+  var tmp = new _ProtoTester();
+  var tmpPrototype = JS('var', '#.constructor.prototype', tmp);
+  var protoFieldExists = JS('var', '!!(#.__proto__)', tmpPrototype);
+  if (protoFieldExists) {
+    JS('void', '#.__proto__ = {}', tmpPrototype);
+    var undefinedCheck = JS('var', 'typeof # === "undefined"', tmpPrototype.f);
+    if (undefinedCheck) {
+      supportsProto = true;
+    }
+  }
+  return supportsProto;
+}
+
+class _ProtoTester {
+  var f;
+}
+
+// see doc for _supportsProto
+// TODO(samhop): migrate this to the JS compiler directive.
+void _copyProperties(source, dest) native 
+'''
+  for (var member in source) {
+    if (member == '' || member == 'super') continue;
+    if (hasOwnProperty.call(source, member)) {
+      dest[member] = source[member];
+    }
+  }
+'''
