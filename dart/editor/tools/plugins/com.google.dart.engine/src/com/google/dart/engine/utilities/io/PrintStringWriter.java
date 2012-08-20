@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.google.dart.tools.core.test.util;
+package com.google.dart.engine.utilities.io;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -144,7 +144,7 @@ public class PrintStringWriter extends PrintWriter {
   }
 
   /**
-   * Sets the length of the character sequence.
+   * Set the length of the character sequence to the given length.
    * 
    * @see AbstractStringBuilder#setLength(int)
    */

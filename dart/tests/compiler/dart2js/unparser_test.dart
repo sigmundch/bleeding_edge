@@ -4,7 +4,10 @@
 
 #import('dart:uri');
 #import('parser_helper.dart');
+#import('mock_compiler.dart');
 #import("../../../lib/compiler/compiler.dart");
+#import("../../../lib/compiler/implementation/dart_backend/dart_backend.dart");
+#import("../../../lib/compiler/implementation/elements/elements.dart");
 #import("../../../lib/compiler/implementation/tree/tree.dart");
 
 testUnparse(String statement) {
@@ -194,12 +197,12 @@ testVariableDefinitions() {
 
 testGetSet() {
   // Top-level get/set.
-  testDart2Dart('set foo(arg){}get foo(){return 5;}main(){foo; foo=5;}');
+  testDart2Dart('set foo(arg){}get foo{return 5;}main(){foo; foo=5;}');
   // Field get/set.
   testDart2Dart('main(){var a=new A(); a.foo; a.foo=5;}'
-      'class A{set foo(a){}get foo(){return 5;}}');
+      'class A{set foo(a){}get foo{return 5;}}');
   // Typed get/set.
-  testDart2Dart('String get foo(){return "a";}main(){foo;}');
+  testDart2Dart('String get foo{return "a";}main(){foo;}');
 }
 
 testFactoryConstructor() {
@@ -415,27 +418,63 @@ testLibraryGetSet() {
   var librarySrc = '''
 #library('mylib');
 
-get topgetset() => 5;
+get topgetset => 5;
 set topgetset(arg) {}
 ''';
   var mainSrc = '''
 #import('mylib.dart', prefix: 'mylib');
 
+get topgetset => 6;
+set topgetset(arg) {}
+
 main() {
+  topgetset;
+  topgetset = 6;
+
   mylib.topgetset;
   mylib.topgetset = 5;
 }
 ''';
   var expectedResult =
-    'get topgetset()=> 5;'
+    'get topgetset=> 5;'
     'set topgetset(arg){}'
-    'main(){topgetset; topgetset=5;}';
+    'get p_topgetset=> 6;'
+    'set p_topgetset(arg){}'
+    'main(){p_topgetset; p_topgetset=6; topgetset; topgetset=5;}';
   testDart2DartWithLibrary(mainSrc, librarySrc,
       (String result) { Expect.equals(expectedResult, result); });
 }
 
 testFieldTypeOutput() {
   testDart2Dart('main(){new A().field;}class B{}class A{B field;}');
+}
+
+testDefaultClassNamePlaceholder() {
+  var src = '''
+interface I default C{
+  I();
+}
+
+class C {
+  I() {}
+}
+
+main() {
+  new I();
+}
+''';
+  MockCompiler compiler = new MockCompiler();
+  compiler.parseScript(src);
+  ClassElement interfaceElement = compiler.mainApp.find(buildSourceString('I'));
+  interfaceElement.ensureResolved(compiler);
+  PlaceholderCollector collector = new PlaceholderCollector(compiler);
+  collector.collect(interfaceElement,
+      compiler.enqueuer.resolution.resolvedElements[interfaceElement]);
+  ClassNode interfaceNode = interfaceElement.parseNode(compiler);
+  Node defaultTypeNode = interfaceNode.defaultClause.typeName;
+  ClassElement classElement = compiler.mainApp.find(buildSourceString('C'));
+  // Check that 'C' in default clause of I gets into placeholders.
+  Expect.isTrue(collector.elementNodes[classElement].contains(defaultTypeNode));
 }
 
 main() {
@@ -467,4 +506,5 @@ main() {
   testStaticInvocation();
   testLibraryGetSet();
   testFieldTypeOutput();
+  testDefaultClassNamePlaceholder();
 }

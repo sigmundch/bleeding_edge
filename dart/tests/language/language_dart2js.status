@@ -42,8 +42,11 @@ arithmetic_test: Fail
 assertion_test: Fail
 
 [ $compiler == dart2js ]
-top_level_getter_arrow_syntax_test: Fail # TODO(ahe): I'm working on this.
-getters_setters_test: Fail # TODO(ahe): I'm working on this.
+implicit_this_test/03: Fail # TODO(ahe): Handle abstract getters.
+implicit_this_test/04: Fail # TODO(ahe): Handle abstract getters.
+property_field_override_test: Fail # TODO(ahe): Handle abstract getters.
+
+getter_declaration_negative_test: Fail # This will be fixed when dart2js reject old getter syntax.
 
 function_type_this_parameter_test: Crash # Issue 4417.
 compile_time_constant8_test: Fail # We don't take the generic type into account yet.
@@ -165,7 +168,6 @@ const_syntax_test/01: Fail # Negative language test.
 const_syntax_test/02: Fail # Negative language test.
 const_syntax_test/03: Fail # Negative language test.
 constructor2_negative_test: Fail # Negative language test.
-constructor_duplicate_initializers_test/02: Fail # Negative language test.
 constructor_negative_test: Pass # For the wrong reason.
 constructor_return_negative_test: Fail # Negative language test.
 constructor_return_with_arrow_negative_test: Fail # Negative language test.
@@ -188,7 +190,6 @@ field7a_negative_test: Fail # Negative language test.
 final_for_in_variable_test/01: Fail # Negative language test
 final_param_negative_test: Fail # Negative language test.
 final_var_negative_test: Fail # Negative language test.
-getter_declaration_negative_test: Fail # Negative language test.
 instantiate_type_variable_negative_test: Pass  # For the wrong reason.
 interface_factory3_negative_test: Fail # Negative language test.
 interface_factory_constructor_negative_test: Fail # Negative language test.

@@ -222,16 +222,6 @@ class PlaceholderCollector extends AbstractVisitor {
     });
   }
 
-  Type resolveType(TypeAnnotation typeAnnotation) {
-    if (treeElements === null) return null;
-    var result = treeElements.getType(typeAnnotation);
-    // TODO: Have better type resolution.
-    if (result === null) {
-      result = compiler.resolveTypeAnnotation(currentElement, typeAnnotation);
-    }
-    return result;
-  }
-
   void tryMakePrivateIdentifier(Identifier identifier) {
     if (identifier.source.isPrivate()) makePrivateIdentifier(identifier);
   }
@@ -303,6 +293,9 @@ class PlaceholderCollector extends AbstractVisitor {
     if (element !== null) {
       if (element.isInstanceMember()) {
         tryMakePrivateIdentifier(send.selector.asIdentifier());
+      } else if (element.isTopLevel()) {
+        assert(element is VariableElement || element.isSetter());
+        makeElementPlaceholder(send.selector, element);
       } else {
         assert(send.selector is Identifier);
         tryMakeLocalPlaceholder(element, send.selector);
@@ -411,6 +404,14 @@ class PlaceholderCollector extends AbstractVisitor {
     assert(currentElement is ClassElement);
     makeElementPlaceholder(node.name, currentElement);
     node.visitChildren(this);
+    if (node.defaultClause !== null) {
+      // Can't just visit class node's default clause because of the bug in the
+      // resolver, it just crashes when it meets type variable.
+      Type defaultType = (currentElement as ClassElement).defaultClass;
+      assert(defaultType !== null);
+      makeTypePlaceholder(node.defaultClause.typeName, defaultType);
+      visit(node.defaultClause.typeArguments);
+    }
   }
 
   visitTypedef(Typedef node) {
