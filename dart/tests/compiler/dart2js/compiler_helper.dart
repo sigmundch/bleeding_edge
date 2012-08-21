@@ -36,6 +36,8 @@ String compileAll(String code) {
   Uri uri = new Uri.fromComponents(scheme: 'source');
   MockCompiler compiler = compilerFor(code, uri);
   compiler.runCompiler(uri);
+  Expect.isFalse(compiler.compilationFailed,
+                 'Unexpected compilation error');
   return compiler.assembledCode;
 }
 
@@ -57,10 +59,10 @@ String getNumberTypeCheck(String variable) {
 
 bool checkNumberOfMatches(Iterator it, int nb) {
   for (int i = 0; i < nb; i++) {
-    Expect.isTrue(it.hasNext());
+    Expect.isTrue(it.hasNext(), "Found less than $nb matches");
     it.next();
   }
-  Expect.isFalse(it.hasNext());
+  Expect.isFalse(it.hasNext(), "Found more than $nb matches");
 }
 
 void compileAndMatch(String code, String entry, RegExp regexp) {

@@ -22,6 +22,7 @@ public class SystemLibraryManagerTest extends TestCase {
   }
 
   SystemLibraryManager systemLibraryManager = new SystemLibraryManager();
+ 
 
   public void testExpand1() throws Exception {
     URI shortUri = new URI("dart:core");

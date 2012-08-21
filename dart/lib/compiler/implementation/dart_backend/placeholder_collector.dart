@@ -28,13 +28,15 @@ class SendVisitor extends ResolvedVisitor {
   }
 
   visitDynamicSend(Send node) {
+    Element element = elements[node];
+    if (element !== null && element.isErroneous()) return;
     tryRenamePrivateSelector(node);
   }
 
   visitGetterSend(Send node) {
     final element = elements[node];
     // element === null means dynamic property access.
-    if (element === null || element.isInstanceMember()) {
+    if (element === null || element.isMember()) {
       tryRenamePrivateSelector(node);
       return;
     }
@@ -98,12 +100,25 @@ class PlaceholderCollector extends AbstractVisitor {
   Element currentElement;
   TreeElements treeElements;
 
+  LibraryElement get coreLibrary => compiler.coreLibrary;
+  FunctionElement get entryFunction => compiler.mainApp.find(Compiler.MAIN);
+
   PlaceholderCollector(this.compiler) :
       nullNodes = new Set<Node>(),
       unresolvedNodes = new Set<Identifier>(),
       elementNodes = new Map<Element, Set<Node>>(),
       localPlaceholders = new Map<FunctionElement, Set<LocalPlaceholder>>(),
       privateNodes = new Map<LibraryElement, Set<Identifier>>();
+
+  void tryMakeConstructorNamePlaceholder(
+      FunctionExpression constructor, ClassElement element) {
+    Node nameNode = constructor.name;
+    if (nameNode is Send) nameNode = nameNode.receiver;
+    if (nameNode.asIdentifier().token.slowToString()
+        == element.name.slowToString()) {
+      makeElementPlaceholder(nameNode, element);
+    }
+  }
 
   void collectFunctionDeclarationPlaceholders(
       FunctionElement element, FunctionExpression node) {
@@ -119,14 +134,27 @@ class PlaceholderCollector extends AbstractVisitor {
       //      0.dart: class C { C(); }
       //      1.dart: interface C default p0.C { C(); }
       //    the second case is just a bug now.
-      final enclosingClass = element.getEnclosingClass();
-      Node nameNode = node.name;
-      if (nameNode is Send) nameNode = nameNode.receiver;
-      // For cases like class C implements I { I(); }
-      if (nameNode.asIdentifier().token.slowToString()
-          == enclosingClass.name.slowToString()) {
-        makeTypePlaceholder(nameNode, enclosingClass.type);
+      tryMakeConstructorNamePlaceholder(node, element.getEnclosingClass());
+
+      // If we have interface constructor, make sure that we put placeholder
+      // for its default factory implementation.
+      // Example:
+      // interface I default C { I();}
+      // class C { factory I() {} }
+      // 2 cases:
+      // Plain interface name. Rename it unless it is the default
+      // constructor for enclosing class.
+      // Example:
+      // interface I { I(); }
+      // class C implements I { C(); }  don't rename this case.
+      // OR I.named() inside C, rename first part.
+      if (element.defaultImplementation !== null
+          && element.defaultImplementation !== element) {
+        FunctionElement implementingFactory = element.defaultImplementation;
+        tryMakeConstructorNamePlaceholder(implementingFactory.cachedNode,
+            element.getEnclosingClass());
       }
+
       // Process Ctor(this._field) correctly.
       for (Node parameter in node.parameters) {
         VariableDefinitions definitions = parameter.asVariableDefinitions();
@@ -143,7 +171,7 @@ class PlaceholderCollector extends AbstractVisitor {
                 tryMakePrivateIdentifier(
                     send.selector.asFunctionExpression().name.asIdentifier());
               } else {
-                internalError('Unreachable case');
+                unreachable();
               }
             } else {
               assert(definition is Identifier
@@ -180,7 +208,7 @@ class PlaceholderCollector extends AbstractVisitor {
           tryMakePrivateIdentifier(
               definition.asSendSet().selector.asIdentifier());
         } else {
-          internalError('Unreachable case');
+          unreachable();
         }
       }
     } else if (element.isTopLevel()) {
@@ -190,7 +218,7 @@ class PlaceholderCollector extends AbstractVisitor {
       } else if (fieldNode is SendSet) {
         makeElementPlaceholder(fieldNode.selector, element);
       } else {
-        internalError('Unreachable case');
+        unreachable();
       }
     }
   }
@@ -214,7 +242,7 @@ class PlaceholderCollector extends AbstractVisitor {
       currentElement = element;
       elementNode = currentElement.parseNode(compiler);
     } else {
-      assert(false); // Unreachable.
+      unreachable();
     }
     currentLocalPlaceholders = new Map<String, LocalPlaceholder>();
     compiler.withCurrentElement(element, () {
@@ -247,6 +275,8 @@ class PlaceholderCollector extends AbstractVisitor {
 
   void makeElementPlaceholder(Node node, Element element) {
     assert(element !== null);
+    if (element === entryFunction) return;
+    if (element.getLibrary() === coreLibrary) return;
     elementNodes.putIfAbsent(element, () => new Set<Node>()).add(node);
   }
 
@@ -279,6 +309,8 @@ class PlaceholderCollector extends AbstractVisitor {
     compiler.cancel(reason: reason, node: node);
   }
 
+  void unreachable() { internalError('Unreachable case'); }
+
   visit(Node node) => (node === null) ? null : node.accept(this);
 
   visitNode(Node node) { node.visitChildren(this); }  // We must go deeper.
@@ -289,11 +321,12 @@ class PlaceholderCollector extends AbstractVisitor {
   }
 
   visitSendSet(SendSet send) {
+    if (send.selector is Identifier) {
+      tryMakePrivateIdentifier(send.selector.asIdentifier());
+    }
     final element = treeElements[send];
     if (element !== null) {
-      if (element.isInstanceMember()) {
-        tryMakePrivateIdentifier(send.selector.asIdentifier());
-      } else if (element.isTopLevel()) {
+      if (element.isTopLevel()) {
         assert(element is VariableElement || element.isSetter());
         makeElementPlaceholder(send.selector, element);
       } else {
@@ -320,12 +353,17 @@ class PlaceholderCollector extends AbstractVisitor {
   visitTypeAnnotation(TypeAnnotation node) {
     // Poor man generic variables resolution.
     // TODO(antonm): get rid of it once resolver can deal with it.
-    if (isPlainTypeName(node) && currentElement is TypeDeclarationElement) {
+    TypeDeclarationElement typeDeclarationElement;
+    if (currentElement is TypeDeclarationElement) {
+      typeDeclarationElement = currentElement;
+    } else {
+      typeDeclarationElement = currentElement.getEnclosingClass();
+    }
+    if (typeDeclarationElement !== null && isPlainTypeName(node)) {
       SourceString name = node.typeName.asIdentifier().source;
-      TypeDeclarationElement typeElement = currentElement;
-      for (TypeVariableType parameter in typeElement.typeVariables) {
+      for (TypeVariableType parameter in typeDeclarationElement.typeVariables) {
         if (parameter.name == name) {
-          // type annotation matches one of parameters, shouldn't be renamed.
+          makeTypePlaceholder(node, parameter);
           return;
         }
       }
@@ -404,6 +442,16 @@ class PlaceholderCollector extends AbstractVisitor {
     assert(currentElement is ClassElement);
     makeElementPlaceholder(node.name, currentElement);
     node.visitChildren(this);
+    if (node.typeParameters !== null) {
+      // Another poor man resolution.
+      final typeVariableTypes =
+          new List<Type>.from(currentElement.typeVariables);
+      int i = 0;
+      for (TypeVariable typeVariable in node.typeParameters) {
+        makeTypePlaceholder(typeVariable.name, typeVariableTypes[i]);
+        i++;
+      }
+    }
     if (node.defaultClause !== null) {
       // Can't just visit class node's default clause because of the bug in the
       // resolver, it just crashes when it meets type variable.

@@ -7468,6 +7468,128 @@ class HistoryImpl implements History native "*History" {
 class HtmlElementImpl extends ElementImpl implements HtmlElement native "*HTMLHtmlElement" {
 }
 
+class HttpRequestImpl extends EventTargetImpl implements HttpRequest native "*XMLHttpRequest" {
+
+  HttpRequestEventsImpl get on() =>
+    new HttpRequestEventsImpl(this);
+
+  static final int DONE = 4;
+
+  static final int HEADERS_RECEIVED = 2;
+
+  static final int LOADING = 3;
+
+  static final int OPENED = 1;
+
+  static final int UNSENT = 0;
+
+  final int readyState;
+
+  final Object response;
+
+  final String responseText;
+
+  String responseType;
+
+  final DocumentImpl responseXML;
+
+  final int status;
+
+  final String statusText;
+
+  final HttpRequestUploadImpl upload;
+
+  bool withCredentials;
+
+  void abort() native;
+
+  void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
+
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
+
+  String getAllResponseHeaders() native;
+
+  String getResponseHeader(String header) native;
+
+  void open(String method, String url, [bool async, String user, String password]) native;
+
+  void overrideMimeType(String override) native;
+
+  void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
+
+  void send([data]) native;
+
+  void setRequestHeader(String header, String value) native;
+}
+
+class HttpRequestEventsImpl extends EventsImpl implements HttpRequestEvents {
+  HttpRequestEventsImpl(_ptr) : super(_ptr);
+
+  EventListenerList get abort() => this['abort'];
+
+  EventListenerList get error() => this['error'];
+
+  EventListenerList get load() => this['load'];
+
+  EventListenerList get loadEnd() => this['loadend'];
+
+  EventListenerList get loadStart() => this['loadstart'];
+
+  EventListenerList get progress() => this['progress'];
+
+  EventListenerList get readyStateChange() => this['readystatechange'];
+}
+
+class HttpRequestExceptionImpl implements HttpRequestException native "*XMLHttpRequestException" {
+
+  static final int ABORT_ERR = 102;
+
+  static final int NETWORK_ERR = 101;
+
+  final int code;
+
+  final String message;
+
+  final String name;
+
+  String toString() native;
+}
+
+class HttpRequestProgressEventImpl extends ProgressEventImpl implements HttpRequestProgressEvent native "*XMLHttpRequestProgressEvent" {
+
+  final int position;
+
+  final int totalSize;
+}
+
+class HttpRequestUploadImpl extends EventTargetImpl implements HttpRequestUpload native "*XMLHttpRequestUpload" {
+
+  HttpRequestUploadEventsImpl get on() =>
+    new HttpRequestUploadEventsImpl(this);
+
+  void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
+
+  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
+
+  void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
+}
+
+class HttpRequestUploadEventsImpl extends EventsImpl implements HttpRequestUploadEvents {
+  HttpRequestUploadEventsImpl(_ptr) : super(_ptr);
+
+  EventListenerList get abort() => this['abort'];
+
+  EventListenerList get error() => this['error'];
+
+  EventListenerList get load() => this['load'];
+
+  EventListenerList get loadEnd() => this['loadend'];
+
+  EventListenerList get loadStart() => this['loadstart'];
+
+  EventListenerList get progress() => this['progress'];
+}
+
 class IDBAnyImpl implements IDBAny native "*IDBAny" {
 }
 
@@ -17076,128 +17198,6 @@ class WorkerNavigatorImpl implements WorkerNavigator native "*WorkerNavigator" {
   final String userAgent;
 }
 
-class XMLHttpRequestImpl extends EventTargetImpl implements XMLHttpRequest native "*XMLHttpRequest" {
-
-  XMLHttpRequestEventsImpl get on() =>
-    new XMLHttpRequestEventsImpl(this);
-
-  static final int DONE = 4;
-
-  static final int HEADERS_RECEIVED = 2;
-
-  static final int LOADING = 3;
-
-  static final int OPENED = 1;
-
-  static final int UNSENT = 0;
-
-  final int readyState;
-
-  final Object response;
-
-  final String responseText;
-
-  String responseType;
-
-  final DocumentImpl responseXML;
-
-  final int status;
-
-  final String statusText;
-
-  final XMLHttpRequestUploadImpl upload;
-
-  bool withCredentials;
-
-  void abort() native;
-
-  void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
-
-  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
-
-  String getAllResponseHeaders() native;
-
-  String getResponseHeader(String header) native;
-
-  void open(String method, String url, [bool async, String user, String password]) native;
-
-  void overrideMimeType(String override) native;
-
-  void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
-
-  void send([data]) native;
-
-  void setRequestHeader(String header, String value) native;
-}
-
-class XMLHttpRequestEventsImpl extends EventsImpl implements XMLHttpRequestEvents {
-  XMLHttpRequestEventsImpl(_ptr) : super(_ptr);
-
-  EventListenerList get abort() => this['abort'];
-
-  EventListenerList get error() => this['error'];
-
-  EventListenerList get load() => this['load'];
-
-  EventListenerList get loadEnd() => this['loadend'];
-
-  EventListenerList get loadStart() => this['loadstart'];
-
-  EventListenerList get progress() => this['progress'];
-
-  EventListenerList get readyStateChange() => this['readystatechange'];
-}
-
-class XMLHttpRequestExceptionImpl implements XMLHttpRequestException native "*XMLHttpRequestException" {
-
-  static final int ABORT_ERR = 102;
-
-  static final int NETWORK_ERR = 101;
-
-  final int code;
-
-  final String message;
-
-  final String name;
-
-  String toString() native;
-}
-
-class XMLHttpRequestProgressEventImpl extends ProgressEventImpl implements XMLHttpRequestProgressEvent native "*XMLHttpRequestProgressEvent" {
-
-  final int position;
-
-  final int totalSize;
-}
-
-class XMLHttpRequestUploadImpl extends EventTargetImpl implements XMLHttpRequestUpload native "*XMLHttpRequestUpload" {
-
-  XMLHttpRequestUploadEventsImpl get on() =>
-    new XMLHttpRequestUploadEventsImpl(this);
-
-  void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
-
-  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
-
-  void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
-}
-
-class XMLHttpRequestUploadEventsImpl extends EventsImpl implements XMLHttpRequestUploadEvents {
-  XMLHttpRequestUploadEventsImpl(_ptr) : super(_ptr);
-
-  EventListenerList get abort() => this['abort'];
-
-  EventListenerList get error() => this['error'];
-
-  EventListenerList get load() => this['load'];
-
-  EventListenerList get loadEnd() => this['loadend'];
-
-  EventListenerList get loadStart() => this['loadstart'];
-
-  EventListenerList get progress() => this['progress'];
-}
-
 class XMLSerializerImpl implements XMLSerializer native "*XMLSerializer" {
 
   String serializeToString(NodeImpl node) native;
@@ -17692,6 +17692,21 @@ class _FileReaderSyncFactoryProvider {
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+class _HttpRequestFactoryProvider {
+  factory HttpRequest() native 'return new XMLHttpRequest();';
+
+  factory HttpRequest.get(String url,
+                                     onSuccess(HttpRequest request)) =>
+      _HttpRequestUtils.get(url, onSuccess, false);
+
+  factory HttpRequest.getWithCredentials(String url,
+                                     onSuccess(HttpRequest request)) =>
+      _HttpRequestUtils.get(url, onSuccess, true);
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 class _IceCandidateFactoryProvider {
   factory IceCandidate(String label, String candidateLine) native
       '''return new IceCandidate(label, candidateLine);''';
@@ -17851,21 +17866,6 @@ class _TextTrackCueFactoryProvider {
 class _WorkerFactoryProvider {
   factory Worker(String scriptUrl) native
       '''return new Worker(scriptUrl);''';
-}
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
-class _XMLHttpRequestFactoryProvider {
-  factory XMLHttpRequest() native 'return new XMLHttpRequest();';
-
-  factory XMLHttpRequest.get(String url,
-                                     onSuccess(XMLHttpRequest request)) =>
-      _XMLHttpRequestUtils.get(url, onSuccess, false);
-
-  factory XMLHttpRequest.getWithCredentials(String url,
-                                     onSuccess(XMLHttpRequest request)) =>
-      _XMLHttpRequestUtils.get(url, onSuccess, true);
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -24860,6 +24860,187 @@ interface History {
 interface HtmlElement extends Element default _Elements {
 
   HtmlElement();
+}
+// Copyright (c) 2011, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// WARNING: Do not edit - generated code.
+
+/// @domName XMLHttpRequest
+interface HttpRequest extends EventTarget default _HttpRequestFactoryProvider {
+  HttpRequest.get(String url, onSuccess(HttpRequest request));
+
+  HttpRequest.getWithCredentials(String url, onSuccess(HttpRequest request));
+
+  HttpRequest();
+
+  /**
+   * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
+   */
+  HttpRequestEvents get on();
+
+  static final int DONE = 4;
+
+  static final int HEADERS_RECEIVED = 2;
+
+  static final int LOADING = 3;
+
+  static final int OPENED = 1;
+
+  static final int UNSENT = 0;
+
+  /** @domName XMLHttpRequest.readyState */
+  final int readyState;
+
+  /** @domName XMLHttpRequest.response */
+  final Object response;
+
+  /** @domName XMLHttpRequest.responseText */
+  final String responseText;
+
+  /** @domName XMLHttpRequest.responseType */
+  String responseType;
+
+  /** @domName XMLHttpRequest.responseXML */
+  final Document responseXML;
+
+  /** @domName XMLHttpRequest.status */
+  final int status;
+
+  /** @domName XMLHttpRequest.statusText */
+  final String statusText;
+
+  /** @domName XMLHttpRequest.upload */
+  final HttpRequestUpload upload;
+
+  /** @domName XMLHttpRequest.withCredentials */
+  bool withCredentials;
+
+  /** @domName XMLHttpRequest.abort */
+  void abort();
+
+  /** @domName XMLHttpRequest.addEventListener */
+  void $dom_addEventListener(String type, EventListener listener, [bool useCapture]);
+
+  /** @domName XMLHttpRequest.dispatchEvent */
+  bool $dom_dispatchEvent(Event evt);
+
+  /** @domName XMLHttpRequest.getAllResponseHeaders */
+  String getAllResponseHeaders();
+
+  /** @domName XMLHttpRequest.getResponseHeader */
+  String getResponseHeader(String header);
+
+  /** @domName XMLHttpRequest.open */
+  void open(String method, String url, [bool async, String user, String password]);
+
+  /** @domName XMLHttpRequest.overrideMimeType */
+  void overrideMimeType(String override);
+
+  /** @domName XMLHttpRequest.removeEventListener */
+  void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]);
+
+  /** @domName XMLHttpRequest.send */
+  void send([data]);
+
+  /** @domName XMLHttpRequest.setRequestHeader */
+  void setRequestHeader(String header, String value);
+}
+
+interface HttpRequestEvents extends Events {
+
+  EventListenerList get abort();
+
+  EventListenerList get error();
+
+  EventListenerList get load();
+
+  EventListenerList get loadEnd();
+
+  EventListenerList get loadStart();
+
+  EventListenerList get progress();
+
+  EventListenerList get readyStateChange();
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// WARNING: Do not edit - generated code.
+
+/// @domName XMLHttpRequestException
+interface HttpRequestException {
+
+  static final int ABORT_ERR = 102;
+
+  static final int NETWORK_ERR = 101;
+
+  /** @domName XMLHttpRequestException.code */
+  final int code;
+
+  /** @domName XMLHttpRequestException.message */
+  final String message;
+
+  /** @domName XMLHttpRequestException.name */
+  final String name;
+
+  /** @domName XMLHttpRequestException.toString */
+  String toString();
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// WARNING: Do not edit - generated code.
+
+/// @domName XMLHttpRequestProgressEvent
+interface HttpRequestProgressEvent extends ProgressEvent {
+
+  /** @domName XMLHttpRequestProgressEvent.position */
+  final int position;
+
+  /** @domName XMLHttpRequestProgressEvent.totalSize */
+  final int totalSize;
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// WARNING: Do not edit - generated code.
+
+/// @domName XMLHttpRequestUpload
+interface HttpRequestUpload extends EventTarget {
+
+  /**
+   * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
+   */
+  HttpRequestUploadEvents get on();
+
+  /** @domName XMLHttpRequestUpload.addEventListener */
+  void $dom_addEventListener(String type, EventListener listener, [bool useCapture]);
+
+  /** @domName XMLHttpRequestUpload.dispatchEvent */
+  bool $dom_dispatchEvent(Event evt);
+
+  /** @domName XMLHttpRequestUpload.removeEventListener */
+  void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]);
+}
+
+interface HttpRequestUploadEvents extends Events {
+
+  EventListenerList get abort();
+
+  EventListenerList get error();
+
+  EventListenerList get load();
+
+  EventListenerList get loadEnd();
+
+  EventListenerList get loadStart();
+
+  EventListenerList get progress();
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -36059,187 +36240,6 @@ interface WorkerNavigator {
   /** @domName WorkerNavigator.userAgent */
   final String userAgent;
 }
-// Copyright (c) 2011, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
-// WARNING: Do not edit - generated code.
-
-/// @domName XMLHttpRequest
-interface XMLHttpRequest extends EventTarget default _XMLHttpRequestFactoryProvider {
-  XMLHttpRequest.get(String url, onSuccess(XMLHttpRequest request));
-
-  XMLHttpRequest.getWithCredentials(String url, onSuccess(XMLHttpRequest request));
-
-  XMLHttpRequest();
-
-  /**
-   * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
-   */
-  XMLHttpRequestEvents get on();
-
-  static final int DONE = 4;
-
-  static final int HEADERS_RECEIVED = 2;
-
-  static final int LOADING = 3;
-
-  static final int OPENED = 1;
-
-  static final int UNSENT = 0;
-
-  /** @domName XMLHttpRequest.readyState */
-  final int readyState;
-
-  /** @domName XMLHttpRequest.response */
-  final Object response;
-
-  /** @domName XMLHttpRequest.responseText */
-  final String responseText;
-
-  /** @domName XMLHttpRequest.responseType */
-  String responseType;
-
-  /** @domName XMLHttpRequest.responseXML */
-  final Document responseXML;
-
-  /** @domName XMLHttpRequest.status */
-  final int status;
-
-  /** @domName XMLHttpRequest.statusText */
-  final String statusText;
-
-  /** @domName XMLHttpRequest.upload */
-  final XMLHttpRequestUpload upload;
-
-  /** @domName XMLHttpRequest.withCredentials */
-  bool withCredentials;
-
-  /** @domName XMLHttpRequest.abort */
-  void abort();
-
-  /** @domName XMLHttpRequest.addEventListener */
-  void $dom_addEventListener(String type, EventListener listener, [bool useCapture]);
-
-  /** @domName XMLHttpRequest.dispatchEvent */
-  bool $dom_dispatchEvent(Event evt);
-
-  /** @domName XMLHttpRequest.getAllResponseHeaders */
-  String getAllResponseHeaders();
-
-  /** @domName XMLHttpRequest.getResponseHeader */
-  String getResponseHeader(String header);
-
-  /** @domName XMLHttpRequest.open */
-  void open(String method, String url, [bool async, String user, String password]);
-
-  /** @domName XMLHttpRequest.overrideMimeType */
-  void overrideMimeType(String override);
-
-  /** @domName XMLHttpRequest.removeEventListener */
-  void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]);
-
-  /** @domName XMLHttpRequest.send */
-  void send([data]);
-
-  /** @domName XMLHttpRequest.setRequestHeader */
-  void setRequestHeader(String header, String value);
-}
-
-interface XMLHttpRequestEvents extends Events {
-
-  EventListenerList get abort();
-
-  EventListenerList get error();
-
-  EventListenerList get load();
-
-  EventListenerList get loadEnd();
-
-  EventListenerList get loadStart();
-
-  EventListenerList get progress();
-
-  EventListenerList get readyStateChange();
-}
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
-// WARNING: Do not edit - generated code.
-
-/// @domName XMLHttpRequestException
-interface XMLHttpRequestException {
-
-  static final int ABORT_ERR = 102;
-
-  static final int NETWORK_ERR = 101;
-
-  /** @domName XMLHttpRequestException.code */
-  final int code;
-
-  /** @domName XMLHttpRequestException.message */
-  final String message;
-
-  /** @domName XMLHttpRequestException.name */
-  final String name;
-
-  /** @domName XMLHttpRequestException.toString */
-  String toString();
-}
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
-// WARNING: Do not edit - generated code.
-
-/// @domName XMLHttpRequestProgressEvent
-interface XMLHttpRequestProgressEvent extends ProgressEvent {
-
-  /** @domName XMLHttpRequestProgressEvent.position */
-  final int position;
-
-  /** @domName XMLHttpRequestProgressEvent.totalSize */
-  final int totalSize;
-}
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
-// WARNING: Do not edit - generated code.
-
-/// @domName XMLHttpRequestUpload
-interface XMLHttpRequestUpload extends EventTarget {
-
-  /**
-   * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
-   */
-  XMLHttpRequestUploadEvents get on();
-
-  /** @domName XMLHttpRequestUpload.addEventListener */
-  void $dom_addEventListener(String type, EventListener listener, [bool useCapture]);
-
-  /** @domName XMLHttpRequestUpload.dispatchEvent */
-  bool $dom_dispatchEvent(Event evt);
-
-  /** @domName XMLHttpRequestUpload.removeEventListener */
-  void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]);
-}
-
-interface XMLHttpRequestUploadEvents extends Events {
-
-  EventListenerList get abort();
-
-  EventListenerList get error();
-
-  EventListenerList get load();
-
-  EventListenerList get loadEnd();
-
-  EventListenerList get loadStart();
-
-  EventListenerList get progress();
-}
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
@@ -37066,20 +37066,20 @@ class _Collections {
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-class _XMLHttpRequestUtils {
+class _HttpRequestUtils {
 
-  // Helper for factory XMLHttpRequest.get
-  static XMLHttpRequest get(String url,
-                            onSuccess(XMLHttpRequest request),
+  // Helper for factory HttpRequest.get
+  static HttpRequest get(String url,
+                            onSuccess(HttpRequest request),
                             bool withCredentials) {
-    final request = new XMLHttpRequest();
+    final request = new HttpRequest();
     request.open('GET', url, true);
 
     request.withCredentials = withCredentials;
 
     // Status 0 is for local XHR request.
     request.on.readyStateChange.add((e) {
-      if (request.readyState == XMLHttpRequest.DONE &&
+      if (request.readyState == HttpRequest.DONE &&
           (request.status == 200 || request.status == 0)) {
         onSuccess(request);
       }
@@ -37120,6 +37120,12 @@ class _JsSerializer extends _Serializer {
     return [ 'sendport', 'dart',
              x._receivePort._isolateId, x._receivePort._portId ];
   }
+
+  visitObject(Object x) {
+    if (x is Function) return visitFunction(x);
+    // TODO: Handle DOM elements and proxy other objects.
+    throw "Unserializable object $x";
+ }
 
   visitFunction(Function func) {
     return [ 'funcref',
@@ -37179,6 +37185,8 @@ _deserialize(var message) {
 
 class _JsDeserializer extends _Deserializer {
 
+  static final _UNSPECIFIED = const Object();
+
   deserializeSendPort(List x) {
     String tag = x[1];
     switch (tag) {
@@ -37194,6 +37202,27 @@ class _JsDeserializer extends _Deserializer {
     }
   }
 
+  deserializeObject(List x) {
+    String tag = x[0];
+    switch (tag) {
+      case 'funcref': return deserializeFunction(x);
+      default: throw 'Illegal object type: $x';
+    }
+  }
+
+  deserializeFunction(List x) {
+    var id = x[1];
+    SendPortSync port = deserializeSendPort(x[2]);
+    // TODO: Support varargs when there is support in the language.
+    return ([arg0 = _UNSPECIFIED, arg1 = _UNSPECIFIED,
+              arg2 = _UNSPECIFIED, arg3 = _UNSPECIFIED]) {
+      var args = [arg0, arg1, arg2, arg3];
+      var last = args.indexOf(_UNSPECIFIED);
+      if (last >= 0) args = args.getRange(0, last);
+      var message = [id, args];
+      return port.callSync(message);
+    };
+  }
 }
 
 // The receiver is JS.
@@ -38067,10 +38096,9 @@ class _MessageTraverser {
     if (x is Map) return visitMap(x);
     if (x is SendPort) return visitSendPort(x);
     if (x is SendPortSync) return visitSendPortSync(x);
-    if (x is Function) return visitFunction(x);
 
-    // TODO(floitsch): make this a real exception. (which one)?
-    throw "Message serialization: Illegal value $x passed";
+    // Overridable fallback.
+    return visitObject(x);
   }
 
   abstract visitPrimitive(x);
@@ -38079,8 +38107,9 @@ class _MessageTraverser {
   abstract visitSendPort(SendPort x);
   abstract visitSendPortSync(SendPortSync x);
 
-  visitFunction(Function func) {
-    throw "Serialization of functions is not allowed.";
+  visitObject(Object x) {
+    // TODO(floitsch): make this a real exception. (which one)?
+    throw "Message serialization: Illegal value $x passed";
   }
 
   static bool isPrimitive(x) {
@@ -38188,8 +38217,7 @@ class _Deserializer {
       case 'list': return _deserializeList(x);
       case 'map': return _deserializeMap(x);
       case 'sendport': return deserializeSendPort(x);
-      // TODO(floitsch): Use real exception (which one?).
-      default: throw "Unexpected serialized object";
+      default: return deserializeObject(x);
     }
   }
 
@@ -38230,6 +38258,10 @@ class _Deserializer {
 
   abstract deserializeSendPort(List x);
 
+  deserializeObject(List x) {
+    // TODO(floitsch): Use real exception (which one?).
+    throw "Unexpected serialized object";
+  }
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a

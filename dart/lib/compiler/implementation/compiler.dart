@@ -349,17 +349,7 @@ class Compiler implements DiagnosticListener {
     coreImplLibrary = scanBuiltinLibrary('coreimpl');
     jsHelperLibrary = scanBuiltinLibrary('_js_helper');
     interceptorsLibrary = scanBuiltinLibrary('_interceptors');
-    coreLibrary = scanBuiltinLibrary('core');
 
-    // Since coreLibrary import the libraries "coreimpl", "js_helper",
-    // and "interceptors", coreLibrary is null when they are being
-    // built. So we add the implicit import of coreLibrary now. This
-    // can be cleaned up when we have proper support for "dart:core"
-    // and don't need to access it through the field "coreLibrary".
-    // TODO(ahe): Clean this up as described above.
-    scanner.importLibrary(coreImplLibrary, coreLibrary, null);
-    scanner.importLibrary(jsHelperLibrary, coreLibrary, null);
-    scanner.importLibrary(interceptorsLibrary, coreLibrary, null);
     addForeignFunctions(jsHelperLibrary);
     addForeignFunctions(interceptorsLibrary);
 
@@ -374,6 +364,17 @@ class Compiler implements DiagnosticListener {
     //patchDartLibrary(coreImplLibrary, 'coreimpl');
   }
 
+  void importCoreLibrary(LibraryElement library) {
+    Uri coreUri = new Uri.fromComponents(scheme: 'dart', path: 'core');
+    if (coreLibrary === null) {
+      coreLibrary = scanner.loadLibrary(coreUri, null, coreUri);
+    }
+    scanner.importLibrary(library,
+                          coreLibrary,
+                          null,
+                          library.entryCompilationUnit);
+  }
+
   void patchDartLibrary(LibraryElement library, String dartLibraryPath) {
     if (library.isPatched) return;
     Uri patchUri = resolvePatchUri(dartLibraryPath);
@@ -381,19 +382,6 @@ class Compiler implements DiagnosticListener {
        patchParser.patchLibrary(patchUri, library);
       // We allow foreign functions in patched libraries.
       addForeignFunctions(library);  // Is safe even if already added.
-      // TODO(lrn): Make this lazy.
-      applyClassPatches(library);
-    }
-  }
-
-  void applyClassPatches(LibraryElement library) {
-    for (Element element in library.localMembers) {
-      if (element.isClass()) {
-        ClassElement classElement = element;
-        if (classElement.isPatched) {
-          applyClassPatch(classElement, classElement.patch);
-        }
-      }
     }
   }
 
@@ -481,16 +469,6 @@ class Compiler implements DiagnosticListener {
       internalError("Cannot overwrite existing '"
                     "${originalElement.name.slowToString()}' with non-patch.");
     }
-    if (originalElement is PartialClassElement) {
-      // Only happens when patching a library. Dart does not, yet, have nested
-      // classes.
-      if (patchElement is! PartialClassElement) {
-        internalError("Trying to patch class with non-class",
-                      element:originalElement);
-      }
-      applyClassPatch(originalElement, patchElement);
-      return;
-    }
     if (originalElement is! FunctionElement) {
       // TODO(lrn): Handle class declarations too.
       internalError("Can only patch functions", element: originalElement);
@@ -525,18 +503,6 @@ class Compiler implements DiagnosticListener {
     }
     // Don't just assign the patch field. This also updates the cachedNode.
     element.setPatch(patchElement);
-  }
-
-  void applyClassPatch(PartialClassElement original,
-                       PartialClassElement patch) {
-    // Eagerly parse the class so we can patch it.
-    // TODO(lrn): Perhaps find a way to delay parsing until the class is needed,
-    // i.e., until [parseNode] is called on [original].
-    ClassNode node = original.parseNode(this);
-    // Parse patch class with "patch" parser.
-    ClassNode patchNode = patchParser.parsePatchClassNode(patch);
-    Link<Element> patches = patch.localMembers;
-    applyContainerPatch(original, patches);
   }
 
   /**

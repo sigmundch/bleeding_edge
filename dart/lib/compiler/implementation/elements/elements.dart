@@ -160,6 +160,9 @@ class Element implements Hashable {
   bool impliesType() => (kind.category & ElementCategory.IMPLIES_TYPE) != 0;
   bool isExtendable() => (kind.category & ElementCategory.IS_EXTENDABLE) != 0;
 
+  /** See [ErroneousElement] for documentation. */
+  bool isErroneous() => false;
+
   // TODO(johnniwinther): This breaks for libraries (for which enclosing
   // elements are null) and is invalid for top level variable declarations for
   // which the enclosing element is a VariableDeclarations and not a compilation
@@ -284,9 +287,62 @@ class Element implements Hashable {
     listener.cancel("Unimplemented cloneTo", element: this);
   }
 
-  Link<Type> get allSupertypesAndSelf() {
-    return allSupertypes.prepend(new InterfaceType(this));
+
+  static bool isInvalid(Element e) => e == null || e.isErroneous();
+}
+
+/**
+ * Represents an unresolvable or duplicated element.
+ *
+ * An [ErroneousElement] is used instead of [null] to provide additional
+ * information about the error that caused the element to be unresolvable
+ * or otherwise invalid.
+ *
+ * Accessing any field or calling any method defined on [Element] except
+ * [isValid] will currently throw an exception. (This might change when we
+ * actually want more information on the erroneous element, e.g., the name
+ * of the element we were trying to resolve.)
+ *
+ * Code that cannot not handle an [ErroneousElement] should use
+ *   [: Element.isInvalid(element) :]
+ * to check for unresolvable elements instead of
+ *   [: element == null :].
+ */
+class ErroneousElement extends Element {
+  final Message errorMessage;
+
+  ErroneousElement(this.errorMessage, Element enclosing)
+      : super(const SourceString('erroneous element'), null, enclosing);
+
+  isErroneous() => true;
+
+  unsupported() {
+    throw 'unsupported operation on erroneous element';
   }
+
+  SourceString get name() => unsupported();
+  ElementKind get kind() => unsupported();
+  Link<Node> get metadata() => unsupported();
+}
+
+class ErroneousFunctionElement extends ErroneousElement
+                               implements FunctionElement {
+  ErroneousFunctionElement(errorMessage, Element enclosing)
+      : super(errorMessage, enclosing);
+
+  get type() => unsupported();
+  get cachedNode() => unsupported();
+  get functionSignature() => unsupported();
+  get patch() => unsupported();
+  get defaultImplementation() => unsupported();
+  bool get isPatched() => unsupported();
+  setPatch(patch) => unsupported();
+  computeSignature(compiler) => unsupported();
+  requiredParameterCount(compiler) => unsupported();
+  optionalParameterCount(compiler) => unsupported();
+  parameterCount(copmiler) => unsupported();
+
+  getLibrary() => enclosingElement.getLibrary();
 }
 
 class ContainerElement extends Element {
@@ -996,7 +1052,7 @@ abstract class TypeDeclarationElement implements Element {
 
     // Create types and elements for type variable.
     var arguments = new LinkBuilder<Type>();
-    for (Link<Node> link = parameters.nodes; !link.isEmpty(); link = link.tail) {
+    for (Link link = parameters.nodes; !link.isEmpty(); link = link.tail) {
       TypeVariable node = link.head;
       SourceString variableName = node.name.source;
       TypeVariableElement variableElement =
@@ -1024,21 +1080,8 @@ class ClassElement extends ScopeContainerElement
   // specifies transitive inheritence from a native class
   bool inheritsFromNative = false;
 
-  int _supertypeLoadState = STATE_NOT_STARTED;
-  int get supertypeLoadState() => _supertypeLoadState;
-  void set supertypeLoadState(int state) {
-    assert(state == _supertypeLoadState + 1);
-    assert(state <= STATE_DONE);
-    _supertypeLoadState = state;
-  }
-
-  int _resolutionState = STATE_NOT_STARTED;
-  int get resolutionState() => _resolutionState;
-  void set resolutionState(int state) {
-    assert(state == _resolutionState + 1);
-    assert(state <= STATE_DONE);
-    _resolutionState = state;
-  }
+  int supertypeLoadState;
+  int resolutionState;
 
   // backendMembers are members that have been added by the backend to simplify
   // compilation. They don't have any user-side counter-part.
@@ -1049,8 +1092,10 @@ class ClassElement extends ScopeContainerElement
   // Lazily applied patch of class members.
   ClassElement patch = null;
 
-  ClassElement(SourceString name, Element enclosing, this.id)
-    : super(name, ElementKind.CLASS, enclosing);
+  ClassElement(SourceString name, Element enclosing, this.id, int initialState)
+    : supertypeLoadState = initialState,
+      resolutionState = initialState,
+      super(name, ElementKind.CLASS, enclosing);
 
   InterfaceType computeType(compiler) {
     if (type == null) {
@@ -1114,8 +1159,9 @@ class ClassElement extends ScopeContainerElement
   Element lookupSuperInterfaceMember(SourceString memberName,
                                      LibraryElement fromLibrary) {
     bool isPrivate = memberName.isPrivate();
-    for (Type t in interfaces) {
-      Element e = t.element.lookupLocalMember(memberName);
+    for (InterfaceType t in interfaces) {
+      ClassElement cls = t.element;
+      Element e = cls.lookupLocalMember(memberName);
       if (e === null) continue;
       // Private members from a different library are not visible.
       if (isPrivate && fromLibrary !== e.getLibrary()) continue;
@@ -1313,21 +1359,25 @@ class ClassElement extends ScopeContainerElement
   ClassElement cloneTo(Element enclosing, DiagnosticListener listener) {
     listener.internalErrorOnElement(this, 'unsupported operation');
   }
+
+  Link<Type> get allSupertypesAndSelf() {
+    return allSupertypes.prepend(new InterfaceType(this));
+  }
 }
 
 class Elements {
   static bool isLocal(Element element) {
-    return ((element !== null)
+    return !Element.isInvalid(element)
             && !element.isInstanceMember()
             && !isStaticOrTopLevelField(element)
             && !isStaticOrTopLevelFunction(element)
             && (element.kind === ElementKind.VARIABLE ||
                 element.kind === ElementKind.PARAMETER ||
-                element.kind === ElementKind.FUNCTION));
+                element.kind === ElementKind.FUNCTION);
   }
 
   static bool isInstanceField(Element element) {
-    return (element !== null)
+    return !Element.isInvalid(element)
            && element.isInstanceMember()
            && (element.kind === ElementKind.FIELD
                || element.kind === ElementKind.GETTER
@@ -1337,12 +1387,12 @@ class Elements {
   static bool isStaticOrTopLevel(Element element) {
     // TODO(ager): This should not be necessary when patch support has
     // been reworked.
-    if (element != null
+    if (!Element.isInvalid(element)
         && element.modifiers != null
         && element.modifiers.isStatic()) {
       return true;
     }
-    return (element != null)
+    return !Element.isInvalid(element)
            && !element.isInstanceMember()
            && !element.isPrefix()
            && element.enclosingElement !== null
@@ -1364,7 +1414,7 @@ class Elements {
   }
 
   static bool isInstanceMethod(Element element) {
-    return (element != null)
+    return !Element.isInvalid(element)
            && element.isInstanceMember()
            && (element.kind === ElementKind.FUNCTION);
   }
@@ -1510,6 +1560,8 @@ class TypeVariableElement extends Element {
   Node parseNode(compiler) => cachedNode;
 
   String toString() => "${enclosingElement.toString()}.${name.slowToString()}";
+
+  Token position() => cachedNode.getBeginToken();
 
   TypeVariableElement cloneTo(Element enclosing, DiagnosticListener listener) {
     TypeVariableElement result =

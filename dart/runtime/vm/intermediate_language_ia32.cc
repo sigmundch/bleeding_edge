@@ -33,12 +33,8 @@ LocationSummary* Computation::MakeCallSummary() {
 
 void BindInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   computation()->EmitNativeCode(compiler);
-  if (is_used() && locs()->out().IsRegister()) {
-    // TODO(vegorov): this should really happen only for comparisons fused
-    // with branches.  Currrently IR does not provide an easy way to remove
-    // instructions from the graph so we just leave fused comparison in it
-    // but change its result location to be NoLocation.
-    compiler->frame_register_allocator()->Push(locs()->out().reg(), this);
+  if (is_used() && !compiler->is_optimizing()) {
+    __ pushl(locs()->out().reg());
   }
 }
 
@@ -164,16 +160,16 @@ void StoreLocalComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-LocationSummary* ConstantVal::MakeLocationSummary() const {
+LocationSummary* MaterializeComp::MakeLocationSummary() const {
   return LocationSummary::Make(0,
                                Location::RequiresRegister(),
                                LocationSummary::kNoCall);
 }
 
 
-void ConstantVal::EmitNativeCode(FlowGraphCompiler* compiler) {
+void MaterializeComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   Register result = locs()->out().reg();
-  __ LoadObject(result, value());
+  __ LoadObject(result, constant_val()->value());
 }
 
 
@@ -244,9 +240,11 @@ static Condition TokenKindToSmiCondition(Token::Kind kind) {
 
 
 LocationSummary* EqualityCompareComp::MakeLocationSummary() const {
+  const intptr_t dart_object_cid =
+      Class::Handle(Isolate::Current()->object_store()->object_class()).id();
   const intptr_t kNumInputs = 2;
   const bool is_checked_strict_equal =
-      HasICData() && ic_data()->AllTargetsHaveSameOwner(kInstanceCid);
+      HasICData() && ic_data()->AllTargetsHaveSameOwner(dart_object_cid);
   if ((receiver_class_id() == kSmiCid) ||
       (receiver_class_id() == kDoubleCid) ||
       is_checked_strict_equal) {
@@ -452,9 +450,7 @@ static void EmitCheckedStrictEqual(FlowGraphCompiler* compiler,
   Register temp = locs.temp(0).reg();
   Label* deopt = compiler->AddDeoptStub(deopt_id,
                                         try_index,
-                                        kDeoptEquality,
-                                        left,
-                                        right);
+                                        kDeoptEquality);
   __ testl(left, Immediate(kSmiTagMask));
   __ j(ZERO, deopt);
   // 'left' is not Smi.
@@ -561,9 +557,7 @@ static void EmitSmiComparisonOp(FlowGraphCompiler* compiler,
     Register temp = locs.temp(0).reg();
     Label* deopt = compiler->AddDeoptStub(deopt_id,
                                           try_index,
-                                          kDeoptSmiCompareSmi,
-                                          left,
-                                          right);
+                                          kDeoptSmiCompareSmi);
     __ movl(temp, left);
     __ orl(temp, right);
     __ testl(temp, Immediate(kSmiTagMask));
@@ -616,9 +610,7 @@ static void EmitDoubleComparisonOp(FlowGraphCompiler* compiler,
   Register temp = locs.temp(0).reg();
   Label* deopt = compiler->AddDeoptStub(deopt_id,
                                         try_index,
-                                        kDeoptDoubleComparison,
-                                        left,
-                                        right);
+                                        kDeoptDoubleComparison);
   compiler->LoadDoubleOrSmiToXmm(XMM0, left, temp, deopt);
   compiler->LoadDoubleOrSmiToXmm(XMM1, right, temp, deopt);
 
@@ -646,8 +638,10 @@ void EqualityCompareComp::EmitNativeCode(FlowGraphCompiler* compiler) {
                            deopt_id(), token_pos(), try_index());
     return;
   }
+  const intptr_t dart_object_cid =
+      Class::Handle(Isolate::Current()->object_store()->object_class()).id();
   const bool is_checked_strict_equal =
-      HasICData() && ic_data()->AllTargetsHaveSameOwner(kInstanceCid);
+      HasICData() && ic_data()->AllTargetsHaveSameOwner(dart_object_cid);
   if (is_checked_strict_equal) {
     EmitCheckedStrictEqual(compiler, *ic_data(), *locs(), kind(), NULL,
                            deopt_id(), token_pos(), try_index());
@@ -832,9 +826,7 @@ void LoadIndexedComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 
   Label* deopt = compiler->AddDeoptStub(original()->deopt_id(),
                                         original()->try_index(),
-                                        deopt_reason,
-                                        receiver,
-                                        index);
+                                        deopt_reason);
 
   __ testl(receiver, Immediate(kSmiTagMask));  // Deoptimize if Smi.
   __ j(ZERO, deopt);
@@ -898,10 +890,7 @@ void StoreIndexedComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 
   Label* deopt = compiler->AddDeoptStub(original()->deopt_id(),
                                         original()->try_index(),
-                                        kDeoptStoreIndexed,
-                                        receiver,
-                                        index,
-                                        value);
+                                        kDeoptStoreIndexed);
 
   __ testl(receiver, Immediate(kSmiTagMask));  // Deoptimize if Smi.
   __ j(ZERO, deopt);
@@ -962,8 +951,7 @@ void LoadInstanceFieldComp::EmitNativeCode(FlowGraphCompiler* compiler) {
     ASSERT(original() != NULL);
     Label* deopt = compiler->AddDeoptStub(original()->deopt_id(),
                                           original()->try_index(),
-                                          kDeoptInstanceGetterSameTarget,
-                                          instance_reg);
+                                          kDeoptInstanceGetterSameTarget);
     // Smis do not have instance fields (Smi class is always first).
     // Use 'result' as temporary register.
     ASSERT(result_reg != instance_reg);
@@ -1098,8 +1086,7 @@ void LoadVMFieldComp::EmitNativeCode(FlowGraphCompiler* compiler) {
     ASSERT(original() != NULL);
     Label* deopt = compiler->AddDeoptStub(original()->deopt_id(),
                                           original()->try_index(),
-                                          kDeoptInstanceGetterSameTarget,
-                                          instance_reg);
+                                          kDeoptInstanceGetterSameTarget);
     // Smis do not have instance fields (Smi class is always first).
     // Use 'result' as temporary register.
     ASSERT(result_reg != instance_reg);
@@ -1511,23 +1498,13 @@ static void EmitSmiBinaryOp(FlowGraphCompiler* compiler, BinaryOpComp* comp) {
   if (can_deopt) {
     deopt  = compiler->AddDeoptStub(comp->instance_call()->deopt_id(),
                                     comp->instance_call()->try_index(),
-                                    kDeoptSmiBinaryOp,
-                                    temp,
-                                    right);
+                                    kDeoptSmiBinaryOp);
   }
-  if (left_is_smi && right_is_smi) {
-    if (can_deopt) {
-      // Preserve left for deopt.
-      __ movl(temp, left);
-    }
-  } else {
-    // TODO(vegorov): for many binary operations this pattern can be rearranged
-    // to save one move.
+  if (!left_is_smi || !right_is_smi) {
     __ movl(temp, left);
-    __ orl(left, right);
-    __ testl(left, Immediate(kSmiTagMask));
+    __ orl(temp, right);
+    __ testl(temp, Immediate(kSmiTagMask));
     __ j(NOT_ZERO, deopt);
-    __ movl(left, temp);
   }
   switch (comp->op_kind()) {
     case Token::kADD: {
@@ -1604,6 +1581,7 @@ static void EmitSmiBinaryOp(FlowGraphCompiler* compiler, BinaryOpComp* comp) {
     case Token::kSHL: {
       Label call_method, done;
       // Check if count too large for handling it inlined.
+      __ movl(temp, left);
       __ cmpl(right,
           Immediate(reinterpret_cast<int64_t>(Smi::New(Smi::kBits))));
       __ j(ABOVE_EQUAL, &call_method, Assembler::kNearJump);
@@ -1678,9 +1656,7 @@ static void EmitMintBinaryOp(FlowGraphCompiler* compiler, BinaryOpComp* comp) {
   ASSERT(comp->op_kind() == Token::kBIT_AND);
   Label* deopt = compiler->AddDeoptStub(comp->instance_call()->deopt_id(),
                                         comp->instance_call()->try_index(),
-                                        kDeoptMintBinaryOp,
-                                        left,
-                                        right);
+                                        kDeoptMintBinaryOp);
   Label mint_static_call, smi_static_call, non_smi, smi_smi, done;
   __ testl(left, Immediate(kSmiTagMask));  // Is receiver Smi?
   __ j(NOT_ZERO, &non_smi);
@@ -1854,8 +1830,7 @@ void UnarySmiOpComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   ASSERT(value == result);
   Label* deopt = compiler->AddDeoptStub(instance_call()->deopt_id(),
                                         instance_call()->try_index(),
-                                        kDeoptUnaryOp,
-                                        value);
+                                        kDeoptUnaryOp);
   if (test_class_id == kSmiCid) {
     __ testl(value, Immediate(kSmiTagMask));
     __ j(NOT_ZERO, deopt);
@@ -1905,8 +1880,7 @@ void NumberNegateComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   ASSERT(value == result);
   Label* deopt = compiler->AddDeoptStub(instance_call()->deopt_id(),
                                         instance_call()->try_index(),
-                                        kDeoptUnaryOp,
-                                        value);
+                                        kDeoptUnaryOp);
   if (test_class_id == kDoubleCid) {
     Register temp = locs()->temp(0).reg();
     __ testl(value, Immediate(kSmiTagMask));
@@ -1956,8 +1930,7 @@ void DoubleToDoubleComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 
   Label* deopt = compiler->AddDeoptStub(instance_call()->deopt_id(),
                                         instance_call()->try_index(),
-                                        kDeoptDoubleToDouble,
-                                        value);
+                                        kDeoptDoubleToDouble);
   Register temp = locs()->temp(0).reg();
   __ testl(value, Immediate(kSmiTagMask));
   __ j(ZERO, deopt);  // Deoptimize if Smi.
@@ -2068,8 +2041,10 @@ static bool ICDataWithBothClassIds(const ICData& ic_data, intptr_t class_id) {
 
 
 static bool IsCheckedStrictEquals(const ICData& ic_data, Token::Kind kind) {
+  const intptr_t dart_object_cid =
+      Class::Handle(Isolate::Current()->object_store()->object_class()).id();
   if ((kind == Token::kEQ) || (kind == Token::kNE)) {
-    return ic_data.AllTargetsHaveSameOwner(kInstanceCid);
+    return ic_data.AllTargetsHaveSameOwner(dart_object_cid);
   }
   return false;
 }
@@ -2207,8 +2182,7 @@ void CheckClassComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   Register temp = locs()->temp(0).reg();
   Label* deopt = compiler->AddDeoptStub(deopt_id(),
                                         try_index(),
-                                        kDeoptCheckClass,
-                                        value);
+                                        kDeoptCheckClass);
   ASSERT(ic_data()->GetReceiverClassIdAt(0) != kSmiCid);
   __ testl(value, Immediate(kSmiTagMask));
   __ j(ZERO, deopt);

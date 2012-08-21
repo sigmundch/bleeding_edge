@@ -395,6 +395,7 @@ class TypeCheckerVisitor implements Visitor<Type> {
     Type returnType;
     Type previousType;
     final FunctionElement element = elements[node];
+    if (Element.isInvalid(element)) return types.dynamicType;
     if (element.kind === ElementKind.GENERATIVE_CONSTRUCTOR ||
         element.kind === ElementKind.GENERATIVE_CONSTRUCTOR_BODY) {
       type = types.dynamicType;
@@ -463,14 +464,15 @@ class TypeCheckerVisitor implements Visitor<Type> {
     return types.dynamicType;
   }
 
-  void analyzeArguments(Send send, FunctionType funType) {
+  void analyzeArguments(Send send, Type type) {
     Link<Node> arguments = send.arguments;
-    if (funType === null || funType === types.dynamicType) {
+    if (type === null || type === types.dynamicType) {
       while(!arguments.isEmpty()) {
         analyze(arguments.head);
         arguments = arguments.tail;
       }
     } else {
+      FunctionType funType = type;
       Link<Type> parameterTypes = funType.parameterTypes;
       while (!arguments.isEmpty() && !parameterTypes.isEmpty()) {
         checkAssignable(arguments.head, parameterTypes.head,
@@ -707,7 +709,7 @@ class TypeCheckerVisitor implements Visitor<Type> {
   }
 
   Type computeType(Element element) {
-    if (element === null) return types.dynamicType;
+    if (Element.isInvalid(element)) return types.dynamicType;
     Type result = element.computeType(compiler);
     return (result !== null) ? result : types.dynamicType;
   }

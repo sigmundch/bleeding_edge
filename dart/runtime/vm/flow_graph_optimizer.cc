@@ -366,33 +366,23 @@ bool FlowGraphOptimizer::TryInlineInstanceGetter(BindInstr* instr,
     ASSERT(!field.IsNull());
 
     LoadInstanceFieldComp* load;
-    if (!use_ssa_) {
-      load = new LoadInstanceFieldComp(field,
-                                       comp->ArgumentAt(0)->value(),
-                                       comp,
-                                       true);  // Can deoptimize.
-      // TODO(fschneider): Remove the boolean parameter can_deoptimize once
-      // the non-SSA optimizer is removed.
-      load->set_ic_data(comp->ic_data());
-    } else {
-      // TODO(fschneider): Avoid generating redundant checks by checking the
-      // result-cid of the value.
-      CheckClassComp* check =
-          new CheckClassComp(comp->ArgumentAt(0)->value(), comp);
-      const ICData& unary_checks =
-          ICData::ZoneHandle(comp->ic_data()->AsUnaryClassChecks());
-      check->set_ic_data(&unary_checks);
-      BindInstr* check_instr = new BindInstr(BindInstr::kUnused, check);
-      ASSERT(instr->env() != NULL);  // Always the case with SSA.
-      // Attach the original environment to the check instruction.
-      check_instr->set_env(instr->env());
-      instr->set_env(NULL);
-      check_instr->InsertBefore(instr);
-      load = new LoadInstanceFieldComp(field,
-                                       comp->ArgumentAt(0)->value(),
-                                       NULL,
-                                       false);  // Can not deoptimize.
-    }
+    // TODO(fschneider): Avoid generating redundant checks by checking the
+    // result-cid of the value.
+    CheckClassComp* check =
+        new CheckClassComp(comp->ArgumentAt(0)->value(), comp);
+    const ICData& unary_checks =
+        ICData::ZoneHandle(comp->ic_data()->AsUnaryClassChecks());
+    check->set_ic_data(&unary_checks);
+    BindInstr* check_instr = new BindInstr(BindInstr::kUnused, check);
+    ASSERT(instr->env() != NULL);  // Always the case with SSA.
+    // Attach the original environment to the check instruction.
+    check_instr->set_env(instr->env());
+    instr->set_env(NULL);
+    check_instr->InsertBefore(instr);
+    load = new LoadInstanceFieldComp(field,
+                                     comp->ArgumentAt(0)->value(),
+                                     NULL,
+                                     false);  // Can not deoptimize.
     instr->set_computation(load);
     RemovePushArguments(comp);
     return true;
@@ -601,6 +591,16 @@ void FlowGraphOptimizer::VisitRelationalOp(RelationalOpComp* comp,
 
 void FlowGraphOptimizer::VisitEqualityCompare(EqualityCompareComp* comp,
                                               BindInstr* instr) {
+  // If one of the inputs is null, no ICdata will be collected.
+  if (comp->left()->BindsToConstantNull() ||
+      comp->right()->BindsToConstantNull()) {
+    Token::Kind strict_kind = (comp->kind() == Token::kEQ) ?
+        Token::kEQ_STRICT : Token::kNE_STRICT;
+    StrictCompareComp* strict_comp =
+        new StrictCompareComp(strict_kind, comp->left(), comp->right());
+    instr->set_computation(strict_comp);
+    return;
+  }
   if (!comp->HasICData() || (comp->ic_data()->NumberOfChecks() == 0)) return;
   if (comp->ic_data()->NumberOfChecks() == 1) {
     ASSERT(comp->ic_data()->num_args_tested() == 2);
@@ -621,6 +621,21 @@ void FlowGraphOptimizer::VisitEqualityCompare(EqualityCompareComp* comp,
 }
 
 
+void FlowGraphOptimizer::VisitBranch(BranchInstr* instr) {
+  if ((instr->kind() != Token::kEQ) &&
+      (instr->kind() != Token::kNE)) {
+    return;
+  }
+  if (!instr->left()->BindsToConstantNull() &&
+      !instr->right()->BindsToConstantNull()) {
+    return;
+  }
+  Token::Kind strict_kind = (instr->kind() == Token::kEQ) ?
+      Token::kEQ_STRICT : Token::kNE_STRICT;
+  instr->set_kind(strict_kind);
+}
+
+
 void FlowGraphOptimizer::VisitBind(BindInstr* instr) {
   instr->computation()->Accept(this, instr);
 }
@@ -633,21 +648,21 @@ void FlowGraphTypePropagator::VisitAssertAssignable(AssertAssignableComp* comp,
       comp->value()->CompileTypeIsMoreSpecificThan(comp->dst_type())) {
     // TODO(regis): Remove is_eliminated_ field and support.
     comp->eliminate();
-    if (is_ssa_) {
-      UseVal* use = comp->value()->AsUse();
-      ASSERT(use != NULL);
-      Definition* result = use->definition();
-      ASSERT(result != NULL);
-      // Replace uses and remove the current instructions via the iterator.
-      instr->ReplaceUsesWith(result);
-      ASSERT(current_iterator()->Current() == instr);
-      current_iterator()->RemoveCurrentFromGraph();
-      if (FLAG_trace_optimization) {
-        OS::Print("Replacing v%d with v%d\n",
-                  instr->ssa_temp_index(),
-                  result->ssa_temp_index());
-      }
+
+    UseVal* use = comp->value()->AsUse();
+    ASSERT(use != NULL);
+    Definition* result = use->definition();
+    ASSERT(result != NULL);
+    // Replace uses and remove the current instructions via the iterator.
+    instr->ReplaceUsesWith(result);
+    ASSERT(current_iterator()->Current() == instr);
+    current_iterator()->RemoveCurrentFromGraph();
+    if (FLAG_trace_optimization) {
+      OS::Print("Replacing v%d with v%d\n",
+                instr->ssa_temp_index(),
+                result->ssa_temp_index());
     }
+
     if (FLAG_trace_type_check_elimination) {
       FlowGraphPrinter::PrintTypeCheck(parsed_function(),
                                        comp->token_pos(),
@@ -676,21 +691,21 @@ void FlowGraphTypePropagator::VisitAssertBoolean(AssertBooleanComp* comp,
           Type::Handle(Type::BoolInterface()))) {
     // TODO(regis): Remove is_eliminated_ field and support.
     comp->eliminate();
-    if (is_ssa_) {
-      UseVal* use = comp->value()->AsUse();
-      ASSERT(use != NULL);
-      Definition* result = use->definition();
-      ASSERT(result != NULL);
-      // Replace uses and remove the current instructions via the iterator.
-      instr->ReplaceUsesWith(result);
-      ASSERT(current_iterator()->Current() == instr);
-      current_iterator()->RemoveCurrentFromGraph();
-      if (FLAG_trace_optimization) {
-        OS::Print("Replacing v%d with v%d\n",
-                  instr->ssa_temp_index(),
-                  result->ssa_temp_index());
-      }
+
+    UseVal* use = comp->value()->AsUse();
+    ASSERT(use != NULL);
+    Definition* result = use->definition();
+    ASSERT(result != NULL);
+    // Replace uses and remove the current instructions via the iterator.
+    instr->ReplaceUsesWith(result);
+    ASSERT(current_iterator()->Current() == instr);
+    current_iterator()->RemoveCurrentFromGraph();
+    if (FLAG_trace_optimization) {
+      OS::Print("Replacing v%d with v%d\n",
+                instr->ssa_temp_index(),
+                result->ssa_temp_index());
     }
+
     if (FLAG_trace_type_check_elimination) {
       const String& name = String::Handle(Symbols::New("boolean expression"));
       FlowGraphPrinter::PrintTypeCheck(parsed_function(),
@@ -718,21 +733,20 @@ void FlowGraphTypePropagator::VisitInstanceOf(InstanceOfComp* comp,
       comp->value()->BindsToConstant() &&
       !comp->value()->BindsToConstantNull() &&
       comp->value()->CompileTypeIsMoreSpecificThan(comp->type())) {
-    if (is_ssa_) {
-      UseVal* use = comp->value()->AsUse();
-      ASSERT(use != NULL);
-      Definition* result = use->definition();
-      ASSERT(result != NULL);
-      // Replace uses and remove the current instructions via the iterator.
-      instr->ReplaceUsesWith(result);
-      ASSERT(current_iterator()->Current() == instr);
-      current_iterator()->RemoveCurrentFromGraph();
-      if (FLAG_trace_optimization) {
-        OS::Print("Replacing v%d with v%d\n",
-                  instr->ssa_temp_index(),
-                  result->ssa_temp_index());
-      }
+    UseVal* use = comp->value()->AsUse();
+    ASSERT(use != NULL);
+    Definition* result = use->definition();
+    ASSERT(result != NULL);
+    // Replace uses and remove the current instructions via the iterator.
+    instr->ReplaceUsesWith(result);
+    ASSERT(current_iterator()->Current() == instr);
+    current_iterator()->RemoveCurrentFromGraph();
+    if (FLAG_trace_optimization) {
+      OS::Print("Replacing v%d with v%d\n",
+                instr->ssa_temp_index(),
+                result->ssa_temp_index());
     }
+
     if (FLAG_trace_type_check_elimination) {
       const String& name = String::Handle(Symbols::New("InstanceOf"));
       FlowGraphPrinter::PrintTypeCheck(parsed_function(),
