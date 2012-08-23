@@ -56,6 +56,16 @@ void set _componentsMetadata(m) {
   JS('void', '\$componentsMetadata = #', m);
 }
 
+/**
+ * Takes [nativeElement] of type NativeType, and [closure], a thunk
+ * returning a webcomponent of type T and does prototype
+ * mangling to achieve the following inheritance hierarchy
+ *
+ * [nativeElement] is T <: *classes between T and NativeType* <: NativeType
+ *
+ * For optimal performance, each call with the same type T should pass the
+ * same closure.
+ */
 void rewirePrototypeChain(nativeElement, closure) {
   // TODO(samhop): worry about field initialization
   // TODO(samhop): worry about perf -- should probably make componentsMetadata
@@ -63,13 +73,38 @@ void rewirePrototypeChain(nativeElement, closure) {
   // TODO(samhop): worry about IE9
   // TODO(samhop): worry about inheriting transitively from a native (may
   // currently work)
+  // TODO(samhop): what happens if someone passes two different closures at
+  // two different calls for the same type?
   var componentPrototype = _componentsMetadata[closure];
   if (componentPrototype == null) {
-    componentPrototype = JS('var', 'Object.getPrototypeOf(#)', closure());
+    var nonNativeElement = closure();
+    componentPrototype = JS('var', 'Object.getPrototypeOf(#)',
+        nonNativeElement);
     _componentsMetadata[closure] = componentPrototype;
-    if (_supportsProto) {
+    // We rely on the __proto__.__proto__ of a nonnative direct subtype of
+    // a native type
+    // being Object.prototype to detect whether or not we are at what should
+    // be the native/non-native boundary and need to rewire.
+    // TODO(samhop): consider the possibility of having different rewiring
+    // functions for direct and transitive subtypes of native types.
+    // Which to call will be known by the webcomponents compiler.
+    var currProto = componentPrototype;
+    // check that the browser supports __proto__ mangling and, if so,
+    // have we already mangled this proto chain appropriately?
+    if (_supportsProto && !(JS(
+            'var', 'Object.isPrototypeOf.call(Object.getPrototypeOf(#), #)',
+            nativeElement, nonNativeElement))) {
+      // We haven't yet mangled this prototype chain appropriately, so
+      // walk up to where we need to hook the nonnative chain up to the
+      // native chain.
+      // TODO(samhop): worry about handling of methods that might be living
+      // on $.Object, which won't make it into this prototype chain.
+      while(!(JS('var', 'Object.getPrototypeOf(#) === Object.prototype',
+          currProto))) {
+        currProto = JS('var', 'Object.getPrototypeOf(#)', currProto);
+      }
       JS('void', '#.__proto__ = Object.getPrototypeOf(#)',
-          componentPrototype, nativeElement);
+          currProto, nativeElement);
     }
   }
   if (_supportsProto) {

@@ -52,7 +52,23 @@ main() {
 
     test('transitive subtype can override direct subtype', () {
       Bar bar = new Bar();
-      expect(bar.overrideMe, equals('overridden'));
+      expect(bar.overrideMe(), equals('overridden'));
+    });
+
+    test('third level subtype can be instantiated, has correct behavior', () {
+      Baz baz = new Baz();
+      expect(baz.zazzle(), equals('zazzle'));
+      expect(baz.dazzle(), equals('dazzle'));
+      expect(baz.razzle(), equals('razzle'));
+
+      expect(baz is Foo);
+      expect(baz is Bar);
+      expect(baz is ParagraphElement);
+
+      baz.innerHTML = '<p>foo</p>';
+      var div = new DivElement();
+      div.nodes.add(baz);
+      expect(div.innerHTML, equals('<p><p>foo</p></p>'));
     });
   });
 
@@ -97,6 +113,24 @@ class Bar extends Foo {
   factory Bar() {
     if (_$constructorThunk == null) {
       _$constructorThunk = (() => new Bar._internal());
+    }
+    var paragraph = new ParagraphElement();
+    rewirePrototypeChain(paragraph, _$constructorThunk);
+    return paragraph;
+  }
+}
+
+class Baz extends Bar {
+  int baz;
+  String zazzle() {
+    return 'zazzle';
+  }
+
+  static var _$constructorThunk;
+  Baz._internal() : super._internal();
+  factory Baz() {
+    if (_$constructorThunk == null) {
+      _$constructorThunk = (() => new Baz._internal());
     }
     var paragraph = new ParagraphElement();
     rewirePrototypeChain(paragraph, _$constructorThunk);
