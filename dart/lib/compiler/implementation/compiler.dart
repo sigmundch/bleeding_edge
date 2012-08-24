@@ -56,7 +56,7 @@ class Backend {
   abstract void processNativeClasses(Enqueuer world,
                                      Collection<LibraryElement> libraries);
   abstract void assembleProgram();
-  abstract List<CompilerTask> get tasks();
+  abstract List<CompilerTask> get tasks;
 
   ItemCompilationContext createItemCompilationContext() {
     return new ItemCompilationContext();
@@ -104,7 +104,7 @@ class Compiler implements DiagnosticListener {
    */
   ClassElement jsIndexingBehaviorInterface;
 
-  Element get currentElement() => _currentElement;
+  Element get currentElement => _currentElement;
   withCurrentElement(Element element, f()) {
     Element old = currentElement;
     _currentElement = element;
@@ -167,8 +167,8 @@ class Compiler implements DiagnosticListener {
             this.enableTypeAssertions = false,
             this.enableUserAssertions = false,
             bool emitJavascript = true,
-            validateUnparse = false,
-            generateSourceMap = true])
+            bool generateSourceMap = true,
+            bool minify = false])
       : libraries = new Map<String, LibraryElement>(),
         world = new World(),
         progress = new Stopwatch.start() {
@@ -185,15 +185,15 @@ class Compiler implements DiagnosticListener {
     typesTask = new ti.TypesTask(this);
     backend = emitJavascript ?
         new js_backend.JavaScriptBackend(this, generateSourceMap) :
-        new dart_backend.DartBackend(this, validateUnparse);
+        new dart_backend.DartBackend(this, minify);
     enqueuer = new EnqueueTask(this);
     tasks = [scanner, dietParser, parser, resolver, closureToClassMapper,
              checker, typesTask, constantHandler, enqueuer];
     tasks.addAll(backend.tasks);
   }
 
-  Universe get resolverWorld() => enqueuer.resolution.universe;
-  Universe get codegenWorld() => enqueuer.codegen.universe;
+  Universe get resolverWorld => enqueuer.resolution.universe;
+  Universe get codegenWorld => enqueuer.codegen.universe;
 
   int getNextFreeClassId() => nextFreeClassId++;
 
@@ -300,9 +300,6 @@ class Compiler implements DiagnosticListener {
   bool hasIsolateSupport() => isolateLibrary !== null;
 
   void onLibraryLoaded(LibraryElement library, Uri uri) {
-    if (uri.toString() == 'dart:isolate') {
-      enableIsolateSupport(library);
-    }
     if (dynamicClass !== null) {
       // When loading the built-in libraries, dynamicClass is null. We
       // take advantage of this as core and coreimpl import js_helper
@@ -379,9 +376,7 @@ class Compiler implements DiagnosticListener {
     if (library.isPatched) return;
     Uri patchUri = resolvePatchUri(dartLibraryPath);
     if (patchUri !== null) {
-       patchParser.patchLibrary(patchUri, library);
-      // We allow foreign functions in patched libraries.
-      addForeignFunctions(library);  // Is safe even if already added.
+      patchParser.patchLibrary(patchUri, library);
     }
   }
 
@@ -390,43 +385,19 @@ class Compiler implements DiagnosticListener {
     while (!patches.isEmpty()) {
       Element patchElement = patches.head;
       Element originalElement = original.localLookup(patchElement.name);
-      if (patchElement.isAccessor()) {
-        // TODO(lrn): When we change to always add accessors to members, and
-        // not add abstract fields, the logic here should be reversed.
-        // For now, access getters through the abstract field and skip
-        // any accessors.
-      } else if (patchElement.kind === ElementKind.ABSTRACT_FIELD) {
-        // Getters and setters are kept inside a synthetic field.
-        if (originalElement !== null &&
-            originalElement.kind !== ElementKind.ABSTRACT_FIELD) {
+      if (patchElement.isAccessor() && originalElement !== null) {
+        if (originalElement.kind !== ElementKind.ABSTRACT_FIELD) {
           internalError("Cannot patch non-getter/setter with getter/setter",
                         element: originalElement);
         }
-        AbstractFieldElement patchField = patchElement;
         AbstractFieldElement originalField = originalElement;
-        if (patchField.getter !== null) {
-          if (originalField === null || originalField.getter === null) {
-            original.addGetterOrSetter(clonePatch(patchField.getter, original),
-                                       originalField,
-                                       this);
-            if (originalField === null && patchField.setter !== null) {
-              // It exists now, so find it for the setter patching.
-              originalField = original.localLookup(patchElement.name);
-            }
-          } else {
-            patchMember(originalField.getter, patchField.getter);
-          }
+        if (patchElement.isGetter()) {
+          originalElement = originalField.getter;
+        } else {
+          originalElement = originalField.setter;
         }
-        if (patchField.setter !== null) {
-          if (originalField === null || originalField.setter === null) {
-            original.addGetterOrSetter(clonePatch(patchField.setter, original),
-                                       originalField,
-                                       this);
-          } else {
-            patchMember(originalField.setter, patchField.setter);
-          }
-        }
-      } else if (originalElement === null) {
+      }
+      if (originalElement === null) {
         if (isPatchElement(patchElement)) {
           internalError("Cannot patch non-existing member '"
                         "${patchElement.name.slowToString()}'.");
@@ -442,7 +413,10 @@ class Compiler implements DiagnosticListener {
   bool isPatchElement(Element element) {
     // TODO(lrn): More checks needed if we introduce metadata for real.
     // In that case, it must have the identifier "native" as metadata.
-    return !element.metadata.isEmpty();
+    for (Link link = element.metadata; !link.isEmpty(); link = link.tail) {
+      if (link.head is PatchMetadataAnnotation) return true;
+    }
+    return false;
   }
 
   Element clonePatch(Element patchElement, Element enclosing) {
@@ -527,9 +501,27 @@ class Compiler implements DiagnosticListener {
         const SourceString('DART_CLOSURE_TO_JS'), library), this);
   }
 
+  /** Enable the 'JS' helper for a library if needed. */
+  void maybeEnableJSHelper(library) {
+    String libraryName = library.uri.toString();
+    if (library.entryCompilationUnit.script.name.contains(
+            'dart/tests/compiler/dart2js_native')
+        || libraryName == 'dart:isolate'
+        || libraryName == 'dart:math'
+        || libraryName == 'dart:html') {
+      library.addToScope(findHelper(const SourceString('JS')), this);
+      if (jsIndexingBehaviorInterface !== null) {
+        library.addToScope(jsIndexingBehaviorInterface, this);
+      }
+    }
+  }
+
   void runCompiler(Uri uri) {
     scanBuiltinLibraries();
     mainApp = scanner.loadLibrary(uri, null, uri);
+    libraries.forEach((_, library) {
+      maybeEnableJSHelper(library);
+    });
     final Element main = mainApp.find(MAIN);
     if (main === null) {
       reportFatalError('Could not find $MAIN', mainApp);
@@ -828,7 +820,7 @@ class Compiler implements DiagnosticListener {
     unimplemented('Compiler.readScript');
   }
 
-  String get legDirectory() {
+  String get legDirectory {
     unimplemented('Compiler.legDirectory');
   }
 
@@ -837,7 +829,7 @@ class Compiler implements DiagnosticListener {
   Element findInterceptor(SourceString name)
       => interceptorsLibrary.findLocal(name);
 
-  bool get isMockCompilation() => false;
+  bool get isMockCompilation => false;
 }
 
 class CompilerTask {
@@ -846,8 +838,8 @@ class CompilerTask {
 
   CompilerTask(this.compiler) : watch = new Stopwatch();
 
-  String get name() => 'Unknown task';
-  int get timing() => watch.elapsedInMs();
+  String get name => 'Unknown task';
+  int get timing => watch.elapsedInMs();
 
   measure(Function action) {
     // TODO(kasperl): Do we have to worry about exceptions here?

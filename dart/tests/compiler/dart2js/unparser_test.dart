@@ -6,6 +6,7 @@
 #import('parser_helper.dart');
 #import('mock_compiler.dart');
 #import("../../../lib/compiler/compiler.dart");
+#import("../../../lib/compiler/implementation/leg.dart", prefix:'leg');
 #import("../../../lib/compiler/implementation/dart_backend/dart_backend.dart");
 #import("../../../lib/compiler/implementation/elements/elements.dart");
 #import("../../../lib/compiler/implementation/tree/tree.dart");
@@ -39,19 +40,27 @@ class Math {
 }
 ''';
 
-testDart2Dart(String src, [void continuation(String s)]) {
+final ioLib = @'''
+#library('io');
+class Platform {
+  static int operatingSystem;
+}
+''';
+
+testDart2Dart(String src, [void continuation(String s), bool minify = false]) {
   // If continuation is not provided, check that source string remains the same.
   if (continuation === null) {
     continuation = (s) { Expect.equals(src, s); };
   }
-  testDart2DartWithLibrary(src, '', continuation);
+  testDart2DartWithLibrary(src, '', continuation, minify);
 }
 
 /**
  * Library name is assumed to be 'mylib' in 'mylib.dart' file.
  */
 testDart2DartWithLibrary(
-    String srcMain, String srcLibrary, [void continuation(String s)]) {
+    String srcMain, String srcLibrary,
+    [void continuation(String s), bool minify = false]) {
   fileUri(path) => new Uri.fromComponents(scheme: 'file', path: path);
 
   final scriptUri = fileUri('script.dart');
@@ -63,6 +72,7 @@ testDart2DartWithLibrary(
       return new Future.immediate(srcLibrary);
     }
     if (uri.path.endsWith('/core.dart')) return new Future.immediate(coreLib);
+    if (uri.path.endsWith('/io.dart')) return new Future.immediate(ioLib);
     return new Future.immediate('');
   }
 
@@ -72,13 +82,16 @@ testDart2DartWithLibrary(
     }
   }
 
+  final options = <String>['--output-type=dart'];
+  if (minify) options.add('--minify');
+
   compile(
       scriptUri,
       fileUri('libraryRoot'),
       fileUri('packageRoot'),
       provider,
       handler,
-      const ['--output-type=dart', '--unparse-validation']).then(continuation);
+      options).then(continuation);
 }
 
 testSignedConstants() {
@@ -282,9 +295,9 @@ main() {
       'globalfoo(){}var globalVar;var globalVarInitialized=6,globalVarInitialized2=7;'
       'class A{A(){}A.fromFoo(){}static staticfoo(){}foo(){}static final field=5;}'
       'p_globalfoo(){}var p_globalVar;var p_globalVarInitialized=6,p_globalVarInitialized2=7;'
-      'class p_A{p_A(){}p_A.fromFoo(){}static staticfoo(){}foo(){}static final field=5;}'
+      'class p_A{p_A(){}p_A.fromFoo(){}static p_staticfoo(){}foo(){}static final p_field=5;}'
       'main(){p_globalVar; p_globalVarInitialized; p_globalVarInitialized2; p_globalfoo();'
-         ' p_A.field; p_A.staticfoo();'
+         ' p_A.p_field; p_A.p_staticfoo();'
          ' new p_A(); new p_A.fromFoo(); new p_A().foo();'
          ' globalVar; globalVarInitialized; globalVarInitialized2; globalfoo();'
          ' A.field; A.staticfoo();'
@@ -449,6 +462,27 @@ testFieldTypeOutput() {
   testDart2Dart('main(){new A().field;}class B{}class A{B field;}');
 }
 
+testLocalFunctionPlaceholder() {
+  var src = '''
+main() {
+  function localfoo() {}
+  localfoo();
+}
+''';
+  MockCompiler compiler = new MockCompiler();
+  compiler.parseScript(src);
+  FunctionElement mainElement = compiler.mainApp.find(leg.Compiler.MAIN);
+  compiler.processQueue(compiler.enqueuer.resolution, mainElement);
+  PlaceholderCollector collector = new PlaceholderCollector(compiler);
+  collector.collect(mainElement,
+      compiler.enqueuer.resolution.resolvedElements[mainElement]);
+  FunctionExpression mainNode = mainElement.parseNode(compiler);
+  FunctionExpression fooNode = mainNode.body.statements.nodes.head.function;
+  LocalPlaceholder fooPlaceholder =
+      collector.functionScopes[mainElement].localPlaceholders.iterator().next();
+  Expect.isTrue(fooPlaceholder.nodes.contains(fooNode.name));
+}
+
 testDefaultClassNamePlaceholder() {
   var src = '''
 interface I default C{
@@ -520,17 +554,21 @@ testTypeVariablesAreRenamed() {
   // both should be renamed.
   var librarySrc = '''
 #library('mylib');
+typedef void MyFunction<T extends num>(T arg);
 class T {}
 class B<T> {}
 class A<T> extends B<T> { T f; }
 ''';
   var mainSrc = '''
 #import('mylib.dart', prefix: 'mylib');
+typedef void MyFunction<T extends num>(T arg);
 class T {}
 class B<T> {}
 class A<T> extends B<T> { T f; }
 
 main() {
+  MyFunction myf1;
+  mylib.MyFunction myf2;
   new A<int>().f;
   new T();
 
@@ -539,9 +577,16 @@ main() {
 }
 ''';
   var expectedResult =
-    'class T{}class B<T>{}class A<T> extends B<T>{T f;}'
-    'class p_T{}class p_B<p_T>{}class p_A<p_T> extends p_B<p_T>{p_T f;}'
-    'main(){new p_A<int>().f; new p_T(); new A<int>().f; new T();}';
+    'typedef void MyFunction<T extends num>(T arg);'
+    'class T{}'
+    'class B<T>{}'
+    'class A<T> extends B<T>{T f;}'
+    'typedef void p_MyFunction<p_T extends num>(p_T arg);'
+    'class p_T{}'
+    'class p_B<p_T>{}'
+    'class p_A<p_T> extends p_B<p_T>{p_T f;}'
+    'main(){p_MyFunction myf1; MyFunction myf2; new p_A<int>().f; '
+        'new p_T(); new A<int>().f; new T();}';
   testDart2DartWithLibrary(mainSrc, librarySrc,
       (String result) { Expect.equals(expectedResult, result); });
 }
@@ -573,6 +618,134 @@ main() {
     'main(){new p_A(); new A();}';
   testDart2DartWithLibrary(mainSrc, librarySrc,
       (String result) { Expect.equals(expectedResult, result); });
+}
+
+testDoubleMains() {
+  var librarySrc = '''
+#library('mylib');
+main() {}
+''';
+  var mainSrc = '''
+#import('mylib.dart', prefix: 'mylib');
+main() {
+  mylib.main();
+}
+''';
+  var expectedResult =
+    'p_main(){}'
+    'main(){p_main();}';
+  testDart2DartWithLibrary(mainSrc, librarySrc,
+      (String result) { Expect.equals(expectedResult, result); });
+}
+
+testInterfaceDefaultAnotherLib() {
+  var librarySrc = '''
+#library('mylib');
+class C<T> {
+  factory I() {}
+}
+''';
+  var mainSrc = '''
+#import('mylib.dart', prefix: 'mylib');
+
+interface I<T> default mylib.C<T> {
+  I();
+}
+
+main() {
+  new I();
+}
+''';
+  var expectedResult =
+    'class C<T>{factory I(){}}'
+    'interface I<T> default C<T>{I();}'
+    'main(){new I();}';
+  testDart2DartWithLibrary(mainSrc, librarySrc,
+      (String result) { Expect.equals(expectedResult, result); });
+}
+
+testStaticAccessIoLib() {
+  var src = '''
+#import('dart:io');
+
+main() {
+  Platform.operatingSystem;
+}
+''';
+  var expectedResult = '#import("dart:io", prefix: "p");'
+      'main(){p.Platform.operatingSystem;}';
+  testDart2Dart(src,
+      (String result) { Expect.equals(expectedResult, result); });
+}
+
+testMinification() {
+  var src = '''
+class ClassWithVeryVeryLongName {}
+main() {
+  new ClassWithVeryVeryLongName();
+}
+''';
+  var expectedResult =
+      'class A{}'
+      'main(){new A();}';
+  testDart2Dart(src,
+      (String result) { Expect.equals(expectedResult, result); }, minify: true);
+}
+
+testClosureLocalsMinified() {
+  var src = '''
+main() {
+  var a = 7;
+  void foo1(a,b) {
+    void foo2(c,d) {
+       var E = a;
+    }
+    foo2(b, a);
+  }
+  foo1(a, 8);
+}
+''';
+  var expectedResult =
+      'main(){'
+        'var a=7; '
+        'void g(a,f){'
+          'void c(e,b){'
+            'var d=a;'
+          '} '
+          'c(f,a);'
+        '} '
+        'g(a,8);'
+      '}';
+  testDart2Dart(src,
+      (String result) { Expect.equals(expectedResult, result); }, minify: true);
+}
+
+testParametersMinified() {
+  var src = '''
+class A {
+  var a;
+  static foo(arg1) {
+    // Should not rename arg1 to a.
+    arg1 = 5;
+  }
+}
+
+fooglobal(arg,[optionalarg = 7]) {
+  arg = 6;
+}
+
+main() {
+  new A().a;
+  A.foo(8);
+  fooglobal(8);
+}
+''';
+  var expectedResult =
+      'class A{var a;static B(b){b=5;}}'
+      'C(a,[optionalarg=7]){a=6;}'
+      'main(){new A().a; A.B(8); C(8);}';
+  testDart2Dart(src,
+      (String result) { Expect.equals(expectedResult, result); }, minify: true);
 }
 
 main() {
@@ -608,4 +781,11 @@ main() {
   testFactoryRename();
   testTypeVariablesAreRenamed();
   testClassTypeArgumentBound();
+  testDoubleMains();
+  testInterfaceDefaultAnotherLib();
+  testStaticAccessIoLib();
+  testLocalFunctionPlaceholder();
+  testMinification();
+  testClosureLocalsMinified();
+  testParametersMinified();
 }

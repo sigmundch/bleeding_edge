@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, the Dart project authors.
+ * Copyright (c) 2012, the Dart project authors.
  * 
  * Licensed under the Eclipse Public License v1.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,11 +13,11 @@
  */
 package com.google.dart.tools.core.internal.model.info;
 
-import com.google.dart.compiler.SystemLibraryManager;
+import com.google.dart.compiler.PackageLibraryManager;
 import com.google.dart.compiler.UrlLibrarySource;
 import com.google.dart.tools.core.internal.model.DartLibraryImpl;
 import com.google.dart.tools.core.internal.model.DartProjectNature;
-import com.google.dart.tools.core.internal.model.SystemLibraryManagerProvider;
+import com.google.dart.tools.core.internal.model.PackageLibraryManagerProvider;
 import com.google.dart.tools.core.model.DartLibrary;
 
 import org.eclipse.core.resources.IProject;
@@ -28,8 +28,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 
 /**
- * Instances of the class <code>DartModelInfo</code> maintain the cached data shared by all model
- * objects.
+ * Instances of the class <code>DartModelInfo</code> maintain the cached data shared by all model objects.
  */
 public class DartModelInfo extends OpenableElementInfo {
   /**
@@ -84,7 +83,7 @@ public class DartModelInfo extends OpenableElementInfo {
     return nonDartProjects;
   }
 
-  private DartLibraryImpl createBundledLibrary(SystemLibraryManager libraryManager, String urlSpec)
+  private DartLibraryImpl createBundledLibrary(PackageLibraryManager libraryManager, String urlSpec)
       throws URISyntaxException {
     URI libUri = new URI(urlSpec);
     return new DartLibraryImpl(new UrlLibrarySource(libUri, libraryManager));
@@ -93,7 +92,8 @@ public class DartModelInfo extends OpenableElementInfo {
   private void initializeBundledLibraries() {
     ArrayList<DartLibrary> libraries = new ArrayList<DartLibrary>();
     try {
-      SystemLibraryManager libraryManager = SystemLibraryManagerProvider.getSystemLibraryManager();
+      PackageLibraryManager libraryManager = PackageLibraryManagerProvider
+        .getPackageLibraryManager();
       coreLibrary = createBundledLibrary(libraryManager, "dart:core");
       for (String spec : libraryManager.getAllLibrarySpecs()) {
         libraries.add(createBundledLibrary(libraryManager, spec));

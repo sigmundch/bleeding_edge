@@ -11,11 +11,23 @@ class LocalPlaceholder implements Hashable {
       'local_placeholder[id($identifier), nodes($nodes)]';
 }
 
+class FunctionScope {
+  final Set<String> parameterIdentifiers;
+  final Set<LocalPlaceholder> localPlaceholders;
+  FunctionScope()
+      : parameterIdentifiers = new Set<String>(),
+      localPlaceholders = new Set<LocalPlaceholder>();
+  void registerParameter(Identifier node) {
+    parameterIdentifiers.add(node.source.slowToString());
+  }
+}
+
 class SendVisitor extends ResolvedVisitor {
   final PlaceholderCollector collector;
 
   SendVisitor(this.collector, TreeElements elements) : super(elements);
 
+  visitDynamicSend(Send node) {}
   visitSuperSend(Send node) {}
   visitOperatorSend(Send node) {}
   visitForeignSend(Send node) {}
@@ -27,25 +39,16 @@ class SendVisitor extends ResolvedVisitor {
     }
   }
 
-  visitDynamicSend(Send node) {
-    Element element = elements[node];
-    if (element !== null && element.isErroneous()) return;
-    tryRenamePrivateSelector(node);
-  }
-
   visitGetterSend(Send node) {
     final element = elements[node];
     // element === null means dynamic property access.
-    if (element === null || element.isMember()) {
-      tryRenamePrivateSelector(node);
-      return;
-    }
-    // We don't want to rename non top-level element access
-    // unless it's a local variable.
+    if (element === null) return;
     if (element.isPrefix()) {
       // Node is prefix part in case of source 'lib.somesetter = 5;'
       collector.makeNullPlaceholder(node);
-      return;
+    } else if (Elements.isStaticOrTopLevel(element)) {
+      // Unqualified or prefixed top level or static.
+      collector.makeElementPlaceholder(node.selector, element);
     } else if (!element.isTopLevel()) {
       // May get FunctionExpression here in selector
       // in case of A(int this.f());
@@ -54,26 +57,16 @@ class SendVisitor extends ResolvedVisitor {
       } else {
         assert(node.selector is FunctionExpression);
       }
-      return;
-    }
-    // Unqualified <class> in static invocation, why it's not a type annotation?
-    // Another option would be to process in visitStaticSend, NB:
-    // those elements are not top-level.
-    // OR: unqualified top level.
-    collector.makeElementPlaceholder(node.selector, element);
-    if (node.receiver !== null) {
-      // <lib prefix>.<top level>.
-      collector.makeNullPlaceholder(node.receiver);  // Cut library prefix.
     }
   }
 
   visitStaticSend(Send node) {
     final element = elements[node];
-    if (!element.isTopLevel()) return;
+    if (element.isConstructor() || element.isFactoryConstructor()) return;
+    collector.makeElementPlaceholder(node.selector, element);
     // Another ugly case: <lib prefix>.<top level> is represented as
     // receiver: lib prefix, selector: top level.
-    collector.makeElementPlaceholder(node.selector, element);
-    if (node.receiver !== null) {
+    if (element.isTopLevel() && node.receiver !== null) {
       assert(elements[node.receiver].isPrefix());
       // Hack: putting null into map overrides receiver of original node.
       collector.makeNullPlaceholder(node.receiver);
@@ -83,10 +76,6 @@ class SendVisitor extends ResolvedVisitor {
   internalError(String reason, [Node node]) {
     collector.internalError(reason, node);
   }
-
-  tryRenamePrivateSelector(Send node) {
-    collector.tryMakePrivateIdentifier(node.selector.asIdentifier());
-  }
 }
 
 class PlaceholderCollector extends AbstractVisitor {
@@ -94,7 +83,7 @@ class PlaceholderCollector extends AbstractVisitor {
   final Set<Node> nullNodes;  // Nodes that should not be in output.
   final Set<Identifier> unresolvedNodes;
   final Map<Element, Set<Node>> elementNodes;
-  final Map<FunctionElement, Set<LocalPlaceholder>> localPlaceholders;
+  final Map<FunctionElement, FunctionScope> functionScopes;
   final Map<LibraryElement, Set<Identifier>> privateNodes;
   Map<String, LocalPlaceholder> currentLocalPlaceholders;
   Element currentElement;
@@ -107,7 +96,7 @@ class PlaceholderCollector extends AbstractVisitor {
       nullNodes = new Set<Node>(),
       unresolvedNodes = new Set<Identifier>(),
       elementNodes = new Map<Element, Set<Node>>(),
-      localPlaceholders = new Map<FunctionElement, Set<LocalPlaceholder>>(),
+      functionScopes = new Map<FunctionElement, FunctionScope>(),
       privateNodes = new Map<LibraryElement, Set<Identifier>>();
 
   void tryMakeConstructorNamePlaceholder(
@@ -154,64 +143,18 @@ class PlaceholderCollector extends AbstractVisitor {
         tryMakeConstructorNamePlaceholder(implementingFactory.cachedNode,
             element.getEnclosingClass());
       }
-
-      // Process Ctor(this._field) correctly.
-      for (Node parameter in node.parameters) {
-        VariableDefinitions definitions = parameter.asVariableDefinitions();
-        if (definitions !== null) {
-          for (Node definition in definitions.definitions) {
-            Send send = definition.asSend();
-            if (send !== null) {
-              assert(send.receiver is Identifier);
-              assert(send.receiver.asIdentifier().isThis());
-              if (send.selector is Identifier) {
-                tryMakePrivateIdentifier(send.selector.asIdentifier());
-              } else if (send.selector is FunctionExpression) {
-                // C(int this.f()) case where f is field of function type.
-                tryMakePrivateIdentifier(
-                    send.selector.asFunctionExpression().name.asIdentifier());
-              } else {
-                unreachable();
-              }
-            } else {
-              assert(definition is Identifier
-                  || definition is FunctionExpression);
-            }
-          }
-        } else {
-          assert(parameter is NodeList);
-          // We don't have to rename privates in optionals.
-        }
-      }
-    } else if (element.isTopLevel()) {
+    } else if (Elements.isStaticOrTopLevel(element)) {
       // Note: this code should only rename private identifiers for class'
       // fields/getters/setters/methods.  Top-level identifiers are renamed
       // just to escape conflicts and that should be enough as we shouldn't
       // be able to resolve private identifiers for other libraries.
       makeElementPlaceholder(node.name, element);
-    } else {
-      if (node.name !== null) {
-        Identifier identifier = node.name.asIdentifier();
-        // operator <blah> names shouldn't be renamed.
-        if (identifier !== null) tryMakePrivateIdentifier(identifier);
-      }
     }
   }
 
   void collectFieldDeclarationPlaceholders(
       Element element, VariableDefinitions node) {
-    if (element.isInstanceMember()) {
-      for (Node definition in node.definitions) {
-        if (definition is Identifier) {
-          tryMakePrivateIdentifier(definition.asIdentifier());
-        } else if (definition is SendSet) {
-          tryMakePrivateIdentifier(
-              definition.asSendSet().selector.asIdentifier());
-        } else {
-          unreachable();
-        }
-      }
-    } else if (element.isTopLevel()) {
+    if (Elements.isStaticOrTopLevel(element)) {
       Node fieldNode = element.parseNode(compiler);
       if (fieldNode is Identifier) {
         makeElementPlaceholder(fieldNode, element);
@@ -250,16 +193,22 @@ class PlaceholderCollector extends AbstractVisitor {
     });
   }
 
-  void tryMakePrivateIdentifier(Identifier identifier) {
-    if (identifier.source.isPrivate()) makePrivateIdentifier(identifier);
-  }
-
   void tryMakeLocalPlaceholder(Element element, Identifier node) {
+    bool isOptionalParameter() {
+      FunctionElement function = element.enclosingElement;
+      for (Element parameter in function.functionSignature.optionalParameters) {
+        if (parameter === element) return true;
+      }
+      return false;
+    }
+
     // TODO(smok): Maybe we should rename privates as well, their privacy
     // should not matter if they are local vars.
     if (node.source.isPrivate()) return;
-    if (element.isVariable()
-        || (element.isFunction() && !Elements.isStaticOrTopLevel(element))) {
+    if (element.isParameter() && isOptionalParameter()) {
+      functionScopes.putIfAbsent(currentElement, () => new FunctionScope())
+          .registerParameter(node);
+    } else if (Elements.isLocal(element)) {
       makeLocalPlaceholder(node);
     }
   }
@@ -277,6 +226,15 @@ class PlaceholderCollector extends AbstractVisitor {
     assert(element !== null);
     if (element === entryFunction) return;
     if (element.getLibrary() === coreLibrary) return;
+    if (isDartCoreLib(compiler, element.getLibrary())
+        && !element.isTopLevel()) {
+      return;
+    }
+    if (element == compiler.types.dynamicType.element) {
+      internalError(
+          'Should never make element placeholder for dynamic type element',
+          node);
+    }
     elementNodes.putIfAbsent(element, () => new Set<Node>()).add(node);
   }
 
@@ -290,19 +248,19 @@ class PlaceholderCollector extends AbstractVisitor {
     unresolvedNodes.add(node);
   }
 
-  void makeLocalPlaceholder(Node node) {
+  void makeLocalPlaceholder(Identifier identifier) {
+    LocalPlaceholder getLocalPlaceholder() {
+      String name = identifier.source.slowToString();
+      return currentLocalPlaceholders.putIfAbsent(name, () {
+        LocalPlaceholder localPlaceholder = new LocalPlaceholder(name);
+        functionScopes.putIfAbsent(currentElement, () => new FunctionScope())
+            .localPlaceholders.add(localPlaceholder);
+        return localPlaceholder;
+      });
+    }
+
     assert(currentElement is FunctionElement);
-    assert(node is Identifier);
-    String identifier = node.asIdentifier().source.slowToString();
-    LocalPlaceholder localPlaceholder =
-        currentLocalPlaceholders.putIfAbsent(identifier,
-            () {
-              LocalPlaceholder localPlaceholder =
-                  new LocalPlaceholder(identifier);
-              localPlaceholders.putIfAbsent(currentElement,
-                  () => new Set<LocalPlaceholder>()).add(localPlaceholder);
-              return localPlaceholder;
-            });
+    getLocalPlaceholder().nodes.add(identifier);
   }
 
   void internalError(String reason, [Node node]) {
@@ -321,12 +279,9 @@ class PlaceholderCollector extends AbstractVisitor {
   }
 
   visitSendSet(SendSet send) {
-    if (send.selector is Identifier) {
-      tryMakePrivateIdentifier(send.selector.asIdentifier());
-    }
     final element = treeElements[send];
     if (element !== null) {
-      if (element.isTopLevel()) {
+      if (Elements.isStaticOrTopLevel(element)) {
         assert(element is VariableElement || element.isSetter());
         makeElementPlaceholder(send.selector, element);
       } else {
@@ -335,6 +290,10 @@ class PlaceholderCollector extends AbstractVisitor {
       }
     }
     send.visitChildren(this);
+  }
+
+  visitIdentifier(Identifier identifier) {
+    if (identifier.source.isPrivate()) makePrivateIdentifier(identifier);
   }
 
   static bool isPlainTypeName(TypeAnnotation typeAnnotation) {
@@ -384,7 +343,7 @@ class PlaceholderCollector extends AbstractVisitor {
         }
       }
       // TODO(antonm): is there a better way to detect unresolved types?
-      if (type !== compiler.types.dynamicType) {
+      if (type.element !== compiler.types.dynamicType.element) {
         makeTypePlaceholder(target, type);
       } else {
         if (!isDynamicType(node)) makeUnresolvedPlaceholder(target);
@@ -428,7 +387,7 @@ class PlaceholderCollector extends AbstractVisitor {
     // May get null here in case of A(int this.f());
     if (element !== null) {
       // Rename only local functions.
-      if (element is FunctionElement && element !== currentElement) {
+      if (element !== currentElement) {
         if (node.name !== null) {
           assert(node.name is Identifier);
           tryMakeLocalPlaceholder(element, node.name);
@@ -439,27 +398,40 @@ class PlaceholderCollector extends AbstractVisitor {
   }
 
   visitClassNode(ClassNode node) {
-    assert(currentElement is ClassElement);
-    makeElementPlaceholder(node.name, currentElement);
+    ClassElement classElement = currentElement;
+    makeElementPlaceholder(node.name, classElement);
     node.visitChildren(this);
-    if (node.typeParameters !== null) {
-      // Another poor man resolution.
-      final typeVariableTypes =
-          new List<Type>.from(currentElement.typeVariables);
-      int i = 0;
-      for (TypeVariable typeVariable in node.typeParameters) {
-        makeTypePlaceholder(typeVariable.name, typeVariableTypes[i]);
-        i++;
-      }
-    }
     if (node.defaultClause !== null) {
       // Can't just visit class node's default clause because of the bug in the
       // resolver, it just crashes when it meets type variable.
-      Type defaultType = (currentElement as ClassElement).defaultClass;
+      Type defaultType = classElement.defaultClass;
       assert(defaultType !== null);
       makeTypePlaceholder(node.defaultClause.typeName, defaultType);
       visit(node.defaultClause.typeArguments);
     }
+  }
+
+  visitTypeVariable(TypeVariable node) {
+    assert(currentElement is TypedefElement || currentElement is ClassElement);
+    // Hack for case when interface and default class are in different
+    // libraries, try to resolve type variable to default class type arg.
+    // Example:
+    // lib1: interface I<K> default C<K> {...}
+    // lib2: class C<K> {...}
+    TypeDeclarationElement typeElement = currentElement;
+    if (currentElement is ClassElement
+        && (currentElement as ClassElement).defaultClass !== null) {
+      typeElement = (currentElement as ClassElement).defaultClass.element;
+    }
+    // Another poor man type resolution.
+    // Find this variable in current element type parameters.
+    for (Type type in typeElement.typeVariables) {
+      if (type.name.slowToString() == node.name.source.slowToString()) {
+        makeTypePlaceholder(node.name, type);
+        break;
+      }
+    }
+    node.visitChildren(this);
   }
 
   visitTypedef(Typedef node) {

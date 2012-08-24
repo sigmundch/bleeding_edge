@@ -57,9 +57,9 @@ DECLARE_RUNTIME_ENTRY(TraceFunctionExit);
   V(DeoptPolymorphicInstanceCallTestFail) \
   V(DeoptIntegerToDouble) \
   V(DeoptDoubleToDouble) \
-  V(DeoptSmiBinaryOp) \
-  V(DeoptMintBinaryOp) \
-  V(DeoptDoubleBinaryOp) \
+  V(DeoptBinarySmiOp) \
+  V(DeoptBinaryMintOp) \
+  V(DeoptBinaryDoubleOp) \
   V(DeoptInstanceSetterSameTarget) \
   V(DeoptInstanceSetter) \
   V(DeoptSmiEquality) \
@@ -77,7 +77,8 @@ DECLARE_RUNTIME_ENTRY(TraceFunctionExit);
   V(DeoptNoTypeFeedback) \
   V(DeoptSAR) \
   V(DeoptUnaryOp) \
-  V(DeoptCheckClass)
+  V(DeoptCheckClass) \
+  V(DeoptCheckSmi)
 
 enum DeoptReasonId {
 #define DEFINE_ENUM_LIST(name) k##name,

@@ -13,6 +13,7 @@
  */
 package com.google.dart.engine.parser;
 
+import com.google.dart.engine.ast.ArgumentDefinitionTest;
 import com.google.dart.engine.ast.AssignmentExpression;
 import com.google.dart.engine.ast.BinaryExpression;
 import com.google.dart.engine.ast.ConditionalExpression;
@@ -32,13 +33,13 @@ import java.util.List;
 public class RecoveryParserTest extends ParserTestCase {
 
   public void test_additiveExpression_missing_LHS() throws Exception {
-    BinaryExpression expression = parseExpression("+ y", ParserErrorCode.NO_UNARY_PLUS_OPERATOR);
+    BinaryExpression expression = parseExpression("+ y", ParserErrorCode.USE_OF_UNARY_PLUS_OPERATOR);
     assertInstanceOf(SimpleIdentifier.class, expression.getLeftOperand());
     assertTrue(expression.getLeftOperand().isSynthetic());
   }
 
   public void test_additiveExpression_missing_LHS_RHS() throws Exception {
-    BinaryExpression expression = parseExpression("+", ParserErrorCode.NO_UNARY_PLUS_OPERATOR);
+    BinaryExpression expression = parseExpression("+", ParserErrorCode.USE_OF_UNARY_PLUS_OPERATOR);
     assertInstanceOf(SimpleIdentifier.class, expression.getLeftOperand());
     assertTrue(expression.getLeftOperand().isSynthetic());
     assertInstanceOf(SimpleIdentifier.class, expression.getRightOperand());
@@ -58,20 +59,25 @@ public class RecoveryParserTest extends ParserTestCase {
   }
 
   public void test_additiveExpression_precedence_multiplicative_left() throws Exception {
-    BinaryExpression expression = parseExpression("* +", ParserErrorCode.NO_UNARY_PLUS_OPERATOR);
+    BinaryExpression expression = parseExpression("* +", ParserErrorCode.USE_OF_UNARY_PLUS_OPERATOR);
     assertInstanceOf(BinaryExpression.class, expression.getLeftOperand());
   }
 
   public void test_additiveExpression_precedence_multiplicative_right() throws Exception {
-    BinaryExpression expression = parseExpression("+ *", ParserErrorCode.NO_UNARY_PLUS_OPERATOR);
+    BinaryExpression expression = parseExpression("+ *", ParserErrorCode.USE_OF_UNARY_PLUS_OPERATOR);
     assertInstanceOf(BinaryExpression.class, expression.getRightOperand());
   }
 
   public void test_additiveExpression_super() throws Exception {
     BinaryExpression expression = parseExpression(
         "super + +",
-        ParserErrorCode.NO_UNARY_PLUS_OPERATOR);
+        ParserErrorCode.USE_OF_UNARY_PLUS_OPERATOR);
     assertInstanceOf(BinaryExpression.class, expression.getLeftOperand());
+  }
+
+  public void test_argumentDefinitionTest_missing_identifier() throws Exception {
+    ArgumentDefinitionTest expression = parseExpression("?", ParserErrorCode.EXPECTED_IDENTIFIER);
+    assertTrue(expression.getIdentifier().isSynthetic());
   }
 
   public void test_assignmentExpression_missing_compound1() throws Exception {
@@ -467,12 +473,12 @@ public class RecoveryParserTest extends ParserTestCase {
   }
 
   public void test_shiftExpression_precedence_unary_left() throws Exception {
-    BinaryExpression expression = parseExpression("+ <<", ParserErrorCode.NO_UNARY_PLUS_OPERATOR);
+    BinaryExpression expression = parseExpression("+ <<", ParserErrorCode.USE_OF_UNARY_PLUS_OPERATOR);
     assertInstanceOf(BinaryExpression.class, expression.getLeftOperand());
   }
 
   public void test_shiftExpression_precedence_unary_right() throws Exception {
-    BinaryExpression expression = parseExpression("<< +", ParserErrorCode.NO_UNARY_PLUS_OPERATOR);
+    BinaryExpression expression = parseExpression("<< +", ParserErrorCode.USE_OF_UNARY_PLUS_OPERATOR);
     assertInstanceOf(BinaryExpression.class, expression.getRightOperand());
   }
 

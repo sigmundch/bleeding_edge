@@ -15,8 +15,8 @@
 package com.google.dart.tools.core.internal.builder;
 
 import com.google.dart.tools.core.DartCore;
-import com.google.dart.tools.core.frog.ProcessRunner;
-import com.google.dart.tools.core.model.DartSdk;
+import com.google.dart.tools.core.dart2js.ProcessRunner;
+import com.google.dart.tools.core.model.DartSdkManager;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -45,7 +45,7 @@ import java.util.List;
  * @see DartBuilder
  */
 public class DartBasedBuilder {
-  private static final boolean VERBOSE = true;
+  private static final boolean VERBOSE = false;
 
   // The generic unix/max/bsd CLI limit is 262144.
   private static final int GENERAL_CLI_LIMIT = 262000;
@@ -145,7 +145,7 @@ public class DartBasedBuilder {
    * @return
    */
   private IFile getBuilderFile(IProject project) {
-    IResource resource = project.findMember("build.dart");
+    IResource resource = project.findMember(DartCore.BUILD_DART_FILE_NAME);
 
     if (resource instanceof IFile) {
       return (IFile) resource;
@@ -220,7 +220,7 @@ public class DartBasedBuilder {
 
     List<String> args = new ArrayList<String>();
 
-    args.add(DartSdk.getInstance().getVmExecutable().getPath());
+    args.add(DartSdkManager.getManager().getSdk().getVmExecutable().getPath());
     args.add("--new_gen_heap_size=256");
     args.add(builderFile.getProjectRelativePath().toOSString());
     args.addAll(buildArgs);

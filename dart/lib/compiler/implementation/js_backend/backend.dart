@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+typedef void Recompile(Element element);
+
 class InvocationInfo {
   int parameterCount = -1;
   List<HType> providedTypes;
@@ -30,7 +32,7 @@ class InvocationInfo {
 
   InvocationInfo.unknownTypes();
 
-  void update(HInvoke node, HTypeMap types, var recompile) {
+  void update(HInvoke node, HTypeMap types, Recompile recompile) {
     // If we don't know anything useful about the types adding more
     // information will not help.
     if (!hasTypeInformation) return;
@@ -38,13 +40,21 @@ class InvocationInfo {
     // Update the type information with the provided types.
     bool typesChanged = false;
     bool allUnknown = true;
-    for (int i = 0; i < providedTypes.length; i++) {
-      HType newType = providedTypes[i].union(types[node.inputs[i + 1]]);
-      if (newType != providedTypes[i]) {
-        typesChanged = true;
-        providedTypes[i] = newType;
+
+    if (providedTypes.length != node.inputs.length - 1) {
+      // If the signatures don't match, remove all optimizations on
+      // that selector.
+      typesChanged = true;
+      allUnknown = true;
+    } else {
+      for (int i = 0; i < providedTypes.length; i++) {
+        HType newType = providedTypes[i].union(types[node.inputs[i + 1]]);
+        if (newType != providedTypes[i]) {
+          typesChanged = true;
+          providedTypes[i] = newType;
+        }
+        if (providedTypes[i] != HType.UNKNOWN) allUnknown = false;
       }
-      if (providedTypes[i] != HType.UNKNOWN) allUnknown = false;
     }
     // If the provided types change we need to recompile all functions which
     // have been compiled under the now invalidated assumptions.
@@ -62,7 +72,7 @@ class InvocationInfo {
       compiledFunctions.add(function);
 
   void clearTypeInformation() { providedTypes = null; }
-  bool get hasTypeInformation() => providedTypes != null;
+  bool get hasTypeInformation => providedTypes != null;
 
 }
 
@@ -77,7 +87,7 @@ class ReturnInfo {
       : this.returnType = null,
         compiledFunctions = new List<Element>();
 
-  void update(HType type, var recompile) {
+  void update(HType type, Recompile recompile) {
     HType newType = returnType != null ? returnType.union(type) : type;
     if (newType != returnType) {
       if (returnType == null && newType === HType.UNKNOWN) {
@@ -118,7 +128,7 @@ class JavaScriptBackend extends Backend {
 
   final List<Element> invalidateAfterCodegen;
 
-  List<CompilerTask> get tasks() {
+  List<CompilerTask> get tasks {
     return <CompilerTask>[builder, optimizer, generator, emitter];
   }
 
@@ -278,6 +288,12 @@ class JavaScriptBackend extends Backend {
     return fields[field];
   }
 
+  void recompile(Element element) {
+    if (compiler.phase == Compiler.PHASE_COMPILING) {
+      invalidateAfterCodegen.add(element);
+    }
+  }
+
   /**
    *  Register a dynamic invocation and collect the provided types for the
    *  named selector.
@@ -285,18 +301,29 @@ class JavaScriptBackend extends Backend {
   void registerDynamicInvocation(HInvokeDynamicMethod node,
                                  Selector selector,
                                  HTypeMap types) {
+    Element element = node.element;
+    Universe resolverWorld = compiler.resolverWorld;
+    // If there are any getters for this method we cannot know anything about
+    // the types of the provided parameters. Use resolverWorld for now as that
+    // information does not change during compilation.
+    // TODO(sgjesse): These checks should use the codegenWorld and keep track
+    // of changes to this information.
+    if (element != null &&
+        (resolverWorld.hasFieldGetter(element, compiler) ||
+         resolverWorld.hasInvokedGetter(element, compiler))) {
+      return;
+    }
     Map<Selector, InvocationInfo> invocationInfos =
         invocationInfo.putIfAbsent(selector.name,
                                    () => new Map<Selector, InvocationInfo>());
-    InvocationInfo info = invocationInfos[selector];
-    if (info != null) {
-      void recompile(Element element) {
-        if (compiler.phase == Compiler.PHASE_COMPILING) {
-          invalidateAfterCodegen.add(element);
-        }
-      }
-
-      info.update(node, types, recompile);
+    if (!invocationInfos.isEmpty()) {
+      invocationInfos.forEach((Selector _, InvocationInfo info) {
+        // TODO(ngeoffray): Check that the signature of [info] applies to
+        // [element]. We cannot do that right now because the
+        // strategy is all or nothing. We should actually retain the
+        // methods that don't apply to [selector].
+        info.update(node, types, recompile);
+      });
     } else {
       invocationInfos[selector] = new InvocationInfo(node, types);
     }
@@ -309,11 +336,6 @@ class JavaScriptBackend extends Backend {
   void registerStaticInvocation(HInvokeStatic node, HTypeMap types) {
     InvocationInfo info = staticInvocationInfo[node.element];
     if (info != null) {
-      recompile(Element element) {
-        if (compiler.phase == Compiler.PHASE_COMPILING) {
-          invalidateAfterCodegen.add(element);
-        }
-      }
       info.update(node, types, recompile);
     } else {
       staticInvocationInfo[node.element] = new InvocationInfo(node, types);
@@ -389,12 +411,6 @@ class JavaScriptBackend extends Backend {
   void registerReturnType(FunctionElement element, HType returnType) {
     ReturnInfo info = returnInfo[element];
     if (info != null) {
-      recompile(Element element) {
-        if (compiler.phase == Compiler.PHASE_COMPILING) {
-          invalidateAfterCodegen.add(element);
-        }
-      }
-
       info.update(returnType, recompile);
     } else {
       returnInfo[element] = new ReturnInfo(returnType);

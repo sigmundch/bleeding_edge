@@ -1,4 +1,4 @@
-// Copyright (c) 2011, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -127,7 +127,7 @@ class StringBase {
   int lastIndexOf(String other, [int start = null]) {
     if (start == null) start = length - 1;
     if (other.isEmpty()) {
-      return Math.min(this.length, start);
+      return min(this.length, start);
     }
     if (start >= this.length) {
       start = this.length - 1;
@@ -152,17 +152,11 @@ class StringBase {
     if (startIndex > endIndex) {
       throw new IndexOutOfRangeException(startIndex);
     }
-    return substringUnchecked_(startIndex, endIndex);
+    return _substringUnchecked(startIndex, endIndex);
   }
 
-  String substringUnchecked_(int startIndex, int endIndex) {
-    int len = endIndex - startIndex;
-    List<int> charCodes = new List<int>(len);
-    for (int i = 0; i < len; i++) {
-      charCodes[i] = this.charCodeAt(startIndex + i);
-    }
-    return StringBase.createFromCharCodes(charCodes);
-  }
+  String _substringUnchecked(int startIndex, int endIndex)
+      native "StringBase_substringUnchecked";
 
   String trim() {
     final int len = this.length;
@@ -187,7 +181,7 @@ class StringBase {
       // whitespaces.
       return this;
     } else {
-      return substringUnchecked_(first, last + 1);
+      return _substringUnchecked(first, last + 1);
     }
   }
 
@@ -238,23 +232,11 @@ class StringBase {
    */
   static String _interpolate(List values) {
     int numValues = values.length;
-    List<String> stringList = new List<String>(numValues);
-    int resultLength = 0;
+    var stringList = new ObjectArray(numValues);
     for (int i = 0; i < numValues; i++) {
-      String str = values[i].toString();
-      resultLength += str.length;
-      stringList[i] = str;
+      stringList[i] = values[i].toString();
     }
-    List<int> codepoints = new List<int>(resultLength);
-    int intArrayIx = 0;
-    for (int i = 0; i < numValues; i++) {
-      String str = stringList[i];
-      int strLength = str.length;
-      for (int k = 0; k < strLength; k++) {
-        codepoints[intArrayIx++] = str.charCodeAt(k);
-      }
-    }
-    return StringBase.createFromCharCodes(codepoints);
+    return _concatAll(stringList);
   }
 
   Iterable<Match> allMatches(String str) {

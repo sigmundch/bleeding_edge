@@ -479,9 +479,9 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 
     deployOptimizedAction = new GenerateJavascriptAction(window);
 
-    pubInstallAction = new RunPubAction(window, RunPubAction.INSTALL_COMMAND);
+    pubInstallAction = RunPubAction.createPubInstallAction(window);
 
-    pubUpdateAction = new RunPubAction(window, RunPubAction.UPDATE_COMMAND);
+    pubUpdateAction = RunPubAction.createPubUpdateAction(window);
 
     newApplicationWizardAction = new OpenNewApplicationWizardAction();
 //TODO (pquitslund): deprecated libaries view support        
@@ -1024,10 +1024,11 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 
     menu.add(deployOptimizedAction);
 
-    // TODO(keertip): uncomment for pub support
-//    menu.add(new Separator());
-//    menu.add(pubInstallAction);
-//    menu.add(pubUpdateAction);
+    if (DartCoreDebug.ENABLE_PUB) {
+      menu.add(new Separator());
+      menu.add(pubInstallAction);
+      menu.add(pubUpdateAction);
+    }
 
     Separator sep = new Separator(IWorkbenchActionConstants.MB_ADDITIONS);
     sep.setVisible(!Util.isMac());
@@ -1043,17 +1044,6 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
     }
 
     //menu.add(ContributionItemFactory.OPEN_WINDOWS.create(getWindow()));
-    return menu;
-  }
-
-  /**
-   * Creates and returns the Window menu.
-   */
-  private MenuManager createViewMenu() {
-    MenuManager menu = new MenuManager("View", IWorkbenchActionConstants.M_WINDOW);
-
-    addViewActions(menu);
-
     return menu;
   }
 

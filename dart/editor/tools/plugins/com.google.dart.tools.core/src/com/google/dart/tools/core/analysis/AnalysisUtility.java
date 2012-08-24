@@ -21,8 +21,8 @@ import com.google.dart.compiler.DartCompilerListener;
 import com.google.dart.compiler.DartSource;
 import com.google.dart.compiler.DefaultCompilerConfiguration;
 import com.google.dart.compiler.LibrarySource;
+import com.google.dart.compiler.PackageLibraryManager;
 import com.google.dart.compiler.Source;
-import com.google.dart.compiler.SystemLibraryManager;
 import com.google.dart.compiler.UrlLibrarySource;
 import com.google.dart.compiler.ast.DartUnit;
 import com.google.dart.compiler.ast.LibraryUnit;
@@ -30,7 +30,7 @@ import com.google.dart.compiler.parser.DartParser;
 import com.google.dart.compiler.parser.DartPrefixParser;
 import com.google.dart.tools.core.DartCore;
 import com.google.dart.tools.core.internal.builder.CachingArtifactProvider;
-import com.google.dart.tools.core.internal.model.SystemLibraryManagerProvider;
+import com.google.dart.tools.core.internal.model.PackageLibraryManagerProvider;
 import com.google.dart.tools.core.utilities.compiler.DartCompilerUtilities;
 import com.google.dart.tools.core.utilities.io.FileUtilities;
 
@@ -47,7 +47,7 @@ import java.util.Set;
 class AnalysisUtility {
   private static final CompilerConfiguration config = new DefaultCompilerConfiguration(
       DartCompilerUtilities.COMPILER_OPTIONS,
-      SystemLibraryManagerProvider.getSystemLibraryManager()) {
+      PackageLibraryManagerProvider.getPackageLibraryManager()) {
     @Override
     public boolean incremental() {
       return false;
@@ -63,11 +63,33 @@ class AnalysisUtility {
   };
 
   /**
-   * Answer <code>true</code> if the specified directory contains a "packages" subdirectory and the
-   * pubspec declaration file.
+   * Answer a new array containing the elements of the old array with the new element appended
    */
-  static boolean isApplicationDirectory(File dir) {
-    return DartCore.isPackagesDirectory(new File(dir, DartCore.PACKAGES_DIRECTORY_NAME));
+  static Library[] append(Library[] oldArray, Library library) {
+    if (oldArray.length == 0) {
+      return new Library[] {library};
+    }
+    int oldLen = oldArray.length;
+    Library[] newArray = new Library[oldLen + 1];
+    System.arraycopy(oldArray, 0, newArray, 0, oldLen);
+    newArray[oldLen] = library;
+    return newArray;
+  }
+
+  /**
+   * Answer <code>true</code> if the directory equals or contains the specified file.
+   * 
+   * @param directory the directory (not <code>null</code>, absolute file)
+   * @param file the file (not <code>null</code>, absolute file)
+   */
+  static boolean equalsOrContains(File directory, File file) {
+    String dirPath = directory.getPath();
+    String filePath = file.getPath();
+    if (!filePath.startsWith(dirPath)) {
+      return false;
+    }
+    int index = dirPath.length();
+    return index == filePath.length() || filePath.charAt(index) == File.separatorChar;
   }
 
   /**
@@ -160,7 +182,7 @@ class AnalysisUtility {
       DartCore.logError("Non absolute path: " + file);
       return null;
     }
-    if (SystemLibraryManager.isDartUri(uri) || SystemLibraryManager.isPackageUri(uri)) {
+    if (PackageLibraryManager.isDartUri(uri) || PackageLibraryManager.isPackageUri(uri)) {
       URI resolveUri = server.getLibraryManager().resolveDartUri(uri);
       if (resolveUri == null) {
         DartCore.logError("Failed to resolve: " + uri);
@@ -190,7 +212,7 @@ class AnalysisUtility {
   static URI toLibraryUri(AnalysisServer server, File libraryFile) {
     URI fileUri = libraryFile.toURI();
     URI shortUri = server.getLibraryManager().getRelativeUri(fileUri);
-    return shortUri != null && !SystemLibraryManager.isPackageUri(shortUri) ? shortUri : fileUri;
+    return shortUri != null && !PackageLibraryManager.isPackageUri(shortUri) ? shortUri : fileUri;
   }
 
   private static DartCompilationError newIoError(Source source, IOException e) {

@@ -55,7 +55,7 @@ class Entrypoint {
    * The path to this "packages" directory.
    */
   // TODO(rnystrom): Make this path configurable.
-  String get path() => join(root.dir, 'packages');
+  String get path => join(root.dir, 'packages');
 
   /**
    * Ensures that the package identified by [id] is installed to the directory.
@@ -106,7 +106,8 @@ class Entrypoint {
    * completes when all dependencies are installed.
    */
   Future installDependencies() {
-    return _loadLockFile()
+    return _validatePubspec()
+      .chain((_) => _loadLockFile())
       .chain((lockFile) => resolveVersions(cache.sources, root, lockFile))
       .chain(_installDependencies);
   }
@@ -117,23 +118,23 @@ class Entrypoint {
    * [Future] that completes when all dependencies are installed.
    */
   Future updateAllDependencies() {
-    return resolveVersions(cache.sources, root, new LockFile.empty()).
-      chain(_installDependencies);
+    return _validatePubspec()
+      .chain((_) => resolveVersions(cache.sources, root, new LockFile.empty()))
+      .chain(_installDependencies);
   }
 
   /**
    * Installs the latest available versions of [dependencies], while leaving
-   * other dependencies as specified by the [LockFile]. Returns a [Future] that
-   * completes when all dependencies are installed.
+   * other dependencies as specified by the [LockFile] if possible. Returns a
+   * [Future] that completes when all dependencies are installed.
    */
   Future updateDependencies(List<String> dependencies) {
-    return _loadLockFile().chain((lockFile) {
+    return _validatePubspec().chain((_) => _loadLockFile()).chain((lockFile) {
+      var versionSolver = new VersionSolver(cache.sources, root, lockFile);
       for (var dependency in dependencies) {
-        // TODO(nweiz): How do we want to detect and handle unknown
-        // dependencies here?
-        lockFile.packages.remove(dependency);
+        versionSolver.useLatestVersion(dependency);
       }
-      return resolveVersions(cache.sources, root, lockFile);
+      return versionSolver.solve();
     }).chain(_installDependencies);
   }
 
@@ -145,7 +146,7 @@ class Entrypoint {
     return Futures.wait(packageVersions.map((id) {
       if (id.source is RootSource) return new Future.immediate(id);
       return install(id);
-    })).chain(_saveLockFile);
+    })).chain(_saveLockFile).chain(_installSelfReference);
   }
 
   /**
@@ -161,13 +162,13 @@ class Entrypoint {
     var future = readTextFile(lockFilePath);
 
     future.handleException((_) {
-      completer.complete(new LockFile.empty());
-
       // If we failed to load the lockfile but it does exist, something's
       // probably wrong and we should notify the user.
-      fileExists(lockFilePath).then((exists) {
+      fileExists(lockFilePath).transform((exists) {
         if (!exists) return;
         printError("Error reading pubspec.lock: ${future.exception}");
+      }).then((_) {
+        completer.complete(new LockFile.empty());
       });
 
       return true;
@@ -188,5 +189,37 @@ class Entrypoint {
     }
 
     return writeTextFile(join(root.dir, 'pubspec.lock'), lockFile.serialize());
+  }
+
+  /**
+   * Installs a self-referential symlink in the `packages` directory that will
+   * allow a package to import its own files using `package:`.
+   */
+  Future _installSelfReference(_) {
+    var linkPath = join(path, root.name);
+    return exists(linkPath).chain((exists) {
+      if (exists) return new Future.immediate(null);
+      return ensureDir(path).chain((_) => createSymlink(root.dir, linkPath));
+    });
+  }
+
+  /**
+   * Validate that the pubspec for the entrypoint exists and specifies the name
+   * of the root package.
+   */
+  Future _validatePubspec() {
+    var future = new Future.immediate(null);;
+    if (root.pubspec.isEmpty) {
+      future = exists(join(path, "pubspec.yaml")).transform((exists) {
+        if (exists) return;
+        throw 'Could not find a file named "pubspec.yaml" in the directory'
+          '$path.';
+      });
+    }
+
+    return future.transform((_) {
+      if (root.pubspec.name != null) return;
+      throw '"pubspec.yaml" must contain a "name" key.';
+    });
   }
 }

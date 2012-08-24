@@ -16,6 +16,7 @@ request_animation_frame_test: Skip   # drt hangs; requestAnimationFrame not impl
 #htmloptionscollection_test: Fail # TODO(asiva): investigate.
 subclass_dom_elements_test: Fail
 subclass_dom_elements_2_test: Fail # subclassing of dom elements is incomplete outside of dart2js
+websql_test: Skip #4645 dartium does not support web SQL (and times out executing)
 
 [ $compiler == none && $runtime == drt && $system == windows]
 audiocontext_test: Skip
@@ -26,7 +27,6 @@ audioelement_test: Fail # Issue 4517
 blob_constructor_test: Fail # Issue 4517
 css_test: Fail # Issue 4517
 htmlaudioelement_test: Fail # Issue 4517
-indexeddb_2_test: Fail  # Issue 1883 - IndexedDB methods don't handle maps correctly.
 
 [ $compiler == none && $runtime == drt && $system == macos]
 audiocontext_test: Pass, Fail
@@ -36,7 +36,6 @@ documentfragment_test: Pass, Timeout
 
 [ $runtime == ie || $runtime == safari || $runtime == ff || $runtime == chrome || $runtime == opera ]
 # TODO(vsm): Triage DOM tests.
-indexeddb_2_test: Fail  # Issue 1883 - IndexedDB methods don't handle maps correctly.
 htmloptionscollection_test: Fail # Issue 3813.
 shadow_dom_test: Skip # No ShadowDOM support except on tip dartium.
 shadow_dom_layout_test: Skip
@@ -60,6 +59,7 @@ localstorage_test: Fail
 node_test: Fail
 svgelement_test: Fail
 svgelement2_test: Fail
+websql_test: Fail # IE does not support web SQL
 #
 # Investigate and triage the following into bug reports.
 #
@@ -73,8 +73,6 @@ css_test: Fail
 datalistelement_test: Fail    # ie9 does not have HTMLDataListElement
 dom_constructors_test: Fail
 exceptions_test: Fail
-hidden_dom_1_test: Fail
-hidden_dom_2_test: Fail
 history_test: Fail
 indexeddb_1_test: Fail
 indexeddb_2_test: Fail
@@ -85,6 +83,7 @@ js_interop_2_test: Fail
 js_interop_3_test: Fail
 js_interop_4_test: Fail
 js_interop_func_passing_test: Fail
+js_interop_obj_passing_test: Fail
 measurement_test: Fail
 messageevent_test: Fail
 mutationobserver_test: Fail
@@ -94,7 +93,6 @@ shadow_dom_test: Fail
 storage_test: Fail
 svg_3_test: Fail
 websocket_test: Fail
-window_nosuchmethod_test: Fail
 window_open_test: Skip      # BUG(4016)
 xsltprocessor_test: Skip    # BUG(4016)
 fileapi_test: Skip          # BUG(4016)
@@ -132,6 +130,7 @@ inner_frame_test: Skip
 js_interop_3_test: Fail
 js_interop_4_test: Fail
 js_interop_func_passing_test: Fail
+js_interop_obj_passing_test: Fail
 # Interfaces not implemented: SVGTests, SVGLangSpace, SVGExternalResourcesRequired, SVGStylable
 svg_3_test: Fail
 svgelement_test: Fail
@@ -145,14 +144,11 @@ typed_arrays_dataview_test: Fail  # DataView not implemented until Firefox 15.0
 # framework, frog no longer resolves forEach statically, and instead it
 # dynamically binds forEach on a bunch of classes, including HTMLCollection.
 typing_test: Pass
+websql_test: Fail # FF does not support web SQL
 websocket_test: Pass, Fail # FF 10 is uses MozWebSocket, FF 11 uses WebSocket.
 # Exception... "Access to restricted URI denied" code: "1012" nsresult: "0x805303f4
 #    (NS_ERROR_DOM_BAD_URI) ...
 xhr_test: Fail
-
-[ $runtime == ff && $system == windows ]
-# TODO(vsm): Investigate why this is only failing on windows.
-js_interop_2_test: Fail
 
 [ $runtime == ie && ($system == linux || $system == macos) ]
 *: Skip
@@ -197,15 +193,9 @@ isolates_test: Skip   # Timeout because leg does not support web workers.
 typed_arrays_1_test: Fail # dart2js doesn't support is checks with generic types.
 
 [ $compiler == dart2js && $runtime == ff && $system == linux]
-canvas_pixel_array_type_alias_test: Fail # Expectation: CreateImageData. Caught NoSuchMethodException : method not found: 'get$data'
 indexeddb_3_test: Fail  # Caught Error: DATA_ERR: DOM IDBDatabase Exception 5 Error: The data provided does not meet the requirements of the function.
-instance_of_test: Fail     # Issue 2535
 localstorage_test: Fail
 mutationobserver_test: Fail  #  Bots have FF 13, will pass on FF 14.
-
-[ $compiler == dart2js && ($runtime == drt || $runtime == ff) && $system == linux]
-# DOM errors.
-indexeddb_2_test: Fail # Uncaught error
 
 [ $compiler == dart2js && $runtime == chrome && $system == macos ]
 fileapi_test: Skip # Issue 3022
@@ -222,5 +212,5 @@ fileapi_test: Skip # Issue 3022
 css_test: Pass, Fail # Issue #2823
 fileapi_test: Skip # Issue 3022
 
-[ $compiler == dart2js && $runtime == drt && $system == macos ]
-indexeddb_2_test: Fail # Issue 3669.
+[ $compiler == dart2js && $runtime == ff && $system == windows]
+js_interop_2_test: Fail # Issue 4658.

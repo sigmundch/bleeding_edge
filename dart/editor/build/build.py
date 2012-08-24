@@ -14,7 +14,6 @@ import subprocess
 import sys
 import tempfile
 import gsutil
-import postprocess
 import ziputils
 
 from os.path import join
@@ -23,7 +22,7 @@ BUILD_OS = None
 DART_PATH = None
 TOOLS_PATH = None
 GSU_PATH_REV = None
-GDU_API_DOCS_PATH = None
+GSU_API_DOCS_PATH = None
 GSU_API_DOCS_BUCKET = 'gs://dartlang-api-docs'
 GSU_PATH_LATEST = None
 REVISION = None
@@ -230,22 +229,6 @@ def main():
   ant_property_file = None
   sdk_zip = None
   
-  # gsutil tests
-#  if 'lin' in buildos and not os.environ.get('DONT_RUN_GSUTIL_TESTS'):
-#    gsutil_test = os.path.join(editorpath, 'build', './gsutilTest.py')
-#    cmds = [sys.executable, gsutil_test]
-#    print 'running gsutil tests'
-#    sys.stdout.flush()
-#    p = subprocess.Popen(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#    (out_stream, err_strteam) = p.communicate()
-#    if p.returncode:
-#      print 'gsutil tests:'
-#      print 'stdout:'
-#      print str(out_stream)
-#      print '*' * 40
-#    print str(err_strteam)
-#    print '*' * 40
-
   try:
     ant_property_file = tempfile.NamedTemporaryFile(suffix='.property',
                                                     prefix='AntProperties',
@@ -364,13 +347,6 @@ def main():
               editorpath, buildos)
       return 0
 
-  #  else:
-  #    PrintSeparator('new builder running on {0} is'
-  #                    ' a place holder until the os specific builds'
-  #                    ' are in place.  This is a '
-  #                    'normal termination'.format(builder_name))
-  #    return 0
-
     PrintSeparator('running the build to produce the Zipped RCP''s')
     #tell the ant script where to write the sdk zip file so it can
     #be expanded later
@@ -407,13 +383,6 @@ def main():
     if status:
       return status
 
-    #process the os specific builds
-    if buildos:
-      found_zips = _FindRcpZipFiles(buildout)
-      if not found_zips:
-        PrintError('could not find any zipped up RCP files')
-        return 7
-
     if not build_skip_tests:
       PrintSeparator('Running the tests')
       junit_status = ant.RunAnt('../com.google.dart.tools.tests.feature_releng',
@@ -444,7 +413,9 @@ def main():
     if buildos:
       # dart-editor-linux.gtk.x86.zip --> darteditor-linux-32.zip
       RenameRcpZipFiles(buildout);
-    
+      
+      PostProcessEditorBuilds(buildout)
+      
       _InstallArtifacts(buildout, buildos, extra_artifacts)
       
       version_file = _FindVersionFile(buildout)
@@ -872,6 +843,39 @@ def RenameRcpZipFiles(out_dir):
       os.rename(zipFile, join(os.path.dirname(zipFile), renameMap[basename]))
 
 
+def PostProcessEditorBuilds(out_dir):
+  """Post-process the created RCP builds"""
+  
+  PrintSeparator('Post-process RCP builds')
+  
+  for zipFile in _FindRcpZipFiles(out_dir):
+    basename = os.path.basename(zipFile)
+    
+    print('  processing %s' % basename)
+    
+    # post-process the info.plist file
+    if (basename.startswith('darteditor-macos-')):
+      infofile = join('dart', 'DartEditor.app', 'Contents', 'Info.plist')
+      subprocess.call(['unzip', zipFile, infofile], env=os.environ)
+      ReplaceInFiles([infofile],
+                     [('<dict>',
+                       '<dict>\n\t<key>NSHighResolutionCapable</key>\n\t\t<true/>')])
+      subprocess.call(['zip', '-q', zipFile, infofile], env=os.environ)
+      os.remove(infofile)
+      
+      
+def ReplaceInFiles(paths, subs):
+  '''Reads a series of files, applies a series of substitutions to each, and
+     saves them back out. subs should by a list of (pattern, replace) tuples.'''
+  for path in paths:
+    contents = open(path).read()
+    for pattern, replace in subs:
+      contents = re.sub(pattern, replace, contents)
+    dest = open(path, 'w')
+    dest.write(contents)
+    dest.close()
+
+
 def ExecuteCommand(cmd, dir=None):
   """Execute the given command."""
   if dir is not None:
@@ -889,8 +893,8 @@ def BuildUpdateSite(gsu, ant, revision, name, buildroot, buildout,
              'build.xml', revision, name, buildroot, buildout,
               editorpath, buildos, ['-Dbuild.dir=%s' % buildout])
   #TODO(pquitslund): migrate to a bucket copy (rather than serial uploads)
-  UploadSite(gsu, buildout, "%s/%s" % (GSU_PATH_REV,'eclipse-update'))
-  UploadSite(gsu, buildout, "%s/%s" % (GSU_PATH_LATEST,'eclipse-update'))
+  UploadSite(gsu, buildout, "%s/%s" % (GSU_PATH_REV, 'eclipse-update'))
+  UploadSite(gsu, buildout, "%s/%s" % (GSU_PATH_LATEST, 'eclipse-update'))
   
   
 def UploadSite(gsu, buildout, gsPath) :
@@ -899,7 +903,7 @@ def UploadSite(gsu, buildout, gsPath) :
   # create eclipse-update/index.html first to ensure eclipse-update prefix
   # exists (needed for recursive copy to follow)
   Gsutil(['cp', '-a', 'public-read', 
-          r'file://' + join(buildout,'buildRepo', 'index.html'),
+          r'file://' + join(buildout, 'buildRepo', 'index.html'),
           join(gsPath,'index.html')])
   # recursively copy update site contents
   UploadDirectory(glob.glob(join(buildout, 'buildRepo', '*')), gsPath)
@@ -910,7 +914,8 @@ def CreateApiDocs(buildLocation):
   
   CallBuildScript('release', 'ia32', 'api_docs')
   
-  apidir = join(DART_PATH, utils.GetBuildRoot('linux', 'release', 'ia32'),'api_docs')
+  apidir = join(DART_PATH, utils.GetBuildRoot(BUILD_OS, 'release', 'ia32'),
+                'api_docs')
 
   UploadApiDocs(apidir)
   
@@ -1053,7 +1058,7 @@ def UploadFile(file):
 
 
 def UploadDirectory(filesToUpload, gs_dir):
-  Gsutil(['cp', '-a', 'public-read', '-r'] + filesToUpload + [gs_dir])
+  Gsutil(['-m', 'cp', '-a', 'public-read', '-r'] + filesToUpload + [gs_dir])
 
 
 def UploadApiDocs(dirName):
@@ -1067,7 +1072,8 @@ def UploadApiDocs(dirName):
 
   # copy -R api_docs into dartlang-api-docs/REVISION
   filesToUpload = glob.glob(join(dirName, '*'))
-  result = Gsutil(['cp', '-a', 'public-read', '-r'] + filesToUpload + [GSU_API_DOCS_PATH])
+  result = Gsutil(['-m', 'cp', '-a', 'public-read', '-r'] + filesToUpload +
+                  [GSU_API_DOCS_PATH])
 
   if result == 0:
     destLatestRevFile = GSU_API_DOCS_BUCKET + '/latest.txt'

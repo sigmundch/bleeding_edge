@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, the Dart project authors.
+ * Copyright (c) 2012, the Dart project authors.
  * 
  * Licensed under the Eclipse Public License v1.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import com.google.dart.tools.ui.DartToolsPlugin;
 import com.google.dart.tools.ui.actions.OpenAction;
 import com.google.dart.tools.ui.actions.SelectionDispatchAction;
 
+import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextViewer;
@@ -79,9 +80,18 @@ public class DartElementHyperlinkDetector extends AbstractHyperlinkDetector {
       final DartElementLocator locator = new DartElementLocator(input, offset, offset); //start, end);
       DartElement foundElement = locator.searchWithin(ast);
       if (foundElement != null) {
+
+        // don't link to non-existent resources (dartbug.com/2308)
+        if (foundElement instanceof CompilationUnit) {
+          IResource resource = foundElement.getResource();
+          if (resource == null || !resource.exists()) {
+            return null;
+          }
+        }
+
         IRegion wordRegion = locator.getWordRegion();
         final IRegion candidateRegion = locator.getCandidateRegion();
-        if (candidateRegion != null) {
+        if (candidateRegion != null && wordRegion != null) {
           return new IHyperlink[] {new DartElementHyperlink(
               foundElement,
               wordRegion,
@@ -95,10 +105,12 @@ public class DartElementHyperlinkDetector extends AbstractHyperlinkDetector {
                 }
               })};
         }
-        return new IHyperlink[] {new DartElementHyperlink(
-            foundElement,
-            wordRegion,
-            (SelectionDispatchAction) openAction)};
+        if (wordRegion != null) {
+          return new IHyperlink[] {new DartElementHyperlink(
+              foundElement,
+              wordRegion,
+              (SelectionDispatchAction) openAction)};
+        }
       }
     }
     return null;

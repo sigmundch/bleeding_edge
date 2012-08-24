@@ -16,7 +16,7 @@ package com.google.dart.tools.core.internal.completion;
 import com.google.common.base.Joiner;
 import com.google.dart.tools.core.analysis.AnalysisTestUtilities;
 import com.google.dart.tools.core.internal.index.impl.InMemoryIndex;
-import com.google.dart.tools.core.internal.model.SystemLibraryManagerProvider;
+import com.google.dart.tools.core.internal.model.PackageLibraryManagerProvider;
 import com.google.dart.tools.core.model.DartModelException;
 
 import junit.framework.TestCase;
@@ -38,13 +38,11 @@ public class CompletionEngineTest extends TestCase {
 
   public void testCommentSnippets001() throws Exception {
     test(
-        "class X {static final num M!4AX = 0;num yc,xc;mth() {xc = yc = MA!1X;x!2c.abs();num f = M!3AX;}}",
+        "class X {static final num MAX = 0;num yc,xc;mth() {xc = yc = MA!1X;x!2c.abs();num f = M!3AX;}}",
         "1+MAX",
         "2+xc",
         "3+MAX",
-        "3+Map",
-        "3+Math",
-        "4+Math"); // not sure 4+Math is correct
+        "3+Map");
   }
 
   public void testCommentSnippets002() throws Exception {
@@ -83,7 +81,7 @@ public class CompletionEngineTest extends TestCase {
   }
 
   public void testCommentSnippets005() throws Exception {
-    test("class X { m() { return Ma!1th.P!2I; }}", "1+Math", "2+PI");
+    test("class X { m() { return Da!1te.JU!2L; }}", "1+Date", "2+JUN", "2+JUL");
   }
 
   public void testCommentSnippets006() throws Exception {
@@ -100,7 +98,7 @@ public class CompletionEngineTest extends TestCase {
   }
 
   public void testCommentSnippets008() throws Exception {
-    test("final num PI2 = Mat!1", "1+Math");
+    test("final num M = Dat!1", "1+Date");
   }
 
   public void testCommentSnippets009() throws Exception {
@@ -539,12 +537,8 @@ public class CompletionEngineTest extends TestCase {
         "3+num");
   }
 
-  public void testCompletion_topLevelField_init1() throws Exception {
-    test("final num PI2 = Mat!1", "1+Math");
-  }
-
   public void testCompletion_topLevelField_init2() throws Exception {
-    test("final num PI2 = Mat!1h.PI;", "1+Math", "1+Match", "1-void");
+    test("final num M = Dat!1e.JUN;", "1+Date", "1-void");
   }
 
   public void testCompletion_while() throws Exception {
@@ -572,7 +566,7 @@ public class CompletionEngineTest extends TestCase {
         !completionTests.isEmpty());
     if (!analysisCleared) {
       analysisCleared = true;
-      SystemLibraryManagerProvider.getDefaultAnalysisServer().reanalyze();
+      PackageLibraryManagerProvider.getDefaultAnalysisServer().reanalyze();
     }
     InMemoryIndex.getInstance().initializeIndex();
     AnalysisTestUtilities.waitForIdle(60000);

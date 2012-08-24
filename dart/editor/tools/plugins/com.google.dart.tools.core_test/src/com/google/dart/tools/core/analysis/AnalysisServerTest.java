@@ -14,10 +14,10 @@
 package com.google.dart.tools.core.analysis;
 
 import com.google.common.base.Joiner;
-import com.google.dart.compiler.SystemLibraryManager;
+import com.google.dart.compiler.PackageLibraryManager;
 import com.google.dart.compiler.ast.DartUnit;
 import com.google.dart.engine.utilities.io.PrintStringWriter;
-import com.google.dart.tools.core.internal.model.SystemLibraryManagerProvider;
+import com.google.dart.tools.core.internal.model.PackageLibraryManagerProvider;
 import com.google.dart.tools.core.test.util.FileOperation;
 import com.google.dart.tools.core.test.util.FileUtilities;
 import com.google.dart.tools.core.test.util.TestUtilities;
@@ -26,6 +26,7 @@ import static com.google.dart.tools.core.analysis.AnalysisTestUtilities.assertQu
 import static com.google.dart.tools.core.analysis.AnalysisTestUtilities.assertTrackedLibraryFiles;
 import static com.google.dart.tools.core.analysis.AnalysisTestUtilities.getServerTaskQueue;
 import static com.google.dart.tools.core.analysis.AnalysisTestUtilities.getTrackedLibraryFiles;
+import static com.google.dart.tools.core.analysis.AnalysisTestUtilities.isLibraryCached;
 
 import junit.framework.TestCase;
 
@@ -67,62 +68,11 @@ public class AnalysisServerTest extends TestCase {
 
     server.analyze(libFile);
     listener.waitForResolved(FIVE_MINUTES_MS, libFile);
-    listener.assertResolvedCount(3);
+    listener.assertResolvedCount(4);
     listener.assertNoDuplicates();
     listener.assertNoDiscards();
     assertTrackedLibraryFiles(server, libFile);
     assertTrue(isLibraryResolved(libFile));
-    return libFile;
-  }
-
-  public void test_discardDirectory() throws Exception {
-    TestUtilities.runWithTempDirectory(new FileOperation() {
-      @Override
-      public void run(File tempDir) throws Exception {
-        test_discardLib(tempDir, true);
-      }
-    });
-  }
-
-  public void test_discardFile() throws Exception {
-    TestUtilities.runWithTempDirectory(new FileOperation() {
-      @Override
-      public void run(File tempDir) throws Exception {
-        test_discardLib(tempDir, false);
-      }
-    });
-  }
-
-  public File test_discardLib(File tempDir, boolean discardParent) throws Exception {
-    File libFile = test_analyzeLibrary(tempDir);
-    assertTrackedLibraryFiles(server, libFile);
-
-    listener.reset();
-    server.discard(discardParent ? libFile.getParentFile() : libFile);
-    listener.waitForDiscarded(FIVE_MINUTES_MS, libFile);
-    listener.assertResolvedCount(0);
-    listener.assertNoDuplicates();
-    assertTrackedLibraryFiles(server);
-    assertFalse(isLibraryCached(libFile));
-
-    listener.reset();
-
-    // Use blocking task to ensure we can add 2 tasks to the queue without being processed
-    BlockingTask blockingTask = new BlockingTask();
-    getServerTaskQueue(server).addNewTask(blockingTask);
-
-    // The discard task should prevent the analysis task from being executed
-    server.analyze(libFile);
-    server.discard(discardParent ? libFile.getParentFile() : libFile);
-    blockingTask.unblock();
-
-    waitForIdle();
-    listener.assertResolvedCount(0);
-    listener.assertNoDuplicates();
-    listener.assertNoDiscards();
-    assertTrackedLibraryFiles(server);
-    assertFalse(isLibraryCached(libFile));
-
     return libFile;
   }
 
@@ -227,7 +177,7 @@ public class AnalysisServerTest extends TestCase {
   }
 
   public void test_read_version_invalid() throws Exception {
-    SystemLibraryManager libraryManager = SystemLibraryManagerProvider.getAnyLibraryManager();
+    PackageLibraryManager libraryManager = PackageLibraryManagerProvider.getAnyLibraryManager();
     server = new AnalysisServer(libraryManager);
     try {
       readCache(new StringReader("vOther"));
@@ -238,7 +188,7 @@ public class AnalysisServerTest extends TestCase {
   }
 
   public void test_read_version_missing() throws Exception {
-    SystemLibraryManager libraryManager = SystemLibraryManagerProvider.getAnyLibraryManager();
+    PackageLibraryManager libraryManager = PackageLibraryManagerProvider.getAnyLibraryManager();
     server = new AnalysisServer(libraryManager);
     try {
       readCache(new StringReader(""));
@@ -299,7 +249,7 @@ public class AnalysisServerTest extends TestCase {
         waitForIdle();
 
         assertTrackedLibraryFiles(server, libFile);
-        assertTrue(isLibraryCached(libFile));
+        assertTrue(isLibraryCached(server, libFile));
         assertFalse(isLibraryResolved(libFile));
         assertQueuedTasks(server);
       }
@@ -344,7 +294,7 @@ public class AnalysisServerTest extends TestCase {
 
         assertQueuedTasks(server, "AnalyzeLibraryTask"); // dart:core
         assertTrackedLibraryFiles(server, libFile);
-        assertTrue(isLibraryCached(libFile));
+        assertTrue(isLibraryCached(server, libFile));
         assertFalse(isLibraryResolved(libFile));
       }
     });
@@ -413,19 +363,12 @@ public class AnalysisServerTest extends TestCase {
   }
 
   private void initServer(Reader reader) throws Exception {
-    SystemLibraryManager libraryManager = SystemLibraryManagerProvider.getAnyLibraryManager();
+    PackageLibraryManager libraryManager = PackageLibraryManagerProvider.getAnyLibraryManager();
     server = new AnalysisServer(libraryManager);
     if (reader != null) {
       readCache(reader);
     }
     listener = new Listener(server);
-  }
-
-  private boolean isLibraryCached(File libFile) throws Exception {
-    Method method = server.getClass().getDeclaredMethod("isLibraryCached", File.class);
-    method.setAccessible(true);
-    Object result = method.invoke(server, libFile);
-    return result instanceof Boolean && ((Boolean) result).booleanValue();
   }
 
   private boolean isLibraryResolved(File libFile) throws Exception {

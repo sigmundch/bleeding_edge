@@ -56,13 +56,17 @@ CODEGEN_TEST_GENERATE(StackmapCodegen, test) {
   if (setjmp(*jump.Set()) == 0) {
     // Build a stackmap table and some stackmap table entries.
     const intptr_t kStackSlotCount = 11;
-    StackmapTableBuilder* stackmap_table_builder =
-        new StackmapTableBuilder(kStackSlotCount);
+    StackmapTableBuilder* stackmap_table_builder = new StackmapTableBuilder();
     EXPECT(stackmap_table_builder != NULL);
 
     BitmapBuilder* stack_bitmap = new BitmapBuilder();
     EXPECT(stack_bitmap != NULL);
+    EXPECT_EQ(0, stack_bitmap->Length());
     stack_bitmap->Set(0, true);
+    EXPECT_EQ(1, stack_bitmap->Length());
+    stack_bitmap->SetLength(kStackSlotCount);
+    EXPECT_EQ(kStackSlotCount, stack_bitmap->Length());
+
     bool expectation0[kStackSlotCount] = { true };
     for (intptr_t i = 0; i < kStackSlotCount; ++i) {
       EXPECT_EQ(expectation0[i], stack_bitmap->Get(i));
@@ -72,9 +76,14 @@ CODEGEN_TEST_GENERATE(StackmapCodegen, test) {
 
     stack_bitmap = new BitmapBuilder();
     EXPECT(stack_bitmap != NULL);
+    EXPECT_EQ(0, stack_bitmap->Length());
     stack_bitmap->Set(0, true);
     stack_bitmap->Set(1, false);
     stack_bitmap->Set(2, true);
+    EXPECT_EQ(3, stack_bitmap->Length());
+    stack_bitmap->SetLength(kStackSlotCount);
+    EXPECT_EQ(kStackSlotCount, stack_bitmap->Length());
+
     bool expectation1[kStackSlotCount] = { true, false, true };
     for (intptr_t i = 0; i < kStackSlotCount; ++i) {
       EXPECT_EQ(expectation1[i], stack_bitmap->Get(i));
@@ -84,10 +93,15 @@ CODEGEN_TEST_GENERATE(StackmapCodegen, test) {
 
     stack_bitmap = new BitmapBuilder();
     EXPECT(stack_bitmap != NULL);
+    EXPECT_EQ(0, stack_bitmap->Length());
     stack_bitmap->Set(0, true);
     stack_bitmap->Set(1, false);
     stack_bitmap->Set(2, true);
     stack_bitmap->SetRange(3, 5, true);
+    EXPECT_EQ(6, stack_bitmap->Length());
+    stack_bitmap->SetLength(kStackSlotCount);
+    EXPECT_EQ(kStackSlotCount, stack_bitmap->Length());
+
     bool expectation2[kStackSlotCount] =
         { true, false, true, true, true, true };
     for (intptr_t i = 0; i < kStackSlotCount; ++i) {
@@ -98,12 +112,17 @@ CODEGEN_TEST_GENERATE(StackmapCodegen, test) {
 
     stack_bitmap = new BitmapBuilder();
     EXPECT(stack_bitmap != NULL);
+    EXPECT_EQ(0, stack_bitmap->Length());
     stack_bitmap->Set(0, true);
     stack_bitmap->Set(1, false);
     stack_bitmap->Set(2, true);
     stack_bitmap->SetRange(3, 5, true);
     stack_bitmap->SetRange(6, 9, false);
     stack_bitmap->Set(10, true);
+    EXPECT_EQ(11, stack_bitmap->Length());
+    stack_bitmap->SetLength(kStackSlotCount);
+    EXPECT_EQ(kStackSlotCount, stack_bitmap->Length());
+
     bool expectation3[kStackSlotCount] =
         { true, false, true, true, true, true, false, false,
           false, false, true };
@@ -221,7 +240,7 @@ TEST_CASE(StackmapGC) {
 
   // Build and setup a stackmap for the call to 'func' in 'A.foo' in order
   // to test the traversal of stack maps when a GC happens.
-  StackmapTableBuilder* stackmap_table_builder = new StackmapTableBuilder(5);
+  StackmapTableBuilder* stackmap_table_builder = new StackmapTableBuilder();
   EXPECT(stackmap_table_builder != NULL);
   BitmapBuilder* stack_bitmap = new BitmapBuilder();
   EXPECT(stack_bitmap != NULL);

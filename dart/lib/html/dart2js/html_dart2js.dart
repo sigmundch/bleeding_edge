@@ -25,6 +25,13 @@ DocumentImpl get _document() native "return document;";
 Element query(String selector) => _document.query(selector);
 ElementList queryAll(String selector) => _document.queryAll(selector);
 
+/// Marker for defaulted arguments.
+class _Default {
+  const _Default();
+}
+
+final _default = const _Default();
+
 // Workaround for tags like <cite> that lack their own Element subclass --
 // Dart issue 1990.
 class HTMLElementImpl extends ElementImpl native "*HTMLElement" {
@@ -3891,7 +3898,20 @@ class CanvasRenderingContext2DImpl extends CanvasRenderingContextImpl implements
 
   void closePath() native;
 
-  ImageDataImpl createImageData(imagedata_OR_sw, [num sh]) native;
+  ImageData createImageData(imagedata_OR_sw, [sh = _default]) {
+    if ((imagedata_OR_sw is ImageData || imagedata_OR_sw == null) &&
+        _default == sh) {
+      var imagedata_1 = _convertDartToNative_ImageData(imagedata_OR_sw);
+      return _convertNativeToDart_ImageData(_createImageData_1(imagedata_1));
+    }
+    if ((imagedata_OR_sw is num || imagedata_OR_sw == null) &&
+        (sh is num || sh == null)) {
+      return _convertNativeToDart_ImageData(_createImageData_2(imagedata_OR_sw, sh));
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  _createImageData_1(imagedata) native "createImageData";
+  _createImageData_2(num sw, num sh) native "createImageData";
 
   CanvasGradientImpl createLinearGradient(num x0, num y0, num x1, num y1) native;
 
@@ -3909,7 +3929,10 @@ class CanvasRenderingContext2DImpl extends CanvasRenderingContextImpl implements
 
   void fillText(String text, num x, num y, [num maxWidth]) native;
 
-  ImageDataImpl getImageData(num sx, num sy, num sw, num sh) native;
+  ImageData getImageData(num sx, num sy, num sw, num sh) {
+    return _convertNativeToDart_ImageData(_getImageData_1(sx, sy, sw, sh));
+  }
+  _getImageData_1(sx, sy, sw, sh) native "getImageData";
 
   bool isPointInPath(num x, num y) native;
 
@@ -3919,7 +3942,27 @@ class CanvasRenderingContext2DImpl extends CanvasRenderingContextImpl implements
 
   void moveTo(num x, num y) native;
 
-  void putImageData(ImageDataImpl imagedata, num dx, num dy, [num dirtyX, num dirtyY, num dirtyWidth, num dirtyHeight]) native;
+  void putImageData(ImageData imagedata, num dx, num dy, [dirtyX = _default, dirtyY = _default, dirtyWidth = _default, dirtyHeight = _default]) {
+    if (_default == dirtyX &&
+        _default == dirtyY &&
+        _default == dirtyWidth &&
+        _default == dirtyHeight) {
+      var imagedata_1 = _convertDartToNative_ImageData(imagedata);
+      _putImageData_1(imagedata_1, dx, dy);
+      return;
+    }
+    if ((dirtyX is num || dirtyX == null) &&
+        (dirtyY is num || dirtyY == null) &&
+        (dirtyWidth is num || dirtyWidth == null) &&
+        (dirtyHeight is num || dirtyHeight == null)) {
+      var imagedata_2 = _convertDartToNative_ImageData(imagedata);
+      _putImageData_2(imagedata_2, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
+      return;
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  void _putImageData_1(imagedata, dx, dy) native "putImageData";
+  void _putImageData_2(imagedata, dx, dy, num dirtyX, num dirtyY, num dirtyWidth, num dirtyHeight) native "putImageData";
 
   void quadraticCurveTo(num cpx, num cpy, num x, num y) native;
 
@@ -3963,9 +4006,32 @@ class CanvasRenderingContext2DImpl extends CanvasRenderingContextImpl implements
 
   void translate(num tx, num ty) native;
 
-  ImageDataImpl webkitGetImageDataHD(num sx, num sy, num sw, num sh) native;
+  ImageData webkitGetImageDataHD(num sx, num sy, num sw, num sh) {
+    return _convertNativeToDart_ImageData(_webkitGetImageDataHD_1(sx, sy, sw, sh));
+  }
+  _webkitGetImageDataHD_1(sx, sy, sw, sh) native "webkitGetImageDataHD";
 
-  void webkitPutImageDataHD(ImageDataImpl imagedata, num dx, num dy, [num dirtyX, num dirtyY, num dirtyWidth, num dirtyHeight]) native;
+  void webkitPutImageDataHD(ImageData imagedata, num dx, num dy, [dirtyX = _default, dirtyY = _default, dirtyWidth = _default, dirtyHeight = _default]) {
+    if (_default == dirtyX &&
+        _default == dirtyY &&
+        _default == dirtyWidth &&
+        _default == dirtyHeight) {
+      var imagedata_1 = _convertDartToNative_ImageData(imagedata);
+      _webkitPutImageDataHD_1(imagedata_1, dx, dy);
+      return;
+    }
+    if ((dirtyX is num || dirtyX == null) &&
+        (dirtyY is num || dirtyY == null) &&
+        (dirtyWidth is num || dirtyWidth == null) &&
+        (dirtyHeight is num || dirtyHeight == null)) {
+      var imagedata_2 = _convertDartToNative_ImageData(imagedata);
+      _webkitPutImageDataHD_2(imagedata_2, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
+      return;
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  void _webkitPutImageDataHD_1(imagedata, dx, dy) native "webkitPutImageDataHD";
+  void _webkitPutImageDataHD_2(imagedata, dx, dy, num dirtyX, num dirtyY, num dirtyWidth, num dirtyHeight) native "webkitPutImageDataHD";
 }
 
 class CharacterDataImpl extends NodeImpl implements CharacterData native "*CharacterData" {
@@ -4667,9 +4733,53 @@ class DirectoryEntryImpl extends EntryImpl implements DirectoryEntry native "*Di
 
   DirectoryReaderImpl createReader() native;
 
-  void getDirectory(String path, [Map options, EntryCallback successCallback, ErrorCallback errorCallback]) native;
+  void getDirectory(String path, [options = _default, successCallback = _default, errorCallback = _default]) {
+    if (_default != errorCallback) {
+      var options_1 = _convertDartToNative_Dictionary(options);
+      _getDirectory_1(path, options_1, successCallback, errorCallback);
+      return;
+    }
+    if (_default != successCallback) {
+      var options_2 = _convertDartToNative_Dictionary(options);
+      _getDirectory_2(path, options_2, successCallback);
+      return;
+    }
+    if (_default != options) {
+      var options_3 = _convertDartToNative_Dictionary(options);
+      _getDirectory_3(path, options_3);
+      return;
+    }
+    _getDirectory_4(path);
+    return;
+  }
+  void _getDirectory_1(path, options, EntryCallback successCallback, ErrorCallback errorCallback) native "getDirectory";
+  void _getDirectory_2(path, options, EntryCallback successCallback) native "getDirectory";
+  void _getDirectory_3(path, options) native "getDirectory";
+  void _getDirectory_4(path) native "getDirectory";
 
-  void getFile(String path, [Map options, EntryCallback successCallback, ErrorCallback errorCallback]) native;
+  void getFile(String path, [options = _default, successCallback = _default, errorCallback = _default]) {
+    if (_default != errorCallback) {
+      var options_1 = _convertDartToNative_Dictionary(options);
+      _getFile_1(path, options_1, successCallback, errorCallback);
+      return;
+    }
+    if (_default != successCallback) {
+      var options_2 = _convertDartToNative_Dictionary(options);
+      _getFile_2(path, options_2, successCallback);
+      return;
+    }
+    if (_default != options) {
+      var options_3 = _convertDartToNative_Dictionary(options);
+      _getFile_3(path, options_3);
+      return;
+    }
+    _getFile_4(path);
+    return;
+  }
+  void _getFile_1(path, options, EntryCallback successCallback, ErrorCallback errorCallback) native "getFile";
+  void _getFile_2(path, options, EntryCallback successCallback) native "getFile";
+  void _getFile_3(path, options) native "getFile";
+  void _getFile_4(path) native "getFile";
 
   void removeRecursively(VoidCallback successCallback, [ErrorCallback errorCallback]) native;
 }
@@ -4678,9 +4788,17 @@ class DirectoryEntrySyncImpl extends EntrySyncImpl implements DirectoryEntrySync
 
   DirectoryReaderSyncImpl createReader() native;
 
-  DirectoryEntrySyncImpl getDirectory(String path, Map flags) native;
+  DirectoryEntrySyncImpl getDirectory(String path, Map flags) {
+    var flags_1 = _convertDartToNative_Dictionary(flags);
+    return _getDirectory_1(path, flags_1);
+  }
+  DirectoryEntrySyncImpl _getDirectory_1(path, flags) native "getDirectory";
 
-  FileEntrySyncImpl getFile(String path, Map flags) native;
+  FileEntrySyncImpl getFile(String path, Map flags) {
+    var flags_1 = _convertDartToNative_Dictionary(flags);
+    return _getFile_1(path, flags_1);
+  }
+  FileEntrySyncImpl _getFile_1(path, flags) native "getFile";
 
   void removeRecursively() native;
 }
@@ -7605,24 +7723,41 @@ class IDBCursorImpl implements IDBCursor native "*IDBCursor" {
 
   final String direction;
 
-  final Dynamic key;
+  Dynamic get key() => _convertNativeToDart_IDBKey(this._key);
+  Dynamic get _key() native "return this.key;";
 
-  final Dynamic primaryKey;
+  Dynamic get primaryKey() => _convertNativeToDart_IDBKey(this._primaryKey);
+  Dynamic get _primaryKey() native "return this.primaryKey;";
 
   final Dynamic source;
 
   void advance(int count) native;
 
-  void continueFunction([key]) native "continue";
+  void continueFunction([key = _default]) {
+    if (_default != key) {
+      var key_1 = _convertDartToNative_IDBKey(key);
+      _continueFunction_1(key_1);
+      return;
+    }
+    _continueFunction_2();
+    return;
+  }
+  void _continueFunction_1(key) native "continue";
+  void _continueFunction_2() native "continue";
 
   IDBRequestImpl delete() native;
 
-  IDBRequestImpl update(value) native;
+  IDBRequestImpl update(value) {
+    var value_1 = _convertDartToNative_SerializedScriptValue(value);
+    return _update_1(value_1);
+  }
+  IDBRequestImpl _update_1(value) native "update";
 }
 
 class IDBCursorWithValueImpl extends IDBCursorImpl implements IDBCursorWithValue native "*IDBCursorWithValue" {
 
-  final Dynamic value;
+  Dynamic get value() => _convertNativeToDart_IDBAny(this._value);
+  Dynamic get _value() native "return this.value;";
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -7684,7 +7819,15 @@ class IDBDatabaseImpl extends EventTargetImpl implements IDBDatabase native "*ID
 
   void close() native;
 
-  IDBObjectStoreImpl createObjectStore(String name, [Map options]) native;
+  IDBObjectStoreImpl createObjectStore(String name, [options = _default]) {
+    if (_default != options) {
+      var options_1 = _convertDartToNative_Dictionary(options);
+      return _createObjectStore_1(name, options_1);
+    }
+    return _createObjectStore_2(name);
+  }
+  IDBObjectStoreImpl _createObjectStore_1(name, options) native "createObjectStore";
+  IDBObjectStoreImpl _createObjectStore_2(name) native "createObjectStore";
 
   void deleteObjectStore(String name) native;
 
@@ -7748,7 +7891,12 @@ class IDBDatabaseExceptionImpl implements IDBDatabaseException native "*IDBDatab
 
 class IDBFactoryImpl implements IDBFactory native "*IDBFactory" {
 
-  int cmp(first, second) native;
+  int cmp(first, second) {
+    var first_1 = _convertDartToNative_IDBKey(first);
+    var second_2 = _convertDartToNative_IDBKey(second);
+    return _cmp_1(first_1, second_2);
+  }
+  int _cmp_1(first, second) native "cmp";
 
   IDBVersionChangeRequestImpl deleteDatabase(String name) native;
 
@@ -7769,15 +7917,152 @@ class IDBIndexImpl implements IDBIndex native "*IDBIndex" {
 
   final bool unique;
 
-  IDBRequestImpl count([key_OR_range]) native;
+  IDBRequestImpl count([key_OR_range = _default]) {
+    if (_default == key_OR_range) {
+      return _count_1();
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null)) {
+      return _count_2(key_OR_range);
+    }
+    if (_default != key_OR_range) {
+      var key_1 = _convertDartToNative_IDBKey(key_OR_range);
+      return _count_3(key_1);
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  IDBRequestImpl _count_1() native "count";
+  IDBRequestImpl _count_2(IDBKeyRangeImpl range) native "count";
+  IDBRequestImpl _count_3(key) native "count";
 
-  IDBRequestImpl get(key) native;
+  IDBRequestImpl get(key) {
+    if ((key is IDBKeyRange || key == null)) {
+      return _get_1(key);
+    }
+    if (_default != key) {
+      var key_1 = _convertDartToNative_IDBKey(key);
+      return _get_2(key_1);
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  IDBRequestImpl _get_1(IDBKeyRangeImpl key) native "get";
+  IDBRequestImpl _get_2(key) native "get";
 
-  IDBRequestImpl getKey(key) native;
+  IDBRequestImpl getKey(key) {
+    if ((key is IDBKeyRange || key == null)) {
+      return _getKey_1(key);
+    }
+    if (_default != key) {
+      var key_1 = _convertDartToNative_IDBKey(key);
+      return _getKey_2(key_1);
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  IDBRequestImpl _getKey_1(IDBKeyRangeImpl key) native "getKey";
+  IDBRequestImpl _getKey_2(key) native "getKey";
 
-  IDBRequestImpl openCursor([key_OR_range, direction]) native;
+  IDBRequestImpl openCursor([key_OR_range = _default, direction = _default]) {
+    if (_default == key_OR_range &&
+        _default == direction) {
+      return _openCursor_1();
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        _default == direction) {
+      return _openCursor_2(key_OR_range);
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        (direction is String || direction == null)) {
+      return _openCursor_3(key_OR_range, direction);
+    }
+    if (_default != key_OR_range &&
+        _default == direction) {
+      var key_1 = _convertDartToNative_IDBKey(key_OR_range);
+      return _openCursor_4(key_1);
+    }
+    if (_default != key_OR_range &&
+        (direction is String || direction == null)) {
+      var key_2 = _convertDartToNative_IDBKey(key_OR_range);
+      return _openCursor_5(key_2, direction);
+    }
+    if (_default == key_OR_range &&
+        _default == direction) {
+      return _openCursor_6();
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        _default == direction) {
+      return _openCursor_7(key_OR_range);
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        (direction is int || direction == null)) {
+      return _openCursor_8(key_OR_range, direction);
+    }
+    if (_default != key_OR_range &&
+        (direction is int || direction == null)) {
+      var key_3 = _convertDartToNative_IDBKey(key_OR_range);
+      return _openCursor_9(key_3, direction);
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  IDBRequestImpl _openCursor_1() native "openCursor";
+  IDBRequestImpl _openCursor_2(IDBKeyRangeImpl range) native "openCursor";
+  IDBRequestImpl _openCursor_3(IDBKeyRangeImpl range, String direction) native "openCursor";
+  IDBRequestImpl _openCursor_4(key) native "openCursor";
+  IDBRequestImpl _openCursor_5(key, String direction) native "openCursor";
+  IDBRequestImpl _openCursor_6() native "openCursor";
+  IDBRequestImpl _openCursor_7(IDBKeyRangeImpl range) native "openCursor";
+  IDBRequestImpl _openCursor_8(IDBKeyRangeImpl range, int direction) native "openCursor";
+  IDBRequestImpl _openCursor_9(key, int direction) native "openCursor";
 
-  IDBRequestImpl openKeyCursor([key_OR_range, direction]) native;
+  IDBRequestImpl openKeyCursor([key_OR_range = _default, direction = _default]) {
+    if (_default == key_OR_range &&
+        _default == direction) {
+      return _openKeyCursor_1();
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        _default == direction) {
+      return _openKeyCursor_2(key_OR_range);
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        (direction is String || direction == null)) {
+      return _openKeyCursor_3(key_OR_range, direction);
+    }
+    if (_default != key_OR_range &&
+        _default == direction) {
+      var key_1 = _convertDartToNative_IDBKey(key_OR_range);
+      return _openKeyCursor_4(key_1);
+    }
+    if (_default != key_OR_range &&
+        (direction is String || direction == null)) {
+      var key_2 = _convertDartToNative_IDBKey(key_OR_range);
+      return _openKeyCursor_5(key_2, direction);
+    }
+    if (_default == key_OR_range &&
+        _default == direction) {
+      return _openKeyCursor_6();
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        _default == direction) {
+      return _openKeyCursor_7(key_OR_range);
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        (direction is int || direction == null)) {
+      return _openKeyCursor_8(key_OR_range, direction);
+    }
+    if (_default != key_OR_range &&
+        (direction is int || direction == null)) {
+      var key_3 = _convertDartToNative_IDBKey(key_OR_range);
+      return _openKeyCursor_9(key_3, direction);
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  IDBRequestImpl _openKeyCursor_1() native "openKeyCursor";
+  IDBRequestImpl _openKeyCursor_2(IDBKeyRangeImpl range) native "openKeyCursor";
+  IDBRequestImpl _openKeyCursor_3(IDBKeyRangeImpl range, String direction) native "openKeyCursor";
+  IDBRequestImpl _openKeyCursor_4(key) native "openKeyCursor";
+  IDBRequestImpl _openKeyCursor_5(key, String direction) native "openKeyCursor";
+  IDBRequestImpl _openKeyCursor_6() native "openKeyCursor";
+  IDBRequestImpl _openKeyCursor_7(IDBKeyRangeImpl range) native "openKeyCursor";
+  IDBRequestImpl _openKeyCursor_8(IDBKeyRangeImpl range, int direction) native "openKeyCursor";
+  IDBRequestImpl _openKeyCursor_9(key, int direction) native "openKeyCursor";
 }
 
 class IDBKeyImpl implements IDBKey native "*IDBKey" {
@@ -7785,11 +8070,13 @@ class IDBKeyImpl implements IDBKey native "*IDBKey" {
 
 class IDBKeyRangeImpl implements IDBKeyRange native "*IDBKeyRange" {
 
-  final Dynamic lower;
+  Dynamic get lower() => _convertNativeToDart_IDBKey(this._lower);
+  Dynamic get _lower() native "return this.lower;";
 
   final bool lowerOpen;
 
-  final Dynamic upper;
+  Dynamic get upper() => _convertNativeToDart_IDBKey(this._upper);
+  Dynamic get _upper() native "return this.upper;";
 
   final bool upperOpen;
 }
@@ -7806,25 +8093,158 @@ class IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
 
   final IDBTransactionImpl transaction;
 
-  IDBRequestImpl add(value, [key]) native;
+  IDBRequestImpl add(value, [key = _default]) {
+    if (_default != key) {
+      var value_1 = _convertDartToNative_SerializedScriptValue(value);
+      var key_2 = _convertDartToNative_IDBKey(key);
+      return _add_1(value_1, key_2);
+    }
+    var value_3 = _convertDartToNative_SerializedScriptValue(value);
+    return _add_2(value_3);
+  }
+  IDBRequestImpl _add_1(value, key) native "add";
+  IDBRequestImpl _add_2(value) native "add";
 
   IDBRequestImpl clear() native;
 
-  IDBRequestImpl count([key_OR_range]) native;
+  IDBRequestImpl count([key_OR_range = _default]) {
+    if (_default == key_OR_range) {
+      return _count_1();
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null)) {
+      return _count_2(key_OR_range);
+    }
+    if (_default != key_OR_range) {
+      var key_1 = _convertDartToNative_IDBKey(key_OR_range);
+      return _count_3(key_1);
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  IDBRequestImpl _count_1() native "count";
+  IDBRequestImpl _count_2(IDBKeyRangeImpl range) native "count";
+  IDBRequestImpl _count_3(key) native "count";
 
-  IDBIndexImpl createIndex(String name, keyPath, [Map options]) native;
+  IDBIndexImpl createIndex(String name, keyPath, [options = _default]) {
+    if ((keyPath is List<String> || keyPath == null) &&
+        _default == options) {
+      List keyPath_1 = _convertDartToNative_StringArray(keyPath);
+      return _createIndex_1(name, keyPath_1);
+    }
+    if ((keyPath is List<String> || keyPath == null) &&
+        (options is Map || options == null)) {
+      List keyPath_2 = _convertDartToNative_StringArray(keyPath);
+      var options_3 = _convertDartToNative_Dictionary(options);
+      return _createIndex_2(name, keyPath_2, options_3);
+    }
+    if ((keyPath is String || keyPath == null) &&
+        _default == options) {
+      return _createIndex_3(name, keyPath);
+    }
+    if ((keyPath is String || keyPath == null) &&
+        (options is Map || options == null)) {
+      var options_4 = _convertDartToNative_Dictionary(options);
+      return _createIndex_4(name, keyPath, options_4);
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  IDBIndexImpl _createIndex_1(name, List keyPath) native "createIndex";
+  IDBIndexImpl _createIndex_2(name, List keyPath, options) native "createIndex";
+  IDBIndexImpl _createIndex_3(name, String keyPath) native "createIndex";
+  IDBIndexImpl _createIndex_4(name, String keyPath, options) native "createIndex";
 
-  IDBRequestImpl delete(key_OR_keyRange) native;
+  IDBRequestImpl delete(key_OR_keyRange) {
+    if ((key_OR_keyRange is IDBKeyRange || key_OR_keyRange == null)) {
+      return _delete_1(key_OR_keyRange);
+    }
+    if (_default != key_OR_keyRange) {
+      var key_1 = _convertDartToNative_IDBKey(key_OR_keyRange);
+      return _delete_2(key_1);
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  IDBRequestImpl _delete_1(IDBKeyRangeImpl keyRange) native "delete";
+  IDBRequestImpl _delete_2(key) native "delete";
 
   void deleteIndex(String name) native;
 
-  IDBRequestImpl getObject(key) native "get";
+  IDBRequestImpl getObject(key) {
+    if ((key is IDBKeyRange || key == null)) {
+      return _getObject_1(key);
+    }
+    if (_default != key) {
+      var key_1 = _convertDartToNative_IDBKey(key);
+      return _getObject_2(key_1);
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  IDBRequestImpl _getObject_1(IDBKeyRangeImpl key) native "get";
+  IDBRequestImpl _getObject_2(key) native "get";
 
   IDBIndexImpl index(String name) native;
 
-  IDBRequestImpl openCursor([key_OR_range, direction]) native;
+  IDBRequestImpl openCursor([key_OR_range = _default, direction = _default]) {
+    if (_default == key_OR_range &&
+        _default == direction) {
+      return _openCursor_1();
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        _default == direction) {
+      return _openCursor_2(key_OR_range);
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        (direction is String || direction == null)) {
+      return _openCursor_3(key_OR_range, direction);
+    }
+    if (_default != key_OR_range &&
+        _default == direction) {
+      var key_1 = _convertDartToNative_IDBKey(key_OR_range);
+      return _openCursor_4(key_1);
+    }
+    if (_default != key_OR_range &&
+        (direction is String || direction == null)) {
+      var key_2 = _convertDartToNative_IDBKey(key_OR_range);
+      return _openCursor_5(key_2, direction);
+    }
+    if (_default == key_OR_range &&
+        _default == direction) {
+      return _openCursor_6();
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        _default == direction) {
+      return _openCursor_7(key_OR_range);
+    }
+    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
+        (direction is int || direction == null)) {
+      return _openCursor_8(key_OR_range, direction);
+    }
+    if (_default != key_OR_range &&
+        (direction is int || direction == null)) {
+      var key_3 = _convertDartToNative_IDBKey(key_OR_range);
+      return _openCursor_9(key_3, direction);
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  IDBRequestImpl _openCursor_1() native "openCursor";
+  IDBRequestImpl _openCursor_2(IDBKeyRangeImpl range) native "openCursor";
+  IDBRequestImpl _openCursor_3(IDBKeyRangeImpl range, String direction) native "openCursor";
+  IDBRequestImpl _openCursor_4(key) native "openCursor";
+  IDBRequestImpl _openCursor_5(key, String direction) native "openCursor";
+  IDBRequestImpl _openCursor_6() native "openCursor";
+  IDBRequestImpl _openCursor_7(IDBKeyRangeImpl range) native "openCursor";
+  IDBRequestImpl _openCursor_8(IDBKeyRangeImpl range, int direction) native "openCursor";
+  IDBRequestImpl _openCursor_9(key, int direction) native "openCursor";
 
-  IDBRequestImpl put(value, [key]) native;
+  IDBRequestImpl put(value, [key = _default]) {
+    if (_default != key) {
+      var value_1 = _convertDartToNative_SerializedScriptValue(value);
+      var key_2 = _convertDartToNative_IDBKey(key);
+      return _put_1(value_1, key_2);
+    }
+    var value_3 = _convertDartToNative_SerializedScriptValue(value);
+    return _put_2(value_3);
+  }
+  IDBRequestImpl _put_1(value, key) native "put";
+  IDBRequestImpl _put_2(value) native "put";
 }
 
 class IDBOpenDBRequestImpl extends IDBRequestImpl implements IDBOpenDBRequest native "*IDBOpenDBRequest" {
@@ -7860,7 +8280,8 @@ class IDBRequestImpl extends EventTargetImpl implements IDBRequest native "*IDBR
 
   final String readyState;
 
-  final Dynamic result;
+  Dynamic get result() => _convertNativeToDart_IDBAny(this._result);
+  Dynamic get _result() native "return this.result;";
 
   final Dynamic source;
 
@@ -9301,7 +9722,12 @@ class MutationObserverImpl implements MutationObserver native "*MutationObserver
 
   void disconnect() native;
 
-  void _observe(NodeImpl target, Map options) native "observe";
+  void _observe(NodeImpl target, Map options) {
+    var options_1 = _convertDartToNative_Dictionary(options);
+    __observe_1(target, options_1);
+    return;
+  }
+  void __observe_1(NodeImpl target, options) native "observe";
 
   List<MutationRecord> takeRecords() native;
 
@@ -9529,7 +9955,18 @@ class NavigatorImpl implements Navigator native "*Navigator" {
 
   GamepadListImpl webkitGetGamepads() native;
 
-  void webkitGetUserMedia(Map options, NavigatorUserMediaSuccessCallback successCallback, [NavigatorUserMediaErrorCallback errorCallback]) native;
+  void webkitGetUserMedia(Map options, NavigatorUserMediaSuccessCallback successCallback, [errorCallback = _default]) {
+    if (_default != errorCallback) {
+      var options_1 = _convertDartToNative_Dictionary(options);
+      _webkitGetUserMedia_1(options_1, successCallback, errorCallback);
+      return;
+    }
+    var options_2 = _convertDartToNative_Dictionary(options);
+    _webkitGetUserMedia_2(options_2, successCallback);
+    return;
+  }
+  void _webkitGetUserMedia_1(options, NavigatorUserMediaSuccessCallback successCallback, NavigatorUserMediaErrorCallback errorCallback) native "webkitGetUserMedia";
+  void _webkitGetUserMedia_2(options, NavigatorUserMediaSuccessCallback successCallback) native "webkitGetUserMedia";
 }
 
 class NavigatorUserMediaErrorImpl implements NavigatorUserMediaError native "*NavigatorUserMediaError" {
@@ -10315,13 +10752,39 @@ class PeerConnection00Impl extends EventTargetImpl implements PeerConnection00 n
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  void addStream(MediaStreamImpl stream, [Map mediaStreamHints]) native;
+  void addStream(MediaStreamImpl stream, [mediaStreamHints = _default]) {
+    if (_default != mediaStreamHints) {
+      var mediaStreamHints_1 = _convertDartToNative_Dictionary(mediaStreamHints);
+      _addStream_1(stream, mediaStreamHints_1);
+      return;
+    }
+    _addStream_2(stream);
+    return;
+  }
+  void _addStream_1(MediaStreamImpl stream, mediaStreamHints) native "addStream";
+  void _addStream_2(MediaStreamImpl stream) native "addStream";
 
   void close() native;
 
-  SessionDescriptionImpl createAnswer(String offer, [Map mediaHints]) native;
+  SessionDescriptionImpl createAnswer(String offer, [mediaHints = _default]) {
+    if (_default != mediaHints) {
+      var mediaHints_1 = _convertDartToNative_Dictionary(mediaHints);
+      return _createAnswer_1(offer, mediaHints_1);
+    }
+    return _createAnswer_2(offer);
+  }
+  SessionDescriptionImpl _createAnswer_1(offer, mediaHints) native "createAnswer";
+  SessionDescriptionImpl _createAnswer_2(offer) native "createAnswer";
 
-  SessionDescriptionImpl createOffer([Map mediaHints]) native;
+  SessionDescriptionImpl createOffer([mediaHints = _default]) {
+    if (_default != mediaHints) {
+      var mediaHints_1 = _convertDartToNative_Dictionary(mediaHints);
+      return _createOffer_1(mediaHints_1);
+    }
+    return _createOffer_2();
+  }
+  SessionDescriptionImpl _createOffer_1(mediaHints) native "createOffer";
+  SessionDescriptionImpl _createOffer_2() native "createOffer";
 
   bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
@@ -10335,7 +10798,17 @@ class PeerConnection00Impl extends EventTargetImpl implements PeerConnection00 n
 
   void setRemoteDescription(int action, SessionDescriptionImpl desc) native;
 
-  void startIce([Map iceOptions]) native;
+  void startIce([iceOptions = _default]) {
+    if (_default != iceOptions) {
+      var iceOptions_1 = _convertDartToNative_Dictionary(iceOptions);
+      _startIce_1(iceOptions_1);
+      return;
+    }
+    _startIce_2();
+    return;
+  }
+  void _startIce_1(iceOptions) native "startIce";
+  void _startIce_2() native "startIce";
 }
 
 class PeerConnection00EventsImpl extends EventsImpl implements PeerConnection00Events {
@@ -10701,9 +11174,13 @@ class SQLResultSetRowListImpl implements SQLResultSetRowList native "*SQLResultS
 }
 
 class SQLTransactionImpl implements SQLTransaction native "*SQLTransaction" {
+
+  void executeSql(String sqlStatement, List arguments, [SQLStatementCallback callback, SQLStatementErrorCallback errorCallback]) native;
 }
 
 class SQLTransactionSyncImpl implements SQLTransactionSync native "*SQLTransactionSync" {
+
+  SQLResultSetImpl executeSql(String sqlStatement, List arguments) native;
 }
 
 class SVGAElementImpl extends SVGElementImpl implements SVGAElement native "*SVGAElement" {
@@ -16415,13 +16892,94 @@ class WebGLRenderingContextImpl extends CanvasRenderingContextImpl implements We
 
   void stencilOpSeparate(int face, int fail, int zfail, int zpass) native;
 
-  void texImage2D(int target, int level, int internalformat, int format_OR_width, int height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video, [int format, int type, ArrayBufferViewImpl pixels]) native;
+  void texImage2D(int target, int level, int internalformat, int format_OR_width, int height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video, [format = _default, type = _default, pixels = _default]) {
+    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is int || border_OR_canvas_OR_image_OR_pixels_OR_video == null) &&
+        (format is int || format == null) &&
+        (type is int || type == null) &&
+        (pixels is ArrayBufferView || pixels == null)) {
+      _texImage2D_1(target, level, internalformat, format_OR_width, height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video, format, type, pixels);
+      return;
+    }
+    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is ImageData || border_OR_canvas_OR_image_OR_pixels_OR_video == null) &&
+        _default == format &&
+        _default == type &&
+        _default == pixels) {
+      var pixels_1 = _convertDartToNative_ImageData(border_OR_canvas_OR_image_OR_pixels_OR_video);
+      _texImage2D_2(target, level, internalformat, format_OR_width, height_OR_type, pixels_1);
+      return;
+    }
+    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is ImageElement || border_OR_canvas_OR_image_OR_pixels_OR_video == null) &&
+        _default == format &&
+        _default == type &&
+        _default == pixels) {
+      _texImage2D_3(target, level, internalformat, format_OR_width, height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video);
+      return;
+    }
+    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is CanvasElement || border_OR_canvas_OR_image_OR_pixels_OR_video == null) &&
+        _default == format &&
+        _default == type &&
+        _default == pixels) {
+      _texImage2D_4(target, level, internalformat, format_OR_width, height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video);
+      return;
+    }
+    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is VideoElement || border_OR_canvas_OR_image_OR_pixels_OR_video == null) &&
+        _default == format &&
+        _default == type &&
+        _default == pixels) {
+      _texImage2D_5(target, level, internalformat, format_OR_width, height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video);
+      return;
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  void _texImage2D_1(target, level, internalformat, width, height, int border, int format, int type, ArrayBufferViewImpl pixels) native "texImage2D";
+  void _texImage2D_2(target, level, internalformat, format, type, pixels) native "texImage2D";
+  void _texImage2D_3(target, level, internalformat, format, type, ImageElementImpl image) native "texImage2D";
+  void _texImage2D_4(target, level, internalformat, format, type, CanvasElementImpl canvas) native "texImage2D";
+  void _texImage2D_5(target, level, internalformat, format, type, VideoElementImpl video) native "texImage2D";
 
   void texParameterf(int target, int pname, num param) native;
 
   void texParameteri(int target, int pname, int param) native;
 
-  void texSubImage2D(int target, int level, int xoffset, int yoffset, int format_OR_width, int height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video, [int type, ArrayBufferViewImpl pixels]) native;
+  void texSubImage2D(int target, int level, int xoffset, int yoffset, int format_OR_width, int height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video, [type = _default, pixels = _default]) {
+    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is int || canvas_OR_format_OR_image_OR_pixels_OR_video == null) &&
+        (type is int || type == null) &&
+        (pixels is ArrayBufferView || pixels == null)) {
+      _texSubImage2D_1(target, level, xoffset, yoffset, format_OR_width, height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video, type, pixels);
+      return;
+    }
+    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is ImageData || canvas_OR_format_OR_image_OR_pixels_OR_video == null) &&
+        _default == type &&
+        _default == pixels) {
+      var pixels_1 = _convertDartToNative_ImageData(canvas_OR_format_OR_image_OR_pixels_OR_video);
+      _texSubImage2D_2(target, level, xoffset, yoffset, format_OR_width, height_OR_type, pixels_1);
+      return;
+    }
+    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is ImageElement || canvas_OR_format_OR_image_OR_pixels_OR_video == null) &&
+        _default == type &&
+        _default == pixels) {
+      _texSubImage2D_3(target, level, xoffset, yoffset, format_OR_width, height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video);
+      return;
+    }
+    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is CanvasElement || canvas_OR_format_OR_image_OR_pixels_OR_video == null) &&
+        _default == type &&
+        _default == pixels) {
+      _texSubImage2D_4(target, level, xoffset, yoffset, format_OR_width, height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video);
+      return;
+    }
+    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is VideoElement || canvas_OR_format_OR_image_OR_pixels_OR_video == null) &&
+        _default == type &&
+        _default == pixels) {
+      _texSubImage2D_5(target, level, xoffset, yoffset, format_OR_width, height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video);
+      return;
+    }
+    throw const Exception("Incorrect number or type of arguments");
+  }
+  void _texSubImage2D_1(target, level, xoffset, yoffset, width, height, int format, int type, ArrayBufferViewImpl pixels) native "texSubImage2D";
+  void _texSubImage2D_2(target, level, xoffset, yoffset, format, type, pixels) native "texSubImage2D";
+  void _texSubImage2D_3(target, level, xoffset, yoffset, format, type, ImageElementImpl image) native "texSubImage2D";
+  void _texSubImage2D_4(target, level, xoffset, yoffset, format, type, CanvasElementImpl canvas) native "texSubImage2D";
+  void _texSubImage2D_5(target, level, xoffset, yoffset, format, type, VideoElementImpl video) native "texSubImage2D";
 
   void uniform1f(WebGLUniformLocationImpl location, num x) native;
 
@@ -28926,6 +29484,9 @@ typedef bool SQLStatementErrorCallback(SQLTransaction transaction, SQLError erro
 
 /// @domName SQLTransaction
 interface SQLTransaction {
+
+  /** @domName SQLTransaction.executeSql */
+  void executeSql(String sqlStatement, List arguments, [SQLStatementCallback callback, SQLStatementErrorCallback errorCallback]);
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -28949,6 +29510,9 @@ typedef bool SQLTransactionErrorCallback(SQLError error);
 
 /// @domName SQLTransactionSync
 interface SQLTransactionSync {
+
+  /** @domName SQLTransactionSync.executeSql */
+  SQLResultSet executeSql(String sqlStatement, List arguments);
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -37098,6 +37662,12 @@ _serialize(var message) {
   return new _JsSerializer().traverse(message);
 }
 
+class JsProxy {
+  final _id;
+
+  JsProxy._internal(this._id);
+}
+
 class _JsSerializer extends _Serializer {
 
   visitSendPortSync(SendPortSync x) {
@@ -37123,28 +37693,51 @@ class _JsSerializer extends _Serializer {
 
   visitObject(Object x) {
     if (x is Function) return visitFunction(x);
+    if (x is JsProxy) return visitJsProxy(x);
+
     // TODO: Handle DOM elements and proxy other objects.
-    throw "Unserializable object $x";
+    var proxyId = _makeDartProxyRef(x);
+    return [ 'objref', 'dart', proxyId ];
  }
 
   visitFunction(Function func) {
     return [ 'funcref',
               _makeFunctionRef(func), visitSendPortSync(_sendPort()), null ];
   }
+
+  visitJsProxy(JsProxy proxy) {
+    return [ 'objref', 'nativejs', proxy._id ];
+  }
 }
 
 // Leaking implementation.  Later will be backend specific and hopefully
 // not leaking (at least in most of the cases.)
 // TODO: provide better, backend specific implementation.
-class _FunctionRegistry {
-  final ReceivePortSync _port;
+class _Registry<T> {
+  final String _name;
   int _nextId;
-  final Map<String, Function> _registry;
+  final Map<String, T> _registry;
+
+  _Registry(this._name) : _nextId = 0, _registry = <T>{};
+
+  String _add(T x) {
+    // TODO(vsm): Cache x and reuse id.
+    final id = '$_name-${_nextId++}';
+    _registry[id] = x;
+    return id;
+  }
+
+  T _get(String id) {
+    return _registry[id];
+  }
+}
+
+class _FunctionRegistry extends _Registry<Function> {
+  final ReceivePortSync _port;
 
   _FunctionRegistry() :
-      _port = new ReceivePortSync(),
-      _nextId = 0,
-      _registry = <Function>{} {
+      super('func-ref'),
+      _port = new ReceivePortSync() {
     _port.receive((msg) {
       final id = msg[0];
       final args = msg[1];
@@ -37160,17 +37753,11 @@ class _FunctionRegistry {
     });
   }
 
-  String _add(Function f) {
-    final id = 'func-ref-${_nextId++}';
-    _registry[id] = f;
-    return id;
-  }
-
-  get _sendPort() => _port.toSendPort();
+  get _sendPort => _port.toSendPort();
 }
 
 _FunctionRegistry __functionRegistry;
-get _functionRegistry() {
+get _functionRegistry {
   if (__functionRegistry === null) __functionRegistry = new _FunctionRegistry();
   return __functionRegistry;
 }
@@ -37178,6 +37765,25 @@ get _functionRegistry() {
 _makeFunctionRef(f) => _functionRegistry._add(f);
 _sendPort() => _functionRegistry._sendPort;
 /// End of function serialization implementation.
+
+/// Object proxy implementation.
+
+class _DartProxyRegistry extends _Registry<Object> {
+  _DartProxyRegistry() : super('dart-ref');
+}
+
+_DartProxyRegistry __dartProxyRegistry;
+get _dartProxyRegistry {
+  if (__dartProxyRegistry === null) {
+    __dartProxyRegistry = new _DartProxyRegistry();
+  }
+  return __dartProxyRegistry;
+}
+
+_makeDartProxyRef(f) => _dartProxyRegistry._add(f);
+_getDartProxyObj(id) => _dartProxyRegistry._get(id);
+
+/// End of object proxy implementation.
 
 _deserialize(var message) {
   return new _JsDeserializer().deserialize(message);
@@ -37206,6 +37812,7 @@ class _JsDeserializer extends _Deserializer {
     String tag = x[0];
     switch (tag) {
       case 'funcref': return deserializeFunction(x);
+      case 'objref': return deserializeProxy(x);
       default: throw 'Illegal object type: $x';
     }
   }
@@ -37222,6 +37829,21 @@ class _JsDeserializer extends _Deserializer {
       var message = [id, args];
       return port.callSync(message);
     };
+  }
+
+  deserializeProxy(x) {
+    String tag = x[1];
+    switch (tag) {
+      case 'nativejs':
+        var id = x[2];
+        return new JsProxy._internal(id);
+      case 'dart':
+        var id = x[2];
+        // TODO(vsm): Check for isolate id.  If the isolate isn't the
+        // current isolate, return a DartProxy.
+        return _getDartProxyObj(id);
+      default: throw 'Illegal proxy: $x';
+    }
   }
 }
 
@@ -37316,7 +37938,7 @@ class ReceivePortSync {
     _portMap[_portId] = this;
   }
 
-  static int get _isolateId() {
+  static int get _isolateId {
     // TODO(vsm): Make this coherent with existing isolate code.
     if (_cachedIsolateId == null) {
       _cachedIsolateId = _getNewIsolateId();      
@@ -37326,7 +37948,7 @@ class ReceivePortSync {
 
   static String _getListenerName(isolateId, portId) =>
       'dart-port-$isolateId-$portId'; 
-  String get _listenerName() => _getListenerName(_isolateId, _portId);
+  String get _listenerName => _getListenerName(_isolateId, _portId);
 
   void receive(callback(var message)) {
     _callback = callback;
@@ -37489,6 +38111,219 @@ void _completeMeasurementFutures() {
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// Patch file for the dart:isolate library.
+
+/********************************************************
+  Inserted from lib/isolate/serialization.dart
+ ********************************************************/
+
+class _MessageTraverserVisitedMap {
+
+  operator[](var object) => null;
+  void operator[]=(var object, var info) { }
+
+  void reset() { }
+  void cleanup() { }
+
+}
+
+/** Abstract visitor for dart objects that can be sent as isolate messages. */
+class _MessageTraverser {
+
+  _MessageTraverserVisitedMap _visited;
+  _MessageTraverser() : _visited = new _MessageTraverserVisitedMap();
+
+  /** Visitor's entry point. */
+  traverse(var x) {
+    if (isPrimitive(x)) return visitPrimitive(x);
+    _visited.reset();
+    var result;
+    try {
+      result = _dispatch(x);
+    } finally {
+      _visited.cleanup();
+    }
+    return result;
+  }
+
+  _dispatch(var x) {
+    if (isPrimitive(x)) return visitPrimitive(x);
+    if (x is List) return visitList(x);
+    if (x is Map) return visitMap(x);
+    if (x is SendPort) return visitSendPort(x);
+    if (x is SendPortSync) return visitSendPortSync(x);
+
+    // Overridable fallback.
+    return visitObject(x);
+  }
+
+  abstract visitPrimitive(x);
+  abstract visitList(List x);
+  abstract visitMap(Map x);
+  abstract visitSendPort(SendPort x);
+  abstract visitSendPortSync(SendPortSync x);
+
+  visitObject(Object x) {
+    // TODO(floitsch): make this a real exception. (which one)?
+    throw "Message serialization: Illegal value $x passed";
+  }
+
+  static bool isPrimitive(x) {
+    return (x === null) || (x is String) || (x is num) || (x is bool);
+  }
+}
+
+
+/** A visitor that recursively copies a message. */
+class _Copier extends _MessageTraverser {
+
+  visitPrimitive(x) => x;
+
+  List visitList(List list) {
+    List copy = _visited[list];
+    if (copy !== null) return copy;
+
+    int len = list.length;
+
+    // TODO(floitsch): we loose the generic type of the List.
+    copy = new List(len);
+    _visited[list] = copy;
+    for (int i = 0; i < len; i++) {
+      copy[i] = _dispatch(list[i]);
+    }
+    return copy;
+  }
+
+  Map visitMap(Map map) {
+    Map copy = _visited[map];
+    if (copy !== null) return copy;
+
+    // TODO(floitsch): we loose the generic type of the map.
+    copy = new Map();
+    _visited[map] = copy;
+    map.forEach((key, val) {
+      copy[_dispatch(key)] = _dispatch(val);
+    });
+    return copy;
+  }
+
+}
+
+/** Visitor that serializes a message as a JSON array. */
+class _Serializer extends _MessageTraverser {
+  int _nextFreeRefId = 0;
+
+  visitPrimitive(x) => x;
+
+  visitList(List list) {
+    int copyId = _visited[list];
+    if (copyId !== null) return ['ref', copyId];
+
+    int id = _nextFreeRefId++;
+    _visited[list] = id;
+    var jsArray = _serializeList(list);
+    // TODO(floitsch): we are losing the generic type.
+    return ['list', id, jsArray];
+  }
+
+  visitMap(Map map) {
+    int copyId = _visited[map];
+    if (copyId !== null) return ['ref', copyId];
+
+    int id = _nextFreeRefId++;
+    _visited[map] = id;
+    var keys = _serializeList(map.getKeys());
+    var values = _serializeList(map.getValues());
+    // TODO(floitsch): we are losing the generic type.
+    return ['map', id, keys, values];
+  }
+
+  _serializeList(List list) {
+    int len = list.length;
+    var result = new List(len);
+    for (int i = 0; i < len; i++) {
+      result[i] = _dispatch(list[i]);
+    }
+    return result;
+  }
+}
+
+/** Deserializes arrays created with [_Serializer]. */
+class _Deserializer {
+  Map<int, Dynamic> _deserialized;
+
+  _Deserializer();
+
+  static bool isPrimitive(x) {
+    return (x === null) || (x is String) || (x is num) || (x is bool);
+  }
+
+  deserialize(x) {
+    if (isPrimitive(x)) return x;
+    // TODO(floitsch): this should be new HashMap<int, var|Dynamic>()
+    _deserialized = new HashMap();
+    return _deserializeHelper(x);
+  }
+
+  _deserializeHelper(x) {
+    if (isPrimitive(x)) return x;
+    assert(x is List);
+    switch (x[0]) {
+      case 'ref': return _deserializeRef(x);
+      case 'list': return _deserializeList(x);
+      case 'map': return _deserializeMap(x);
+      case 'sendport': return deserializeSendPort(x);
+      default: return deserializeObject(x);
+    }
+  }
+
+  _deserializeRef(List x) {
+    int id = x[1];
+    var result = _deserialized[id];
+    assert(result !== null);
+    return result;
+  }
+
+  List _deserializeList(List x) {
+    int id = x[1];
+    // We rely on the fact that Dart-lists are directly mapped to Js-arrays.
+    List dartList = x[2];
+    _deserialized[id] = dartList;
+    int len = dartList.length;
+    for (int i = 0; i < len; i++) {
+      dartList[i] = _deserializeHelper(dartList[i]);
+    }
+    return dartList;
+  }
+
+  Map _deserializeMap(List x) {
+    Map result = new Map();
+    int id = x[1];
+    _deserialized[id] = result;
+    List keys = x[2];
+    List values = x[3];
+    int len = keys.length;
+    assert(len == values.length);
+    for (int i = 0; i < len; i++) {
+      var key = _deserializeHelper(keys[i]);
+      var value = _deserializeHelper(values[i]);
+      result[key] = value;
+    }
+    return result;
+  }
+
+  abstract deserializeSendPort(List x);
+
+  deserializeObject(List x) {
+    // TODO(floitsch): Use real exception (which one?).
+    throw "Unexpected serialized object";
+  }
+}
+
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 class _EventFactoryProvider {
   factory Event(String type, [bool canBubble = true,
       bool cancelable = true]) {
@@ -37591,6 +38426,403 @@ class _SVGSVGElementFactoryProvider {
     return el;
   }
 }
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+
+// Conversions for IDBKey.
+//
+// Per http://www.w3.org/TR/IndexedDB/#key-construct
+//
+// "A value is said to be a valid key if it is one of the following types: Array
+// JavaScript objects [ECMA-262], DOMString [WEBIDL], Date [ECMA-262] or float
+// [WEBIDL]. However Arrays are only valid keys if every item in the array is
+// defined and is a valid key (i.e. sparse arrays can not be valid keys) and if
+// the Array doesn't directly or indirectly contain itself. Any non-numeric
+// properties are ignored, and thus does not affect whether the Array is a valid
+// key. Additionally, if the value is of type float, it is only a valid key if
+// it is not NaN, and if the value is of type Date it is only a valid key if its
+// [[PrimitiveValue]] internal property, as defined by [ECMA-262], is not NaN."
+
+// What is required is to ensure that an Lists in the key are actually
+// JavaScript arrays, and any Dates are JavaScript Dates.
+
+// Conversions for ImageData
+//
+// On Firefox, the returned ImageData is a plain object.
+
+class _TypedImageData implements ImageData {
+  final Uint8ClampedArray data;
+  final int height;
+  final int width;
+
+  _TypedImageData(this.data, this.height, this.width);
+}
+
+ImageData _convertNativeToDart_ImageData(nativeImageData) {
+  if (nativeImageData is ImageData) return nativeImageData;
+
+  // On Firefox the above test fails because imagedata is a plain object.
+  // So we create a _TypedImageData.
+
+  return new _TypedImageData(
+      JS('var', '#.data', nativeImageData),
+      JS('var', '#.height', nativeImageData),
+      JS('var', '#.width', nativeImageData));
+}
+
+// We can get rid of this conversion if _TypedImageData implements the fields
+// with native names.
+_convertDartToNative_ImageData(ImageData imageData) {
+  if (imageData is ImageDataImpl) return imageData;
+  return JS('Object', '{data: #, height: #, width: #}',
+            imageData.data, imageData.height, imageData.width);
+}
+
+
+/// Converts a JavaScript object with properties into a Dart Map.
+/// Not suitable for nested objects.
+Map _convertNativeToDart_Dictionary(object) {
+  if (object == null) return null;
+  var dict = {};
+  for (final key in JS('List', 'Object.getOwnPropertyNames(#)', object)) {
+    dict[key] = JS('var', '#[#]', object, key);
+  }
+  return dict;
+}
+
+/// Converts a flat Dart map into a JavaScript object with properties.
+_convertDartToNative_Dictionary(Map dict) {
+  if (dict == null) return null;
+  var object = JS('var', '{}');
+  dict.forEach((String key, value) {
+      JS('void', '#[#] = #', object, key, value);
+    });
+  return object;
+}
+
+
+/**
+ * Ensures that the input is a JavaScript Array.
+ *
+ * Creates a new JavaScript array if necessary, otherwise returns the original.
+ */
+List _convertDartToNative_StringArray(List<String> input) {
+  // TODO(sra).  Implement this.
+  return input;
+}
+
+
+// -----------------------------------------------------------------------------
+
+/**
+ * Converts a native IDBKey into a Dart object.
+ *
+ * May return the original input.  May mutate the original input (but will be
+ * idempotent if mutation occurs).  It is assumed that this conversion happens
+ * on native IDBKeys on all paths that return IDBKeys from native DOM calls.
+ *
+ * If necessary, JavaScript Dates are converted into Dart Dates.
+ */
+_convertNativeToDart_IDBKey(nativeKey) {
+  containsDate(object) {
+    if (_isJavaScriptDate(object)) return true;
+    if (object is List) {
+      for (int i = 0; i < object.length; i++) {
+        if (containsDate(object[i])) return true;
+      }
+    }
+    return false;  // number, string.
+  }
+  if (containsDate(nativeKey)) {
+    throw const NotImplementedException('IDBKey containing Date');
+  }
+  // TODO: Cache conversion somewhere?
+  return nativeKey;
+}
+
+/**
+ * Converts a Dart object into a valid IDBKey.
+ *
+ * May return the original input.  Does not mutate input.
+ *
+ * If necessary, [dartKey] may be copied to ensure all lists are converted into
+ * JavaScript Arrays and Dart Dates into JavaScript Dates.
+ */
+_convertDartToNative_IDBKey(dartKey) {
+  // TODO: Implement.
+  return dartKey;
+}
+
+
+
+// May modify original.  If so, action is idempotent.
+_convertNativeToDart_IDBAny(object) {
+  return _convertNativeToDart_AcceptStructuredClone(object);
+}
+
+/// Converts a Dart value into
+_convertDartToNative_SerializedScriptValue(value) {
+  return _convertDartToNative_PrepareForStructuredClone(value);
+}
+
+
+/**
+ * Converts a Dart value into a JavaScript SerializedScriptValue.  Returns the
+ * original input or a functional 'copy'.  Does not mutate the original.
+ *
+ * The main transformation is the translation of Dart Maps are converted to
+ * JavaScript Objects.
+ *
+ * The algorithm is essentially a dry-run of the structured clone algorithm
+ * described at
+ * http://www.whatwg.org/specs/web-apps/current-work/multipage/common-dom-interfaces.html#structured-clone
+ * https://www.khronos.org/registry/typedarray/specs/latest/#9
+ *
+ */
+_convertDartToNative_PrepareForStructuredClone(value) {
+
+  // TODO(sra): Replace slots with identity hash table.
+  var values = [];
+  var copies = [];  // initially 'null', 'true' during initial DFS, then a copy.
+
+  int findSlot(value) {
+    int length = values.length;
+    for (int i = 0; i < length; i++) {
+      if (values[i] === value) return i;
+    }
+    values.add(value);
+    copies.add(null);
+    return length;
+  }
+  readSlot(int i) => copies[i];
+  writeSlot(int i, x) { copies[i] = x; }
+  cleanupSlots() {}  // Will be needed if we mark objects with a property.
+
+  // Returns the input, or a clone of the input.
+  walk(e) {
+    if (e == null) return e;
+    if (e is bool) return e;
+    if (e is num) return e;
+    if (e is String) return e;
+    if (e is Date) {
+      // TODO(sra).
+      throw const NotImplementedException('structured clone of Date');
+    }
+    if (e is RegExp) {
+      // TODO(sra).
+      throw const NotImplementedException('structured clone of RegExp');
+    }
+
+    // The browser's internal structured cloning algorithm will copy certain
+    // types of object, but it will copy only its own implementations and not
+    // just any Dart implementations of the interface.
+
+    // TODO(sra): The JavaScript objects suitable for direct cloning by the
+    // structured clone algorithm could be tagged with an private interface.
+
+    if (e is FileImpl) return e;
+    if (e is File) {
+      throw const NotImplementedException('structured clone of File');
+    }
+
+    if (e is BlobImpl) return e;
+    if (e is Blob) {
+      throw const NotImplementedException('structured clone of Blob');
+    }
+
+    if (e is FileListImpl) return e;
+    if (e is FileList) {
+      throw const NotImplementedException('structured clone of FileList');
+    }
+
+    // TODO(sra): Firefox: How to convert _TypedImageData on the other end?
+    if (e is ImageDataImpl) return e;
+    if (e is ImageData) {
+      throw const NotImplementedException('structured clone of FileList');
+    }
+
+    if (e is ArrayBufferImpl) return e;
+    if (e is ArrayBuffer) {
+      throw const NotImplementedException('structured clone of ArrayBuffer');
+    }
+
+    if (e is ArrayBufferViewImpl) return e;
+    if (e is ArrayBufferView) {
+      throw const NotImplementedException('structured clone of ArrayBufferView');
+    }
+
+    if (e is Map) {
+      var slot = findSlot(e);
+      var copy = readSlot(slot);
+      if (copy != null) return copy;
+      copy = JS('var', '{}');
+      writeSlot(slot, copy);
+      e.forEach((key, value) {
+          JS('void', '#[#] = #', copy, key, walk(value));
+        });
+      return copy;
+    }
+
+    if (e is List) {
+      // Since a JavaScript Array is an instance of Dart List it is possible to
+      // avoid making a copy of the list if there is no need to copy anything
+      // reachable from the array.  We defer creating a new array until a cycle
+      // is detected or a subgraph was copied.
+      int length = e.length;
+      var slot = findSlot(e);
+      var copy = readSlot(slot);
+      if (copy != null) {
+        if (true == copy) {  // Cycle, so commit to making a copy.
+          copy = JS('List', 'new Array(#)', length);
+          writeSlot(slot, copy);
+        }
+        return copy;
+      }
+
+      int i = 0;
+
+      if (_isJavaScriptArray(e) &&
+          // We have to copy immutable lists, otherwise the structured clone
+          // algorithm will copy the .immutable$list marker property, making the
+          // list immutable when received!
+          !_isImmutableJavaScriptArray(e)) {
+        writeSlot(slot, true);  // Deferred copy.
+        for ( ; i < length; i++) {
+          var element = e[i];
+          var elementCopy = walk(element);
+          if (elementCopy !== element) {
+            copy = readSlot(slot);   // Cyclic reference may have created it.
+            if (true == copy) {
+              copy = JS('List', 'new Array(#)', length);
+              writeSlot(slot, copy);
+            }
+            for (int j = 0; j < i; j++) {
+              copy[j] = e[j];
+            }
+            copy[i] = elementCopy;
+            i++;
+            break;
+          }
+        }
+        if (copy == null) {
+          copy = e;
+          writeSlot(slot, copy);
+        }
+      } else {
+        // Not a JavaScript Array.  We are forced to make a copy.
+        copy = JS('List', 'new Array(#)', length);
+        writeSlot(slot, copy);
+      }
+
+      for ( ; i < length; i++) {
+        copy[i] = walk(e[i]);
+      }
+      return copy;
+    }
+
+    throw const NotImplementedException('structured clone of other type');
+  }
+
+  var copy = walk(value);
+  cleanupSlots();
+  return copy;
+}
+
+/**
+ * Converts a native value into a Dart object.
+ *
+ * May return the original input.  May mutate the original input (but will be
+ * idempotent if mutation occurs).  It is assumed that this conversion happens
+ * on native serializable script values such values from native DOM calls.
+ *
+ * [object] is the result of a structured clone operation.
+ *
+ * If necessary, JavaScript Dates are converted into Dart Dates.
+ */
+_convertNativeToDart_AcceptStructuredClone(object) {
+
+  // TODO(sra): Replace slots with identity hash table that works on non-dart
+  // objects.
+  var values = [];
+  var copies = [];
+
+  int findSlot(value) {
+    int length = values.length;
+    for (int i = 0; i < length; i++) {
+      if (values[i] === value) return i;
+    }
+    values.add(value);
+    copies.add(null);
+    return length;
+  }
+  readSlot(int i) => copies[i];
+  writeSlot(int i, x) { copies[i] = x; }
+
+  walk(e) {
+    if (e == null) return e;
+    if (e is bool) return e;
+    if (e is num) return e;
+    if (e is String) return e;
+
+    if (_isJavaScriptDate(e)) {
+      // TODO(sra).
+      throw const NotImplementedException('structured clone of Date');
+    }
+
+    if (_isJavaScriptRegExp(e)) {
+      // TODO(sra).
+      throw const NotImplementedException('structured clone of RegExp');
+    }
+
+    if (_isJavaScriptSimpleObject(e)) {
+      // TODO(sra): Swizzle the prototype for one of a Map implementation that
+      // uses the properies as storage.
+      var slot = findSlot(e);
+      var copy = readSlot(slot);
+      if (copy != null) return copy;
+      copy = {};
+
+      writeSlot(slot, copy);
+      for (final key in JS('List', 'Object.keys(#)', e)) {
+        copy[key] = walk(JS('var', '#[#]', e, key));
+      }
+      return copy;
+    }
+
+    if (_isJavaScriptArray(e)) {
+      // Since a JavaScript Array is an instance of Dart List, we can modify it
+      // in-place.
+      var slot = findSlot(e);
+      var copy = readSlot(slot);
+      if (copy != null) return copy;
+      writeSlot(slot, e);
+
+      int length = e.length;
+      for (int i = 0; i < length; i++) {
+        e[i] = walk(e[i]);
+      }
+      return e;
+    }
+
+    // Assume anything else is already a valid Dart object, either by having
+    // already been processed, or e.g. a clonable native class.
+    return e;
+  }
+
+  var copy = walk(object);
+  return copy;
+}
+
+
+bool _isJavaScriptDate(value) => JS('bool', '# instanceof Date', value);
+bool _isJavaScriptRegExp(value) => JS('bool', '# instanceof RegExp', value);
+bool _isJavaScriptArray(value) => JS('bool', '# instanceof Array', value);
+bool _isJavaScriptSimpleObject(value) =>
+    JS('bool', 'Object.getPrototypeOf(#) === Object.prototype', value);
+bool _isImmutableJavaScriptArray(value) =>
+    JS('bool', @'!!(#.immutable$list)', value);
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
@@ -38055,212 +39287,6 @@ class _Lists {
       accumulator.add(a[i]);
     }
     return accumulator;
-  }
-}
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
-class _MessageTraverserVisitedMap {
-
-  operator[](var object) => null;
-  void operator[]=(var object, var info) { }
-
-  void reset() { }
-  void cleanup() { }
-
-}
-
-/** Abstract visitor for dart objects that can be sent as isolate messages. */
-class _MessageTraverser {
-
-  _MessageTraverserVisitedMap _visited;
-  _MessageTraverser() : _visited = new _MessageTraverserVisitedMap();
-
-  /** Visitor's entry point. */
-  traverse(var x) {
-    if (isPrimitive(x)) return visitPrimitive(x);
-    _visited.reset();
-    var result;
-    try {
-      result = _dispatch(x);
-    } finally {
-      _visited.cleanup();
-    }
-    return result;
-  }
-
-  _dispatch(var x) {
-    if (isPrimitive(x)) return visitPrimitive(x);
-    if (x is List) return visitList(x);
-    if (x is Map) return visitMap(x);
-    if (x is SendPort) return visitSendPort(x);
-    if (x is SendPortSync) return visitSendPortSync(x);
-
-    // Overridable fallback.
-    return visitObject(x);
-  }
-
-  abstract visitPrimitive(x);
-  abstract visitList(List x);
-  abstract visitMap(Map x);
-  abstract visitSendPort(SendPort x);
-  abstract visitSendPortSync(SendPortSync x);
-
-  visitObject(Object x) {
-    // TODO(floitsch): make this a real exception. (which one)?
-    throw "Message serialization: Illegal value $x passed";
-  }
-
-  static bool isPrimitive(x) {
-    return (x === null) || (x is String) || (x is num) || (x is bool);
-  }
-}
-
-
-/** A visitor that recursively copies a message. */
-class _Copier extends _MessageTraverser {
-
-  visitPrimitive(x) => x;
-
-  List visitList(List list) {
-    List copy = _visited[list];
-    if (copy !== null) return copy;
-
-    int len = list.length;
-
-    // TODO(floitsch): we loose the generic type of the List.
-    copy = new List(len);
-    _visited[list] = copy;
-    for (int i = 0; i < len; i++) {
-      copy[i] = _dispatch(list[i]);
-    }
-    return copy;
-  }
-
-  Map visitMap(Map map) {
-    Map copy = _visited[map];
-    if (copy !== null) return copy;
-
-    // TODO(floitsch): we loose the generic type of the map.
-    copy = new Map();
-    _visited[map] = copy;
-    map.forEach((key, val) {
-      copy[_dispatch(key)] = _dispatch(val);
-    });
-    return copy;
-  }
-
-}
-
-/** Visitor that serializes a message as a JSON array. */
-class _Serializer extends _MessageTraverser {
-  int _nextFreeRefId = 0;
-
-  visitPrimitive(x) => x;
-
-  visitList(List list) {
-    int copyId = _visited[list];
-    if (copyId !== null) return ['ref', copyId];
-
-    int id = _nextFreeRefId++;
-    _visited[list] = id;
-    var jsArray = _serializeList(list);
-    // TODO(floitsch): we are losing the generic type.
-    return ['list', id, jsArray];
-  }
-
-  visitMap(Map map) {
-    int copyId = _visited[map];
-    if (copyId !== null) return ['ref', copyId];
-
-    int id = _nextFreeRefId++;
-    _visited[map] = id;
-    var keys = _serializeList(map.getKeys());
-    var values = _serializeList(map.getValues());
-    // TODO(floitsch): we are losing the generic type.
-    return ['map', id, keys, values];
-  }
-
-  _serializeList(List list) {
-    int len = list.length;
-    var result = new List(len);
-    for (int i = 0; i < len; i++) {
-      result[i] = _dispatch(list[i]);
-    }
-    return result;
-  }
-}
-
-/** Deserializes arrays created with [_Serializer]. */
-class _Deserializer {
-  Map<int, Dynamic> _deserialized;
-
-  _Deserializer();
-
-  static bool isPrimitive(x) {
-    return (x === null) || (x is String) || (x is num) || (x is bool);
-  }
-
-  deserialize(x) {
-    if (isPrimitive(x)) return x;
-    // TODO(floitsch): this should be new HashMap<int, var|Dynamic>()
-    _deserialized = new HashMap();
-    return _deserializeHelper(x);
-  }
-
-  _deserializeHelper(x) {
-    if (isPrimitive(x)) return x;
-    assert(x is List);
-    switch (x[0]) {
-      case 'ref': return _deserializeRef(x);
-      case 'list': return _deserializeList(x);
-      case 'map': return _deserializeMap(x);
-      case 'sendport': return deserializeSendPort(x);
-      default: return deserializeObject(x);
-    }
-  }
-
-  _deserializeRef(List x) {
-    int id = x[1];
-    var result = _deserialized[id];
-    assert(result !== null);
-    return result;
-  }
-
-  List _deserializeList(List x) {
-    int id = x[1];
-    // We rely on the fact that Dart-lists are directly mapped to Js-arrays.
-    List dartList = x[2];
-    _deserialized[id] = dartList;
-    int len = dartList.length;
-    for (int i = 0; i < len; i++) {
-      dartList[i] = _deserializeHelper(dartList[i]);
-    }
-    return dartList;
-  }
-
-  Map _deserializeMap(List x) {
-    Map result = new Map();
-    int id = x[1];
-    _deserialized[id] = result;
-    List keys = x[2];
-    List values = x[3];
-    int len = keys.length;
-    assert(len == values.length);
-    for (int i = 0; i < len; i++) {
-      var key = _deserializeHelper(keys[i]);
-      var value = _deserializeHelper(values[i]);
-      result[key] = value;
-    }
-    return result;
-  }
-
-  abstract deserializeSendPort(List x);
-
-  deserializeObject(List x) {
-    // TODO(floitsch): Use real exception (which one?).
-    throw "Unexpected serialized object";
   }
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file

@@ -23,11 +23,9 @@
     'regexp.cc',
     'regexp_jsc.cc',
     'regexp_jsc.h',
-    'regexp.dart',
+    'regexp_patch.dart',
     'stopwatch_patch.dart',
     'string.cc',
     'string.dart',
-    'weak_property.cc',
-    'weak_property.dart',
   ],
 }

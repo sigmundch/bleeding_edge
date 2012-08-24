@@ -73,20 +73,6 @@ bool CheckClassComp::AttributesEqual(Computation* other) const {
 }
 
 
-UseVal::UseVal(Definition* definition)
-    : definition_(definition), next_use_(NULL), previous_use_(NULL) {
-  AddToUseList();
-}
-
-
-void UseVal::SetDefinition(Definition* definition) {
-  ASSERT(definition != NULL);
-  RemoveFromUseList();
-  definition_ = definition;
-  AddToUseList();
-}
-
-
 // Returns true if the value represents a constant.
 bool UseVal::BindsToConstant() const {
   BindInstr* bind = definition()->AsBind();
@@ -121,42 +107,16 @@ const Object& UseVal::BoundConstant() const {
 }
 
 
-void UseVal::RemoveFromUseList() {
-  ASSERT(definition_ != NULL);
-  if (next_use_ != NULL) {
-    next_use_->previous_use_ = previous_use_;
-  }
-  if (previous_use_ != NULL) {
-    previous_use_->next_use_ = next_use_;
-  } else {
-    // This is the head of the list.
-    ASSERT(definition_->use_list() == this);
-    definition_->set_use_list(next_use_);
-  }
-  previous_use_ = next_use_ = NULL;
-  definition_ = NULL;
-}
-
-
-void UseVal::AddToUseList() {
-  ASSERT(next_use_ == NULL && previous_use_ == NULL && definition_ != NULL);
-  UseVal* head = definition_->use_list();
-  if (head != NULL) {
-    next_use_ = head;
-    head->previous_use_ = this;
-  }
-  definition_->set_use_list(this);
-}
-
-
 MethodRecognizer::Kind MethodRecognizer::RecognizeKind(
     const Function& function) {
-  // Only core library methods can be recognized.
+  // Only core and math library methods can be recognized.
   const Library& core_lib = Library::Handle(Library::CoreLibrary());
   const Library& core_impl_lib = Library::Handle(Library::CoreImplLibrary());
+  const Library& math_lib = Library::Handle(Library::MathLibrary());
   const Class& function_class = Class::Handle(function.Owner());
   if ((function_class.library() != core_lib.raw()) &&
-      (function_class.library() != core_impl_lib.raw())) {
+      (function_class.library() != core_impl_lib.raw()) &&
+      (function_class.library() != math_lib.raw())) {
     return kUnknown;
   }
   const String& recognize_name = String::Handle(function.name());
@@ -224,17 +184,26 @@ Instruction* Instruction::RemoveFromGraph(bool return_previous) {
   // that the instruction is removed from the graph.
   set_previous(NULL);
   set_next(NULL);
-  ASSERT(!IsDefinition() || AsDefinition()->use_list() == NULL);
   return return_previous ? prev_instr : next_instr;
 }
 
 
-void BindInstr::InsertBefore(BindInstr* next) {
+void BindInstr::InsertBefore(Instruction* next) {
   ASSERT(previous_ == NULL);
   ASSERT(next_ == NULL);
   next_ = next;
   previous_ = next->previous_;
   next->previous_ = this;
+  previous_->next_ = this;
+}
+
+
+void BindInstr::InsertAfter(Instruction* prev) {
+  ASSERT(previous_ == NULL);
+  ASSERT(next_ == NULL);
+  previous_ = prev;
+  next_ = prev->next_;
+  next_->previous_ = this;
   previous_->next_ = this;
 }
 
@@ -403,23 +372,53 @@ void Instruction::RecordAssignedVars(BitVector* assigned_vars,
 }
 
 
+void UseVal::AddToInputUseList() {
+  set_next_use(definition()->input_use_list());
+  definition()->set_input_use_list(this);
+}
+
+
+void UseVal::AddToEnvUseList() {
+  set_next_use(definition()->env_use_list());
+  definition()->set_env_use_list(this);
+}
+
+
 void Definition::ReplaceUsesWith(Definition* other) {
-  UseVal* head = use_list();
-  if (head == NULL) return;
-
-  UseVal* current = head;
-  while (current->next_use() != NULL) {
-    current->definition_ = other;
-    current = current->next_use();
+  ASSERT(other != NULL);
+  while (input_use_list_ != NULL) {
+    UseVal* current = input_use_list_;
+    input_use_list_ = input_use_list_->next_use();
+    current->set_definition(other);
+    current->AddToInputUseList();
   }
-  current->definition_ = other;
-
-  if (other->use_list() != NULL) {
-    current->next_use_ = other->use_list();
-    other->use_list()->previous_use_ = current;
+  while (env_use_list_ != NULL) {
+    UseVal* current = env_use_list_;
+    env_use_list_ = env_use_list_->next_use();
+    current->set_definition(other);
+    current->AddToEnvUseList();
   }
-  other->set_use_list(head);
-  set_use_list(NULL);
+}
+
+
+void Definition::ReplaceUsesWith(Value* value) {
+  ASSERT(value != NULL);
+  if (value->IsUse()) {
+    ReplaceUsesWith(value->AsUse()->definition());
+    return;
+  }
+  ASSERT(value->IsConstant());
+  while (input_use_list_ != NULL) {
+    Instruction* instr = input_use_list_->instruction();
+    instr->SetInputAt(input_use_list_->use_index(), value);
+    input_use_list_ = input_use_list_->next_use();
+  }
+  while (env_use_list_ != NULL) {
+    Environment* env = env_use_list_->instruction()->env();
+    ASSERT(env != NULL);
+    env->values()[env_use_list_->use_index()] = value;
+    env_use_list_ = env_use_list_->next_use();
+  }
 }
 
 
@@ -812,9 +811,7 @@ RawAbstractType* EqualityCompareComp::CompileType() const {
       (receiver_class_id() == kNumberCid)) {
     return Type::BoolInterface();
   }
-  const intptr_t dart_object_cid =
-      Class::Handle(Isolate::Current()->object_store()->object_class()).id();
-  if (HasICData() && ic_data()->AllTargetsHaveSameOwner(dart_object_cid)) {
+  if (HasICData() && ic_data()->AllTargetsHaveSameOwner(kInstanceCid)) {
     return Type::BoolInterface();
   }
   return Type::DynamicType();
@@ -828,9 +825,7 @@ intptr_t EqualityCompareComp::ResultCid() const {
     // Known/library equalities that are guaranteed to return Boolean.
     return kBoolCid;
   }
-  const intptr_t dart_object_cid =
-      Class::Handle(Isolate::Current()->object_store()->object_class()).id();
-  if (HasICData() && ic_data()->AllTargetsHaveSameOwner(dart_object_cid)) {
+  if (HasICData() && ic_data()->AllTargetsHaveSameOwner(kInstanceCid)) {
     return kBoolCid;
   }
   return kDynamicCid;
@@ -914,8 +909,7 @@ RawAbstractType* InstanceOfComp::CompileType() const {
 
 
 RawAbstractType* CreateArrayComp::CompileType() const {
-  // TODO(regis): Be more specific.
-  return Type::DynamicType();
+  return type().raw();
 }
 
 
@@ -940,7 +934,15 @@ RawAbstractType* AllocateObjectWithBoundsCheckComp::CompileType() const {
 
 RawAbstractType* LoadVMFieldComp::CompileType() const {
   // Type may be null if the field is a VM field, e.g. context parent.
-  return type().raw();
+  // Keep it as null for debug purposes and do not return Dynamic in production
+  // mode, since misuse of the type would remain undetected.
+  if (type().IsNull()) {
+    return AbstractType::null();
+  }
+  if (FLAG_enable_type_checks) {
+    return type().raw();
+  }
+  return Type::DynamicType();
 }
 
 
@@ -989,40 +991,70 @@ RawAbstractType* CheckStackOverflowComp::CompileType() const {
 }
 
 
-RawAbstractType* BinaryOpComp::CompileType() const {
-  ObjectStore* object_store = Isolate::Current()->object_store();
-  if (operands_type() == kMintOperands) {
-    return object_store->mint_type();
-  }
-  if (op_kind() == Token::kSHL) {
-    return Type::IntInterface();
-  }
-  ASSERT(operands_type() == kSmiOperands);
-  return object_store->smi_type();
+RawAbstractType* BinarySmiOpComp::CompileType() const {
+  return (op_kind() == Token::kSHL) ? Type::IntInterface() : Type::SmiType();
 }
 
 
-intptr_t BinaryOpComp::ResultCid() const {
-  if (operands_type() == kMintOperands) {
-    return kMintCid;
-  }
-  ASSERT(operands_type() == kSmiOperands);
+intptr_t BinarySmiOpComp::ResultCid() const {
   return (op_kind() == Token::kSHL) ? kDynamicCid : kSmiCid;
 }
 
 
-RawAbstractType* DoubleBinaryOpComp::CompileType() const {
+bool BinarySmiOpComp::CanDeoptimize() const {
+  switch (op_kind()) {
+    case Token::kBIT_AND:
+    case Token::kBIT_OR:
+    case Token::kBIT_XOR:
+      return false;
+    default:
+      return true;
+  }
+}
+
+
+RawAbstractType* BinaryMintOpComp::CompileType() const {
+  return Type::MintType();
+}
+
+
+intptr_t BinaryMintOpComp::ResultCid() const {
+  return kMintCid;
+}
+
+
+RawAbstractType* BinaryDoubleOpComp::CompileType() const {
   return Type::DoubleInterface();
 }
 
 
-intptr_t DoubleBinaryOpComp::ResultCid() const {
+intptr_t BinaryDoubleOpComp::ResultCid() const {
   return kDoubleCid;
 }
 
 
+RawAbstractType* UnboxedDoubleBinaryOpComp::CompileType() const {
+  return Type::DoubleInterface();
+}
+
+
+RawAbstractType* UnboxDoubleComp::CompileType() const {
+  return Type::null();
+}
+
+
+intptr_t BoxDoubleComp::ResultCid() const {
+  return kDoubleCid;
+}
+
+
+RawAbstractType* BoxDoubleComp::CompileType() const {
+  return Type::DoubleInterface();
+}
+
+
 RawAbstractType* UnarySmiOpComp::CompileType() const {
-  return Type::IntInterface();
+  return Type::SmiType();
 }
 
 
@@ -1047,32 +1079,64 @@ RawAbstractType* CheckClassComp::CompileType() const {
 }
 
 
+RawAbstractType* CheckSmiComp::CompileType() const {
+  return AbstractType::null();
+}
+
+
+RawAbstractType* CheckEitherNonSmiComp::CompileType() const {
+  return AbstractType::null();
+}
+
+
+// Optimizations that eliminate or simplify individual computations.
+Definition* Computation::TryReplace(BindInstr* instr) const {
+  return instr;
+}
+
+
+Definition* StrictCompareComp::TryReplace(BindInstr* instr) const {
+  UseVal* left_use = left()->AsUse();
+  UseVal* right_use = right()->AsUse();
+  if ((right_use == NULL) || (left_use == NULL)) return instr;
+  if (!right_use->BindsToConstant()) return instr;
+  const Object& right_constant = right_use->BoundConstant();
+  Definition* left = left_use->definition();
+  // TODO(fschneider): Handle other cases: e === false and e !== true/false.
+  // Handles e === true.
+  if ((kind() == Token::kEQ_STRICT) &&
+      (right_constant.raw() == Bool::True()) &&
+      (left_use->ResultCid() == kBoolCid)) {
+    // Remove the constant from the graph.
+    BindInstr* right = right_use->definition()->AsBind();
+    if (right != NULL) {
+      right->RemoveFromGraph();
+    }
+    // Return left subexpression as the replacement for this instruction.
+    return left;
+  }
+  return instr;
+}
+
+
+Definition* CheckSmiComp::TryReplace(BindInstr* instr) const {
+  return (value()->ResultCid() == kSmiCid) ?  NULL : instr;
+}
+
+
+Definition* CheckEitherNonSmiComp::TryReplace(BindInstr* instr) const {
+  if ((left()->ResultCid() == kDoubleCid) ||
+      (right()->ResultCid() == kDoubleCid)) {
+    return NULL;  // Remove from the graph.
+  }
+  return instr;
+}
+
+
 // Shared code generation methods (EmitNativeCode, MakeLocationSummary, and
 // PrepareEntry). Only assembly code that can be shared across all architectures
 // can be used. Machine specific register allocation and code generation
 // is located in intermediate_language_<arch>.cc
-
-
-// True iff. the arguments to a call will be properly pushed and can
-// be popped after the call.
-template <typename T> static bool VerifyCallComputation(T* comp) {
-  // Argument values should be consecutive temps.
-  //
-  // TODO(kmillikin): implement stack height tracking so we can also assert
-  // they are on top of the stack.
-  intptr_t previous = -1;
-  for (int i = 0; i < comp->ArgumentCount(); ++i) {
-    Value* val = comp->ArgumentAt(i);
-    if (!val->IsUse()) return false;
-    intptr_t current = val->AsUse()->definition()->temp_index();
-    if (i != 0) {
-      if (current != (previous + 1)) return false;
-    }
-    previous = current;
-  }
-  return true;
-}
-
 
 #define __ compiler->assembler()->
 
@@ -1147,7 +1211,7 @@ void ThrowInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
                                 token_pos(),
                                 try_index(),
                                 kThrowRuntimeEntry,
-                                locs()->stack_bitmap());
+                                locs());
   __ int3();
 }
 
@@ -1162,7 +1226,7 @@ void ReThrowInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
                                 token_pos(),
                                 try_index(),
                                 kReThrowRuntimeEntry,
-                                locs()->stack_bitmap());
+                                locs());
   __ int3();
 }
 
@@ -1248,31 +1312,6 @@ void StoreContextComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-Definition* StrictCompareComp::TryReplace(BindInstr* instr) {
-  UseVal* left_use = left()->AsUse();
-  UseVal* right_use = right()->AsUse();
-  if ((right_use == NULL) || (left_use == NULL)) return NULL;
-  if (!right_use->BindsToConstant()) return NULL;
-  const Object& right_constant = right_use->BoundConstant();
-  Definition* left = left_use->definition();
-  // TODO(fschneider): Handle other cases: e === false and e !== true/false.
-  // Handles e === true.
-  if ((kind() == Token::kEQ_STRICT) &&
-      (right_constant.raw() == Bool::True()) &&
-      (left_use->ResultCid() == kBoolCid)) {
-    // Remove the constant from the graph.
-    BindInstr* right = right_use->definition()->AsBind();
-    if (right != NULL) {
-      right->set_use_list(NULL);
-      right->RemoveFromGraph();
-    }
-    // Return left subexpression as the replacement for this instruction.
-    return left;
-  }
-  return NULL;
-}
-
-
 LocationSummary* StrictCompareComp::MakeLocationSummary() const {
   return LocationSummary::Make(2,
                                Location::SameAsFirstInput(),
@@ -1314,7 +1353,7 @@ void ClosureCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
                          try_index(),
                          &StubCode::CallClosureFunctionLabel(),
                          PcDescriptors::kOther,
-                         locs()->stack_bitmap());
+                         locs());
   __ Drop(argument_count);
 }
 
@@ -1336,7 +1375,7 @@ void InstanceCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
                                  ArgumentCount(),
                                  argument_names(),
                                  checked_argument_count(),
-                                 locs()->stack_bitmap());
+                                 locs());
 }
 
 
@@ -1357,7 +1396,7 @@ void StaticCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
                                function(),
                                ArgumentCount(),
                                argument_names(),
-                               locs()->stack_bitmap());
+                               locs());
   __ Bind(&done);
 }
 
@@ -1369,7 +1408,7 @@ void AssertAssignableComp::EmitNativeCode(FlowGraphCompiler* compiler) {
                                        try_index(),
                                        dst_type(),
                                        dst_name(),
-                                       locs()->stack_bitmap());
+                                       locs());
   }
   ASSERT(locs()->in(0).reg() == locs()->out().reg());
 }
@@ -1463,7 +1502,7 @@ void AllocateObjectComp::EmitNativeCode(FlowGraphCompiler* compiler) {
                          try_index(),
                          &label,
                          PcDescriptors::kOther,
-                         locs()->stack_bitmap());
+                         locs());
   __ Drop(ArgumentCount());  // Discard arguments.
 }
 
@@ -1480,7 +1519,7 @@ void CreateClosureComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   const ExternalLabel label(closure_function.ToCString(), stub.EntryPoint());
   compiler->GenerateCall(token_pos(), try_index(), &label,
                          PcDescriptors::kOther,
-                         locs()->stack_bitmap());
+                         locs());
   __ Drop(2);  // Discard type arguments and receiver.
 }
 
@@ -1525,6 +1564,20 @@ Environment::Environment(const GrowableArray<Definition*>& definitions,
   for (intptr_t i = 0; i < definitions.length(); ++i) {
     values_.Add(UseDefinition(definitions[i]));
   }
+}
+
+
+Environment* Environment::Copy() const {
+  Environment* copy = new Environment(values().length(),
+                                      fixed_parameter_count());
+  GrowableArray<Value*>* values_copy = copy->values_ptr();
+  for (intptr_t i = 0; i < values().length(); ++i) {
+    Value* val = values()[i];
+    values_copy->Add(val->IsUse()
+                     ? UseDefinition(values()[i]->AsUse()->definition())
+                     : val);
+  }
+  return copy;
 }
 
 

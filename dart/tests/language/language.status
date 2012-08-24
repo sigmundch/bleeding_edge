@@ -16,6 +16,7 @@
 # 3) Update the language/src directory with the updated test.
 
 [ $compiler == none ]
+call_nonexistent_constructor_test: Fail # Issue 3801
 gc_test: Fail # Issue 1487
 field_override_test/none: Fail  # Issue 742: field shadowing now allowed
 field_override_test/01: Fail    # Issue 742: field shadowing now allowed
@@ -80,6 +81,8 @@ final_syntax_test/*: Skip  # can't handle base case
 getter_no_setter_test/01: Fail # Fails to detect compile-time error.
 instance_call_wrong_argument_count_negative_test: Fail # Runtime only test, rewrite as multitest
 interface_factory1_negative_test: Fail # language change 1031
+interface_constants_test: Fail # Issue 3549
+ct_const_test: Fail # Issue 3549
 is_not_class2_negative_test: Fail #  Runtime only test, rewrite as multitest
 library2_negative_test: Fail # still a valid test? Issue 3649
 library4_negative_test: Fail # still a valid test? Issue 3530
@@ -93,6 +96,7 @@ new_expression_type_args_frog_test/02: Fail # language change 1031
 no_such_method_negative_test: Fail # Runtime only test, rewrite as multiteste
 override_field_test/03: Fail # still a valid test? Issue 3894
 override_field_test/04: Fail # still a valid test? Issue 3656
+parameter_initializer6_negative_test: Fail # language change 4288
 prefix1_negative_test : Fail # language change 1031
 prefix4_negative_test : Fail # language change 1031
 prefix5_negative_test : Fail # language change 1031
@@ -137,7 +141,7 @@ string_escape1_negative_test: Skip
 [ $runtime == opera ]
 *: Skip
 
-[ $runtime == ie && ($system == linux || $system == mac) ]
+[ $runtime == ie && ($system == linux || $system == macos) ]
 *: Skip
 
 [ $runtime == safari && ($system == linux || $system == windows) ]
@@ -153,10 +157,7 @@ string_escape1_negative_test: Skip
 *: Skip
 
 [ $compiler == dart2dart ]
-implicit_this_test/03: Fail # TODO(ahe): Handle abstract getters.
-implicit_this_test/04: Fail # TODO(ahe): Handle abstract getters.
-property_field_override_test: Fail # TODO(ahe): Handle abstract getters.
-
+call_nonexistent_constructor_test: Fail # Issue 1031
 const_var_test: Fail # Map literals take 2 type arguments.
 map_literal3_test: Fail # Map literals take 2 type arguments.
 class_cycle_negative_test: Fail, OK # Bad test: assumes eager loading.
@@ -215,6 +216,8 @@ static_top_level_test/02: Fail
 static_top_level_test/03: Fail
 static_top_level_test/04: Fail
 static_top_level_test/05: Fail
+static_top_level_test/06: Fail
+static_top_level_test/07: Fail
 # Bug in dart2js frontend: cannot find the constructor.
 default_factory_library_test: Fail
 # Bug in dart2js parser: it happily parses 1is int; variable declaration.

@@ -6,13 +6,16 @@
 #library("compiler_helper");
 
 #import("dart:uri");
-#import("../../../lib/compiler/implementation/leg.dart", prefix: "leg");
-#import("../../../lib/compiler/implementation/js_backend/js_backend.dart", prefix: "js");
+
 #import("../../../lib/compiler/implementation/elements/elements.dart", prefix: "lego");
-#import('../../../lib/compiler/implementation/source_file.dart');
+#import("../../../lib/compiler/implementation/js_backend/js_backend.dart", prefix: "js");
+#import("../../../lib/compiler/implementation/leg.dart", prefix: "leg");
 #import("../../../lib/compiler/implementation/ssa/ssa.dart", prefix: "ssa");
-#import("parser_helper.dart");
+#import("../../../lib/compiler/implementation/util/util.dart");
+#import('../../../lib/compiler/implementation/source_file.dart');
+
 #import("mock_compiler.dart");
+#import("parser_helper.dart");
 
 String compile(String code, [String entry = 'main']) {
   MockCompiler compiler = new MockCompiler();
@@ -41,7 +44,17 @@ String compileAll(String code) {
   return compiler.assembledCode;
 }
 
-lego.Element findElement(var compiler, String name) {
+Dynamic compileAndCheck(String code,
+                        String name,
+                        check(MockCompiler compiler, lego.Element element)) {
+  Uri uri = new Uri.fromComponents(scheme: 'source');
+  MockCompiler compiler = compilerFor(code, uri);
+  compiler.runCompiler(uri);
+  lego.Element element = findElement(compiler, name);
+  return check(compiler, element);
+}
+
+lego.Element findElement(compiler, String name) {
   var element = compiler.mainApp.find(buildSourceString(name));
   Expect.isNotNull(element, 'Could not locate $name.');
   return element;
@@ -76,3 +89,5 @@ void compileAndDoNotMatch(String code, String entry, RegExp regexp) {
   Expect.isFalse(regexp.hasMatch(generated),
                  '"$generated" has a match in /$regexp/');
 }
+
+int length(Link link) => link.isEmpty() ? 0 : length(link.tail) + 1;

@@ -1,16 +1,18 @@
 #library("dom_modify_html");
 #import("dart:html");
 #import("dart:json");
+#import("dart:math", prefix: "Math");
 #source("Common.dart");
 #source("RunnerSuite.dart");
 
 void main() {
   final int num = 400;
+  var random = new Math.Random();
 
   String str = 'null';
   // Very ugly way to build up the string, but let's mimic JS version as much as possible.
   for (int i = 0; i < 1024; i++) {
-    str = "$str${new String.fromCharCodes([((25 * Math.random()) + 97).toInt()])}";
+    str = "$str${new String.fromCharCodes([((25 * random.nextDouble()) + 97).toInt()])}";
   }
 
   List<Node> elems = <Node>[];

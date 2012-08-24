@@ -13,11 +13,15 @@
 #import('dart:io');
 #import('dart:isolate');
 #import('dart:json');
+#import('dart:math');
 #import('dart:uri');
 
 #import('../../../pkg/unittest/unittest.dart');
 #import('../../lib/file_system.dart', prefix: 'fs');
+#import('../../pub/git_source.dart');
 #import('../../pub/io.dart');
+#import('../../pub/repo_source.dart');
+#import('../../pub/sdk_source.dart');
 #import('../../pub/utils.dart');
 #import('../../pub/yaml/yaml.dart');
 
@@ -56,20 +60,35 @@ TarFileDescriptor tar(Pattern name, [List<Descriptor> contents]) =>
  */
 var _server;
 
+/** The cached value for [_portCompleter]. */
+Completer<int> _portCompleterCache;
+
+/** The completer for [port]. */
+Completer<int> get _portCompleter {
+  if (_portCompleterCache != null) return _portCompleterCache;
+  _portCompleterCache = new Completer<int>();
+  _scheduleCleanup((_) {
+    _portCompleterCache = null;
+  });
+  return _portCompleterCache;
+}
+
+/**
+ * A future that will complete to the port used for the current server.
+ */
+Future<int> get port => _portCompleter.future;
+
 /**
  * Creates an HTTP server to serve [contents] as static files. This server will
  * exist only for the duration of the pub run.
  *
  * Subsequent calls to [serve] will replace the previous server.
  */
-void serve(String host, int port, [List<Descriptor> contents]) {
+void serve([List<Descriptor> contents]) {
   var baseDir = dir("serve-dir", contents);
-  if (host == 'localhost') {
-    host = '127.0.0.1';
-  }
 
   _schedule((_) {
-    _closeServer().transform((_) {
+    return _closeServer().transform((_) {
       _server = new HttpServer();
       _server.defaultRequestHandler = (request, response) {
         var path = request.uri.replaceFirst("/", "").split("/");
@@ -99,7 +118,8 @@ void serve(String host, int port, [List<Descriptor> contents]) {
           response.outputStream.close();
         });
       };
-      _server.listen(host, port);
+      _server.listen("127.0.0.1", 0);
+      _portCompleter.complete(_server.port);
       _scheduleCleanup((_) => _closeServer());
       return null;
     });
@@ -114,6 +134,7 @@ Future _closeServer() {
   if (_server == null) return new Future.immediate(null);
   _server.close();
   _server = null;
+  _portCompleterCache = null;
   // TODO(nweiz): Remove this once issue 4155 is fixed. Pumping the event loop
   // *seems* to be enough to ensure that the server is actually closed, but I'm
   // putting this at 10ms to be safe.
@@ -121,38 +142,233 @@ Future _closeServer() {
 }
 
 /**
- * Creates an HTTP server that replicates the structure of pub.dartlang.org.
- * [pubspecs] is a list of YAML-format pubspecs representing the packages to
- * serve.
+ * The [DirectoryDescriptor] describing the server layout of packages that are
+ * being served via [servePackages]. This is `null` if [servePackages] has not
+ * yet been called for this test.
  */
-void servePackages(String host, int port, List<String> pubspecs) {
-  var packages = <String, Map<String, String>>{};
-  pubspecs.forEach((spec) {
-    var parsed = loadYaml(spec);
-    var name = parsed['name'];
-    var version = parsed['version'];
-    packages.putIfAbsent(name, () => <String, String>{})[version] = spec;
-  });
+DirectoryDescriptor _servedPackageDir;
 
-  serve(host, port, [
-    dir('packages', flatten(packages.getKeys().map((name) {
-      return [
-        file('$name.json',
-          JSON.stringify({'versions': packages[name].getKeys()})),
-        dir(name, [
-          dir('versions', flatten(packages[name].getKeys().map((version) {
-            return [
-              file('$version.yaml', packages[name][version]),
-              tar('$version.tar.gz', [
-                file('pubspec.yaml', packages[name][version]),
-                file('$name.dart', 'main() => print("$name $version");')
-              ])
-            ];
-          })))
-        ])
-      ];
-    })))
+/**
+ * A map from package names to version numbers to YAML-serialized pubspecs for
+ * those packages. This represents the packages currently being served by
+ * [servePackages], and is `null` if [servePackages] has not yet been called for
+ * this test.
+ */
+Map<String, Map<String, String>> _servedPackages;
+
+/**
+ * Creates an HTTP server that replicates the structure of pub.dartlang.org.
+ * [pubspecs] is a list of unserialized pubspecs representing the packages to
+ * serve.
+ *
+ * Subsequent calls to [servePackages] will add to the set of packages that are
+ * being served. Previous packages will continue to be served.
+ */
+void servePackages(List<Map> pubspecs) {
+  if (_servedPackages == null || _servedPackageDir == null) {
+    _servedPackages = <String, Map<String, String>>{};
+    _servedPackageDir = dir('packages', []);
+    serve([_servedPackageDir]);
+
+    _scheduleCleanup((_) {
+      _servedPackages = null;
+      _servedPackageDir = null;
+    });
+  }
+
+  _schedule((_) {
+    return _awaitObject(pubspecs).transform((resolvedPubspecs) {
+      for (var spec in resolvedPubspecs) {
+        var name = spec['name'];
+        var version = spec['version'];
+        var versions = _servedPackages.putIfAbsent(
+            name, () => <String, String>{});
+        versions[version] = yaml(spec);
+      }
+
+      _servedPackageDir.contents.clear();
+      for (var name in _servedPackages.getKeys()) {
+        var versions = _servedPackages[name].getKeys();
+        _servedPackageDir.contents.addAll([
+          file('$name.json',
+              JSON.stringify({'versions': versions})),
+          dir(name, [
+            dir('versions', flatten(versions.map((version) {
+              return [
+                file('$version.yaml', _servedPackages[name][version]),
+                tar('$version.tar.gz', [
+                  file('pubspec.yaml', _servedPackages[name][version]),
+                  file('$name.dart', 'main() => print("$name $version");')
+                ])
+              ];
+            })))
+          ])
+        ]);
+      }
+    });
+  });
+}
+
+/** Converts [value] into a YAML string. */
+String yaml(value) => JSON.stringify(value);
+
+/**
+ * Describes a file named `pubspec.yaml` with the given YAML-serialized
+ * [contents], which should be a serializable object.
+ *
+ * [contents] may contain [Future]s that resolve to serializable objects, which
+ * may in turn contain [Future]s recursively.
+ */
+Descriptor pubspec(Map contents) {
+  return async(_awaitObject(contents).transform((resolvedContents) =>
+      file("pubspec.yaml", yaml(resolvedContents))));
+}
+
+/**
+ * Describes a file named `pubspec.yaml` for an application package with the
+ * given [dependencies].
+ */
+Descriptor appPubspec(List dependencies) {
+  return pubspec({
+    "name": "myapp",
+    "dependencies": _dependencyListToMap(dependencies)
+  });
+}
+
+/**
+ * Describes a file named `pubspec.yaml` for a library package with the given
+ * [name], [version], and [dependencies].
+ */
+Descriptor libPubspec(String name, String version, [List dependencies]) =>
+  pubspec(package(name, version, dependencies));
+
+/**
+ * Describes a map representing a library package with the given [name],
+ * [version], and [dependencies].
+ */
+Map package(String name, String version, [List dependencies]) {
+  var package = {"name": name, "version": version};
+  if (dependencies != null) {
+    package["dependencies"] = _dependencyListToMap(dependencies);
+  }
+  return package;
+}
+
+/**
+ * Describes a map representing a dependency on a package in the package
+ * repository.
+ */
+Map dependency(String name, [String versionConstraint]) {
+  var url = port.transform((p) => "http://localhost:$p");
+  var dependency = {"repo": {"name": name, "url": url}};
+  if (versionConstraint != null) dependency["version"] = versionConstraint;
+  return dependency;
+}
+
+/**
+ * Describes a directory for a package installed from the mock package repo.
+ * This directory is of the form found in the `packages/` directory.
+ */
+DirectoryDescriptor packageDir(String name, String version) {
+  return dir(name, [
+    file("$name.dart", 'main() => print("$name $version");')
   ]);
+}
+
+/**
+ * Describes a directory for a package installed from the mock package server.
+ * This directory is of the form found in the global package cache.
+ */
+DirectoryDescriptor packageCacheDir(String name, String version) {
+  return dir("$name-$version", [
+    file("$name.dart", 'main() => print("$name $version");')
+  ]);
+}
+
+/**
+ * Describes a directory for a Git package. This directory is of the form found
+ * in the global package cache.
+ */
+DirectoryDescriptor gitPackageCacheDir(String name, [int modifier]) {
+  var value = name;
+  if (modifier != null) value = "$name $modifier";
+  return dir(new RegExp("$name${@'-[a-f0-9]+'}"), [
+    file('$name.dart', 'main() => "$value";')
+  ]);
+}
+
+/**
+ * Describes the `packages/` directory containing all the given [packages],
+ * which should be name/version pairs. The packages will be validated against
+ * the format produced by the mock package server.
+ */
+DirectoryDescriptor packagesDir(Map<String, String> packages) {
+  var contents = <Descriptor>[];
+  packages.forEach((name, version) {
+    contents.add(packageDir(name, version));
+  });
+  return dir(packagesPath, contents);
+}
+
+/**
+ * Describes the global package cache directory containing all the given
+ * [packages], which should be name/version pairs. The packages will be
+ * validated against the format produced by the mock package server.
+ *
+ * A package's value may also be a list of versions, in which case all versions
+ * are expected to be installed.
+ */
+DirectoryDescriptor cacheDir(Map packages) {
+  var contents = <Descriptor>[];
+  packages.forEach((name, versions) {
+    if (versions is! List) versions = [versions];
+    for (var version in versions) {
+      contents.add(packageCacheDir(name, version));
+    }
+  });
+  return dir(cachePath, [
+    dir('repo', [
+      async(port.transform((p) => dir('localhost%58$p', contents)))
+    ])
+  ]);
+}
+
+/**
+ * Describes the application directory, containing only a pubspec specifying the
+ * given [dependencies].
+ */
+DirectoryDescriptor appDir(List dependencies) =>
+  dir(appPath, [appPubspec(dependencies)]);
+
+/**
+ * Converts a list of dependencies as passed to [package] into a hash as used in
+ * a pubspec.
+ */
+Future<Map> _dependencyListToMap(List<Map> dependencies) {
+  return _awaitObject(dependencies).transform((resolvedDependencies) {
+    var result = <String, Map>{};
+    for (var dependency in resolvedDependencies) {
+      var keys = dependency.getKeys().filter((key) => key != "version");
+      var sourceName = only(keys);
+      var source;
+      switch (sourceName) {
+      case "git":
+        source = new GitSource();
+        break;
+      case "repo":
+        source = new RepoSource();
+        break;
+      case "sdk":
+        source = new SdkSource('');
+        break;
+      default:
+        throw 'Unknown source "$sourceName"';
+      }
+
+      result[source.packageName(dependency[sourceName])] = dependency;
+    }
+    return result;
+  }); 
 }
 
 /**
@@ -227,14 +443,13 @@ void run() {
     // If an error occurs during testing, delete the sandbox, throw the error so
     // that the test framework sees it, then finally call asyncDone so that the
     // test framework knows we're done doing asynchronous stuff.
-    cleanup().then((_) {
-      registerException(error, future.stackTrace);
-      asyncDone();
-    });
+    cleanup().then((_) => registerException(error, future.stackTrace));
     return true;
   });
 
-  future.chain((_) => cleanup()).then((_) => asyncDone());
+  future.chain((_) => cleanup()).then((_) {
+    asyncDone();
+  });
 }
 
 /**
@@ -364,7 +579,7 @@ void _validateOutputString(String expectedText, List<String> actual) {
   // to expect zero lines of output, not a single empty line.
   expected.removeLast();
 
-  final length = Math.min(expected.length, actual.length);
+  final length = min(expected.length, actual.length);
   for (var i = 0; i < length; i++) {
     if (expected[i].trim() != actual[i].trim()) {
       Expect.fail(
@@ -455,7 +670,7 @@ class Descriptor {
   /**
    * Asserts that the name of the descriptor is a [String] and returns it.
    */
-  String get _stringName() {
+  String get _stringName {
     if (name is String) return name;
     throw 'Pattern $name must be a string.';
   }
@@ -483,24 +698,36 @@ class Descriptor {
       if (matches.length == 1) return validate(matches[0]);
 
       var failures = [];
+      var successes = 0;
       var completer = new Completer();
+      checkComplete() {
+        if (failures.length + successes != matches.length) return;
+        if (successes > 0) {
+          completer.complete(null);
+          return;
+        }
+
+        var error = new StringBuffer();
+        error.add("No files named $name in $dir were valid:\n");
+        for (var failure in failures) {
+          error.add("  ").add(failure).add("\n");
+        }
+        completer.completeException(new ExpectException(error.toString()));
+      }
+
       for (var match in matches) {
         var future = validate(match);
 
         future.handleException((e) {
           failures.add(e);
-          if (failures.length != matches.length) return true;
-
-          var error = new StringBuffer();
-          error.add("No files named $name in $dir were valid:\n");
-          for (var failure in failures) {
-            error.add("  ").add(failure).add("\n");
-          }
-          completer.completeException(new ExpectException(error.toString()));
+          checkComplete();
           return true;
         });
 
-        future.then(completer.complete);
+        future.then((_) {
+          successes++;
+          checkComplete();
+        });
       }
       return completer.future;
     });
@@ -584,23 +811,15 @@ class DirectoryDescriptor extends Descriptor {
    * the creation is done.
    */
   Future<Directory> create(parentDir) {
-    final completer = new Completer<Directory>();
-
     // Create the directory.
-    ensureDir(join(parentDir, _stringName)).then((dir) {
-      if (contents == null) {
-        completer.complete(dir);
-      } else {
-        // Recursively create all of its children.
-        final childFutures = contents.map((child) => child.create(dir));
-        Futures.wait(childFutures).then((_) {
-          // Only complete once all of the children have been created too.
-          completer.complete(dir);
-        });
-      }
-    });
+    return ensureDir(join(parentDir, _stringName)).chain((dir) {
+      if (contents == null) return new Future<Directory>.immediate(dir);
 
-    return completer.future;
+      // Recursively create all of its children.
+      final childFutures = contents.map((child) => child.create(dir));
+      // Only complete once all of the children have been created too.
+      return Futures.wait(childFutures).transform((_) => dir);
+    });
   }
 
   /**
@@ -800,6 +1019,31 @@ class TarFileDescriptor extends Descriptor {
     });
     return sinkStream;
   }
+}
+
+/**
+ * Takes a simple data structure (composed of [Map]s, [List]s, scalar objects,
+ * and [Future]s) and recursively resolves all the [Future]s contained within.
+ * Completes with the fully resolved structure.
+ */
+Future _awaitObject(object) {
+  // Unroll nested futures.
+  if (object is Future) return object.chain(_awaitObject);
+  if (object is Collection) return Futures.wait(object.map(_awaitObject));
+  if (object is! Map) return new Future.immediate(object);
+
+  var pairs = <Future<Pair>>[];
+  object.forEach((key, value) {
+    pairs.add(_awaitObject(value)
+        .transform((resolved) => new Pair(key, resolved)));
+  });
+  return Futures.wait(pairs).transform((resolvedPairs) {
+    var map = {};
+    for (var pair in resolvedPairs) {
+      map[pair.first] = pair.last;
+    }
+    return map;
+  });
 }
 
 /**

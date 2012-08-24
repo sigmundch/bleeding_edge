@@ -2662,6 +2662,10 @@
             sequence="M3+ARROW_LEFT"
             schemeId="com.google.dart.tools.dartAcceleratorConfiguration" />
       <key
+            commandId="com.google.dart.tools.ui.edit.text.dart.quick.format"
+            sequence="M1+M2+F"
+            schemeId="com.google.dart.tools.dartAcceleratorConfiguration" />
+      <key
             platform="carbon"
             sequence="M3+ARROW_LEFT"
             commandId=""
@@ -3314,7 +3318,7 @@
             locationURI="popup:com.google.dart.tools.ui.FileExplorer?after=additions">
          <command
                commandId="com.google.dart.tools.ui.commands.pubInstall"
-               label="Pub install"
+               label="Pub Install"
                style="push"
                tooltip="Run pub install">
                  <visibleWhen

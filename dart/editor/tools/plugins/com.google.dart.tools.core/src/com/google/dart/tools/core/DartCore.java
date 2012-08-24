@@ -14,7 +14,6 @@
 package com.google.dart.tools.core;
 
 import com.google.dart.tools.core.analysis.index.AnalysisIndexManager;
-import com.google.dart.tools.core.frog.FrogManager;
 import com.google.dart.tools.core.internal.MessageConsoleImpl;
 import com.google.dart.tools.core.internal.builder.RootArtifactProvider;
 import com.google.dart.tools.core.internal.directoryset.DirectorySetManager;
@@ -169,7 +168,12 @@ public class DartCore extends Plugin implements DartSdkListener {
   /**
    * Name of pubspec file
    */
-  private static final String PUBSPEC_FILE_NAME = "pubspec.yaml";
+  public static final String PUBSPEC_FILE_NAME = "pubspec.yaml";
+
+  /**
+   * The name of the build.dart special file.
+   */
+  public static final String BUILD_DART_FILE_NAME = "build.dart";
 
   /**
    * The shared message console instance.
@@ -231,6 +235,14 @@ public class DartCore extends Plugin implements DartSdkListener {
    */
   public static void addElementChangedListener(ElementChangedListener listener, int eventMask) {
     DartModelManager.getInstance().addElementChangedListener(listener, eventMask);
+  }
+
+  /**
+   * Return true if directory contains a "packages" directory that is installed by pub
+   */
+  public static boolean containsPackagesDirectory(File file) {
+    File pkgsDir = new File(file, PACKAGES_DIRECTORY_NAME);
+    return pkgsDir.isDirectory() && checkForPubspec(pkgsDir);
   }
 
   /**
@@ -903,10 +915,10 @@ public class DartCore extends Plugin implements DartSdkListener {
   }
 
   /**
-   * Use frog if sdk is present
+   * Use dart2js if the SDK is present.
    */
-  public boolean getCompileWithFrog() {
-    return DartSdk.isInstalled();
+  public boolean getCompileWithDart2JS() {
+    return DartSdkManager.getManager().hasSdk();
   }
 
   /**
@@ -964,7 +976,6 @@ public class DartCore extends Plugin implements DartSdkListener {
       AnalysisIndexManager.stopServerAndIndexing();
       DartModelManager.shutdown();
       RootArtifactProvider.shutdown();
-      FrogManager.shutdown();
 
       if (DartCoreDebug.METRICS) {
         StringWriter writer = new StringWriter();

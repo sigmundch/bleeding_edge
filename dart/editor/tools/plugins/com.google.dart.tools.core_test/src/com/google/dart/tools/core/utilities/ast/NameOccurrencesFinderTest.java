@@ -34,6 +34,7 @@ public class NameOccurrencesFinderTest extends TestCase {
     test(
         compose(
             "#import('dart:html');",
+            "#import('dart:math', prefix: 'Math');",
             "main() {",
             "  new Sunfl!2ower();",
             "}",

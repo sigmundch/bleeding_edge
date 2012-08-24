@@ -374,6 +374,19 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
         libraryResult.getErrors(),
         errEx(TypeErrorCode.CASE_EXPRESSIONS_SHOULD_BE_SAME_TYPE, 5, 10, 3));
   }
+  
+  public void test_switchExpression_case_finalLocalVariable() throws Exception {
+    AnalyzeLibraryResult libraryResult = analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "foo(var v) {",
+        "  final int VALUE = 0;",
+        "  switch (v) {",
+        "    case VALUE: break;",
+        "  }",
+        "}",
+        "");
+    assertErrors(libraryResult.getErrors());
+  }
 
   /**
    * Language specification requires that factory should be declared in class. However declaring
@@ -1946,7 +1959,6 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
         "  var v5 = 1.0 + 2.0;",
         "  var v6 = new Map<String, int>();",
         "  var v7 = new Map().length;",
-        "  var v8 = Math.random();",
         "}",
         "");
     // prepare expected results
@@ -1959,7 +1971,6 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     expectedList.add("double");
     expectedList.add("Map<String, int>");
     expectedList.add("int");
-    expectedList.add("double");
     // check each "v" type
     for (int i = 0; i < expectedList.size(); i++) {
       String expectedTypeString = expectedList.get(i);
@@ -1967,26 +1978,156 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     }
   }
 
-  public void test_typesPropagation_secondAssign_sameType() throws Exception {
+  public void test_typesPropagation_multiAssign() throws Exception {
     analyzeLibrary(
         "// filler filler filler filler filler filler filler filler filler filler",
         "f() {",
         "  var v = true;",
-        "  v = false;",
+        "  var v1 = v;",
+        "  v = 0;",
+        "  var v2 = v;",
         "}",
         "");
-    assertInferredElementTypeString(testUnit, "v", "bool");
+    assertInferredElementTypeString(testUnit, "v1", "bool");
+    assertInferredElementTypeString(testUnit, "v2", "int");
   }
 
-  public void test_typesPropagation_secondAssign_differentType() throws Exception {
+  public void test_typesPropagation_multiAssign_noInitialValue() throws Exception {
+    analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "f() {",
+        "  var v;",
+        "  v = 0;",
+        "  var v1 = v;",
+        "}",
+        "");
+    assertInferredElementTypeString(testUnit, "v1", "int");
+  }
+
+  public void test_typesPropagation_multiAssign_IfThen() throws Exception {
     analyzeLibrary(
         "// filler filler filler filler filler filler filler filler filler filler",
         "f() {",
         "  var v = true;",
-        "  v = 0;",
+        "  var v1 = v;",
+        "  if (true) {",
+        "    v = 0;",
+        "    var v2 = v;",
+        "  }",
+        "  var v3 = v;",
         "}",
         "");
-    assertInferredElementTypeString(testUnit, "v", "<dynamic>");
+    assertInferredElementTypeString(testUnit, "v1", "bool");
+    assertInferredElementTypeString(testUnit, "v2", "int");
+    assertInferredElementTypeString(testUnit, "v3", "Object");
+  }
+
+  public void test_typesPropagation_multiAssign_IfThenElse() throws Exception {
+    analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "f() {",
+        "  var a = true;",
+        "  var b = true;",
+        "  var c = true;",
+        "  var d = true;",
+        "  if (true) {",
+        "    a = 0;",
+        "    b = 0;",
+        "  } else {",
+        "    a = 0;",
+        "    c = 0;",
+        "  }",
+        "  var a1 = a;",
+        "  var b1 = b;",
+        "  var c1 = c;",
+        "  var d1 = d;",
+        "}",
+        "");
+    assertInferredElementTypeString(testUnit, "a1", "int");
+    assertInferredElementTypeString(testUnit, "b1", "Object");
+    assertInferredElementTypeString(testUnit, "c1", "Object");
+    assertInferredElementTypeString(testUnit, "d1", "bool");
+  }
+
+  public void test_typesPropagation_multiAssign_While() throws Exception {
+    analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "f() {",
+        "  var v = true;",
+        "  var v1 = v;",
+        "  while (true) {",
+        "    var v2 = v;",
+        "    v = 0;",
+        "    var v3 = v;",
+        "  }",
+        "  var v4 = v;",
+        "}",
+        "");
+    assertInferredElementTypeString(testUnit, "v1", "bool");
+    assertInferredElementTypeString(testUnit, "v2", "bool");
+    assertInferredElementTypeString(testUnit, "v3", "int");
+    assertInferredElementTypeString(testUnit, "v4", "Object");
+  }
+  
+  public void test_typesPropagation_multiAssign_DoWhile() throws Exception {
+    analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "f() {",
+        "  var v = true;",
+        "  var v1 = v;",
+        "  do {",
+        "    var v2 = v;",
+        "    v = 0;",
+        "    var v3 = v;",
+        "  } while (true);",
+        "  var v4 = v;",
+        "}",
+        "");
+    assertInferredElementTypeString(testUnit, "v1", "bool");
+    assertInferredElementTypeString(testUnit, "v2", "bool");
+    assertInferredElementTypeString(testUnit, "v3", "int");
+    assertInferredElementTypeString(testUnit, "v4", "int");
+  }
+
+  public void test_typesPropagation_multiAssign_For() throws Exception {
+    analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "f() {",
+        "  var v = true;",
+        "  var v1 = v;",
+        "  for (int i = 0; i < 10; i++) {",
+        "    var v2 = v;",
+        "    v = 0;",
+        "    var v3 = v;",
+        "  }",
+        "  var v4 = v;",
+        "}",
+        "");
+    assertInferredElementTypeString(testUnit, "v1", "bool");
+    assertInferredElementTypeString(testUnit, "v2", "bool");
+    assertInferredElementTypeString(testUnit, "v3", "int");
+    assertInferredElementTypeString(testUnit, "v4", "Object");
+  }
+
+  public void test_typesPropagation_multiAssign_ForIn() throws Exception {
+    analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "f() {",
+        "  var v = true;",
+        "  var v1 = v;",
+        "  List<String> names = [];",
+        "  for (var name in names) {",
+        "    var v2 = v;",
+        "    v = 0;",
+        "    var v3 = v;",
+        "  }",
+        "  var v4 = v;",
+        "}",
+        "");
+    assertInferredElementTypeString(testUnit, "v1", "bool");
+    assertInferredElementTypeString(testUnit, "v2", "bool");
+    assertInferredElementTypeString(testUnit, "v3", "int");
+    assertInferredElementTypeString(testUnit, "v4", "Object");
   }
 
   /**
@@ -2371,19 +2512,47 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     // we exited "if" Block, so "assert" may be was not executed, so we don't know type
     assertInferredElementTypeString(testUnit, "v5", "<dynamic>");
   }
+  
+  /**
+   * <p>
+   * http://code.google.com/p/dart/issues/detail?id=4410
+   */
+  public void test_typesPropagation_assertIsType_twoVariables() throws Exception {
+    analyzeLibrary(
+        "f(a, b) {",
+        "  while (true) {",
+        "    var a1 = a;",
+        "    var b1 = b;",
+        "    assert(a is String);",
+        "    assert(b is String);",
+        "    var a2 = a;",
+        "    var b2 = b;",
+        "  }",
+        "  var a3 = a;",
+        "  var b3 = b;",
+        "}",
+        "");
+    // we don't know type initially
+    assertInferredElementTypeString(testUnit, "a1", "<dynamic>");
+    assertInferredElementTypeString(testUnit, "b1", "<dynamic>");
+    // after "assert" all next statements know type
+    assertInferredElementTypeString(testUnit, "a2", "String");
+    assertInferredElementTypeString(testUnit, "b2", "String");
+    // we exited "if" Block, so "assert" may be was not executed, so we don't know type
+    assertInferredElementTypeString(testUnit, "a3", "<dynamic>");
+    assertInferredElementTypeString(testUnit, "b3", "<dynamic>");
+  }
 
   public void test_typesPropagation_field_inClass_final() throws Exception {
     analyzeLibrary(
         "// filler filler filler filler filler filler filler filler filler filler",
         "class A {",
         "  final v1 = 123;",
-        "  final v2 = Math.random();",
-        "  final v3 = 1 + 2.0;",
+        "  final v2 = 1 + 2.0;",
         "}",
         "");
     assertInferredElementTypeString(testUnit, "v1", "int");
     assertInferredElementTypeString(testUnit, "v2", "double");
-    assertInferredElementTypeString(testUnit, "v3", "double");
   }
 
   public void test_typesPropagation_field_inClass_const() throws Exception {
@@ -2416,12 +2585,10 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     analyzeLibrary(
         "// filler filler filler filler filler filler filler filler filler filler",
         "final v1 = 123;",
-        "final v2 = Math.random();",
-        "final v3 = 1 + 2.0;",
+        "final v2 = 1 + 2.0;",
         "");
     assertInferredElementTypeString(testUnit, "v1", "int");
     assertInferredElementTypeString(testUnit, "v2", "double");
-    assertInferredElementTypeString(testUnit, "v3", "double");
   }
 
   public void test_typesPropagation_field_topLevel_const() throws Exception {
@@ -2565,6 +2732,49 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
         "}",
         "");
     assertInferredElementTypeString(testUnit, "v", "Event");
+  }
+  
+  /**
+   * Helpful (but not perfectly satisfying Specification) type of "conditional" is intersection of
+   * then/else types, not just their "least upper bounds". And this corresponds runtime behavior.
+   */
+  public void test_typesPropagation_conditional() throws Exception {
+    AnalyzeLibraryResult libraryResult = analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "interface I1 {",
+        "  f1();",
+        "}",
+        "interface I2 {",
+        "  f2();",
+        "}",
+        "class A implements I1, I2 {",
+        "  f1() => 11;",
+        "  f2() => 12;",
+        "}",
+        "class B implements I1, I2 {",
+        "  f1() => 21;",
+        "  f2() => 22;",
+        "}",
+        "main() {",
+        "  var v = true ? new A() : new B();",
+        "  v.f1();",
+        "  v.f2();",
+        "}",
+        "");
+    // no errors, because both f1() and f2() invocations were resolved
+    assertErrors(libraryResult.getErrors());
+    // v.f1() was resolved
+    {
+      DartExpression expression = findExpression(testUnit, "v.f1()");
+      assertNotNull(expression);
+      assertNotNull(expression.getElement());
+    }
+    // v.f2() was resolved
+    {
+      DartExpression expression = findExpression(testUnit, "v.f1()");
+      assertNotNull(expression);
+      assertNotNull(expression.getElement());
+    }
   }
 
   public void test_getType_binaryExpression() throws Exception {

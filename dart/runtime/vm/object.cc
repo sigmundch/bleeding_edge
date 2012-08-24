@@ -396,6 +396,7 @@ void Object::RegisterSingletonClassNames() {
   SET_CLASS_NAME(type_parameter, TypeParameter);
   SET_CLASS_NAME(type_arguments, TypeArguments);
   SET_CLASS_NAME(instantiated_type_arguments, InstantiatedTypeArguments);
+  SET_CLASS_NAME(patch_class, PatchClass);
   SET_CLASS_NAME(function, Function);
   SET_CLASS_NAME(field, Field);
   SET_CLASS_NAME(literal_token, LiteralToken);
@@ -444,6 +445,8 @@ RawClass* Object::CreateAndRegisterInterface(const char* cname,
 void Object::RegisterClass(const Class& cls,
                            const String& name,
                            const Library& lib) {
+  ASSERT(name.Length() > 0);
+  ASSERT(name.CharAt(0) != '_');
   cls.set_name(name);
   lib.AddClass(cls);
 }
@@ -452,6 +455,8 @@ void Object::RegisterClass(const Class& cls,
 void Object::RegisterPrivateClass(const Class& cls,
                                   const String& public_class_name,
                                   const Library& lib) {
+  ASSERT(public_class_name.Length() > 0);
+  ASSERT(public_class_name.CharAt(0) == '_');
   String& str = String::Handle();
   str = lib.PrivateName(public_class_name);
   cls.set_name(str);
@@ -624,19 +629,13 @@ RawError* Object::Init(Isolate* isolate) {
   RegisterClass(cls, name, core_impl_lib);
   pending_classes.Add(cls, Heap::kOld);
 
-  cls = Class::New<WeakProperty>();
-  object_store->set_weak_property_class(cls);
-  name = Symbols::WeakProperty();
-  RegisterClass(cls, name, core_impl_lib);
-  pending_classes.Add(cls, Heap::kOld);
-
   // Initialize the base interfaces used by the core VM classes.
   const Script& script = Script::Handle(Bootstrap::LoadCoreScript(false));
 
   // Allocate and initialize the Object class and type.  The Object
   // class and ByteArray subclasses are the only pre-allocated,
   // non-interface classes in the core library.
-  cls = Class::New<Instance>();
+  cls = Class::New<Instance>(kInstanceCid);
   object_store->set_object_class(cls);
   name = Symbols::Object();
   cls.set_name(name);
@@ -747,20 +746,31 @@ RawError* Object::Init(Isolate* isolate) {
   name = Symbols::_ExternalFloat64Array();
   RegisterPrivateClass(cls, name, core_lib);
 
+  cls = Class::New<WeakProperty>();
+  object_store->set_weak_property_class(cls);
+  name = Symbols::_WeakProperty();
+  RegisterPrivateClass(cls, name, core_lib);
+
   // Set the super type of class Stacktrace to Object type so that the
   // 'toString' method is implemented.
   cls = object_store->stacktrace_class();
   cls.set_super_type(type);
 
-  cls = CreateAndRegisterInterface("Function", script, core_lib);
+  // Note: The abstract class Function is represented by VM class
+  // DartFunction, not VM class Function.
+  name = Symbols::Function();
+  cls = Class::New<DartFunction>();
+  RegisterClass(cls, name, core_lib);
   pending_classes.Add(cls, Heap::kOld);
   type = Type::NewNonParameterizedType(cls);
-  object_store->set_function_interface(type);
+  object_store->set_function_type(type);
 
-  cls = CreateAndRegisterInterface("num", script, core_lib);
+  cls = Class::New<Number>();
+  name = Symbols::Number();
+  RegisterClass(cls, name, core_lib);
   pending_classes.Add(cls, Heap::kOld);
   type = Type::NewNonParameterizedType(cls);
-  object_store->set_number_interface(type);
+  object_store->set_number_type(type);
 
   cls = CreateAndRegisterInterface("int", script, core_lib);
   pending_classes.Add(cls, Heap::kOld);
@@ -858,7 +868,6 @@ RawError* Object::Init(Isolate* isolate) {
     return error.raw();
   }
   const Script& math_script = Script::Handle(Bootstrap::LoadMathScript(false));
-  Library::InitMathLibrary(isolate);
   const Library& math_lib = Library::Handle(Library::MathLibrary());
   ASSERT(!math_lib.IsNull());
   error = Bootstrap::Compile(math_lib, math_script);
@@ -919,6 +928,9 @@ void Object::InitFromSnapshot(Isolate* isolate) {
   // Set up empty classes in the object store, these will get
   // initialized correctly when we read from the snapshot.
   // This is done to allow bootstrapping of reading classes from the snapshot.
+  cls = Class::New<Instance>(kInstanceCid);
+  object_store->set_object_class(cls);
+
   cls = Class::New<Array>();
   object_store->set_array_class(cls);
 
@@ -1029,6 +1041,12 @@ void Object::InitFromSnapshot(Isolate* isolate) {
 
   cls = Class::New<JSRegExp>();
   object_store->set_jsregexp_class(cls);
+
+  // Some classes are not stored in the object store. Yet we still need to
+  // create their Class object so that they get put into the class_table
+  // (as a side effect of Class::New()).
+  cls = Class::New<DartFunction>();
+  cls = Class::New<Number>();
 
   cls = Class::New<WeakProperty>();
   object_store->set_weak_property_class(cls);
@@ -1250,9 +1268,9 @@ RawClass* Class::New() {
   result.set_handle_vtable(fake.vtable());
   result.set_instance_size(FakeObject::InstanceSize());
   result.set_next_field_offset(FakeObject::InstanceSize());
-  result.set_id((FakeObject::kClassId != kInstanceCid &&
-                 FakeObject::kClassId != kClosureCid) ?
-                FakeObject::kClassId : kIllegalCid);
+  ASSERT((FakeObject::kClassId != kInstanceCid) &&
+         (FakeObject::kClassId != kClosureCid));
+  result.set_id(FakeObject::kClassId);
   result.raw_ptr()->state_bits_ = 0;
   // VM backed classes are almost ready: run checks and resolve class
   // references, but do not recompute size.
@@ -1594,7 +1612,10 @@ const char* Class::ApplyPatch(const Class& patch) const {
       // Non-patched function is preserved, all patched functions are added in
       // the loop below.
       new_functions.Add(orig_func);
-    } else if (!func.HasCompatibleParametersWith(orig_func)) {
+    } else if (!func.HasCompatibleParametersWith(orig_func) &&
+               !(func.IsFactory() && orig_func.IsConstructor() &&
+                 (func.num_fixed_parameters() + 1 ==
+                  orig_func.num_fixed_parameters()))) {
       return FormatPatchError("mismatched parameters: %s", member_name);
     }
   }
@@ -1674,10 +1695,15 @@ RawClass* Class::New(intptr_t index) {
   result.raw_ptr()->state_bits_ = 0;
   result.raw_ptr()->type_arguments_instance_field_offset_ = kNoTypeArguments;
   result.raw_ptr()->num_native_fields_ = 0;
+  result.raw_ptr()->token_pos_ = Scanner::kDummyTokenIndex;
   result.InitEmptyFields();
   Isolate::Current()->class_table()->Register(result);
   return result.raw();
 }
+
+
+// Force instantiation of template version to work around ld problems.
+template RawClass* Class::New<Closure>(intptr_t index);
 
 
 template <class FakeInstance>
@@ -1737,9 +1763,9 @@ RawClass* Class::NewSignatureClass(const String& name,
   result.set_type_arguments_instance_field_offset(
       Closure::type_arguments_offset());
   // Implements interface "Function".
-  const Type& function_interface = Type::Handle(Type::FunctionInterface());
+  const Type& function_type = Type::Handle(Type::Function());
   const Array& interfaces = Array::Handle(Array::New(1, Heap::kOld));
-  interfaces.SetAt(0, function_interface);
+  interfaces.SetAt(0, function_type);
   result.set_interfaces(interfaces);
   // Unless the signature function already has a signature class, create a
   // canonical signature class by having the signature function point back to
@@ -1763,22 +1789,6 @@ RawClass* Class::NewSignatureClass(const String& name,
   new_canonical_types.SetAt(0, signature_type);
   result.set_canonical_types(new_canonical_types);
   return result.raw();
-}
-
-
-RawClass* Class::GetClass(intptr_t class_id, bool is_signature_class) {
-  if (class_id >= kIntegerCid && class_id <= kWeakPropertyCid) {
-    return Isolate::Current()->class_table()->At(class_id);
-  }
-  if (class_id >= kNumPredefinedCids) {
-    if (is_signature_class) {
-      return Class::New<Closure>();
-    }
-    return Class::New<Instance>();
-  }
-  OS::Print("Class::GetClass id unknown: %d\n", class_id);
-  UNREACHABLE();
-  return Class::null();
 }
 
 
@@ -1861,7 +1871,6 @@ void Class::AddDirectSubclass(const Class& subclass) const {
   ASSERT(!subclass.IsNull());
   ASSERT(subclass.SuperClass() == raw());
   // Do not keep track of the direct subclasses of class Object.
-  // TODO(regis): Replace assert below with ASSERT(id() != kDartObjectCid).
   ASSERT(!IsObjectClass());
   GrowableObjectArray& direct_subclasses =
       GrowableObjectArray::Handle(raw_ptr()->direct_subclasses_);
@@ -1903,11 +1912,6 @@ void Class::set_allocation_stub(const Code& value) const {
   ASSERT(!value.IsNull());
   ASSERT(raw_ptr()->allocation_stub_ == Code::null());
   StorePointer(&raw_ptr()->allocation_stub_, value.raw());
-}
-
-
-bool Class::IsObjectClass() const {
-  return raw() == Type::Handle(Type::ObjectType()).type_class();
 }
 
 
@@ -2569,9 +2573,9 @@ bool AbstractType::IsDoubleInterface() const {
 }
 
 
-bool AbstractType::IsNumberInterface() const {
+bool AbstractType::IsNumberType() const {
   return HasResolvedTypeClass() &&
-      (type_class() == Type::Handle(Type::NumberInterface()).type_class());
+      (type_class() == Type::Handle(Type::Number()).type_class());
 }
 
 
@@ -2581,9 +2585,9 @@ bool AbstractType::IsStringInterface() const {
 }
 
 
-bool AbstractType::IsFunctionInterface() const {
+bool AbstractType::IsFunctionType() const {
   return HasResolvedTypeClass() &&
-      (type_class() == Type::Handle(Type::FunctionInterface()).type_class());
+      (type_class() == Type::Handle(Type::Function()).type_class());
 }
 
 
@@ -2694,13 +2698,23 @@ RawType* Type::IntInterface() {
 }
 
 
+RawType* Type::SmiType() {
+  return Isolate::Current()->object_store()->smi_type();
+}
+
+
+RawType* Type::MintType() {
+  return Isolate::Current()->object_store()->mint_type();
+}
+
+
 RawType* Type::DoubleInterface() {
   return Isolate::Current()->object_store()->double_interface();
 }
 
 
-RawType* Type::NumberInterface() {
-  return Isolate::Current()->object_store()->number_interface();
+RawType* Type::Number() {
+  return Isolate::Current()->object_store()->number_type();
 }
 
 
@@ -2709,8 +2723,8 @@ RawType* Type::StringInterface() {
 }
 
 
-RawType* Type::FunctionInterface() {
-  return Isolate::Current()->object_store()->function_interface();
+RawType* Type::Function() {
+  return Isolate::Current()->object_store()->function_type();
 }
 
 
@@ -6186,6 +6200,10 @@ void Library::InitCoreLibrary(Isolate* isolate) {
   core_impl_lib.Register();
   core_lib.AddImport(core_impl_lib);
   core_impl_lib.AddImport(core_lib);
+  Library::InitMathLibrary(isolate);
+  const Library& math_lib = Library::Handle(Library::MathLibrary());
+  core_lib.AddImport(math_lib);
+  core_impl_lib.AddImport(math_lib);
   isolate->object_store()->set_root_library(Library::Handle());
 
   // Hook up predefined classes without setting their library pointers. These
@@ -6773,18 +6791,17 @@ void Stackmap::SetBit(intptr_t bit_index, bool value) const {
 }
 
 
-RawStackmap* Stackmap::New(intptr_t pc_offset,
-                           intptr_t length,
-                           BitmapBuilder* bmap) {
+RawStackmap* Stackmap::New(intptr_t pc_offset, BitmapBuilder* bmap) {
   ASSERT(Object::stackmap_class() != Class::null());
   ASSERT(bmap != NULL);
   Stackmap& result = Stackmap::Handle();
   // Guard against integer overflow of the instance size computation.
+  intptr_t length = bmap->Length();
   intptr_t payload_size =
       Utils::RoundUp(length, kBitsPerByte) / kBitsPerByte;
-  if (payload_size < 0 ||
-      payload_size >
-          (kSmiMax - static_cast<intptr_t>(sizeof(RawStackmap)))) {
+  if ((payload_size < 0) ||
+      (payload_size >
+           (kSmiMax - static_cast<intptr_t>(sizeof(RawStackmap))))) {
     // This should be caught before we reach here.
     FATAL1("Fatal error in Stackmap::New: invalid length %" PRIdPTR "\n",
            length);
@@ -6807,7 +6824,6 @@ RawStackmap* Stackmap::New(intptr_t pc_offset,
   for (intptr_t i = 0; i < length; ++i) {
     result.SetBit(i, bmap->Get(i));
   }
-  ASSERT(bmap->Maximum() < length);
   return result.raw();
 }
 
@@ -7164,7 +7180,7 @@ RawCode* Code::FinalizeCode(const char* name, Assembler* assembler) {
   assembler->FinalizeInstructions(region);
   Dart_FileWriterFunction perf_events_writer = Dart::perf_events_writer();
   if (perf_events_writer != NULL) {
-    const char* format = "%x %x %s\n";
+    const char* format = "%" PRIxPTR " %" PRIxPTR " %s\n";
     uword addr = instrs.EntryPoint();
     uword size = instrs.size();
     intptr_t len = OS::SNPrint(NULL, 0, format, addr, size, name);
@@ -7824,6 +7840,15 @@ const char* Error::ToCString() const {
 }
 
 
+RawApiError* ApiError::New() {
+  ASSERT(Object::api_error_class() != Class::null());
+  RawObject* raw = Object::Allocate(ApiError::kClassId,
+                                    ApiError::InstanceSize(),
+                                    Heap::kOld);
+  return reinterpret_cast<RawApiError*>(raw);
+}
+
+
 RawApiError* ApiError::New(const String& message, Heap::Space space) {
   ASSERT(Object::api_error_class() != Class::null());
   ApiError& result = ApiError::Handle();
@@ -7852,6 +7877,15 @@ const char* ApiError::ToErrorCString() const {
 
 const char* ApiError::ToCString() const {
   return "ApiError";
+}
+
+
+RawLanguageError* LanguageError::New() {
+  ASSERT(Object::language_error_class() != Class::null());
+  RawObject* raw = Object::Allocate(LanguageError::kClassId,
+                                    LanguageError::InstanceSize(),
+                                    Heap::kOld);
+  return reinterpret_cast<RawLanguageError*>(raw);
 }
 
 
@@ -9239,7 +9273,10 @@ RawString* String::SubString(const String& str,
   ASSERT(!str.IsNull());
   ASSERT(begin_index >= 0);
   ASSERT(length >= 0);
-  if (begin_index >= str.Length()) {
+  if (begin_index <= str.Length() && length == 0) {
+    return Symbols::Empty();
+  }
+  if (begin_index > str.Length()) {
     return String::null();
   }
   String& result = String::Handle();
@@ -10101,10 +10138,9 @@ RawArray* Array::MakeArray(const GrowableObjectArray& growable_array) {
       // Update the leftover space as a basic object.
       ASSERT(leftover_size == Object::InstanceSize());
       RawObject* raw = reinterpret_cast<RawObject*>(RawObject::FromAddr(addr));
-      const Class& cls = Class::Handle(isolate->object_store()->object_class());
       tags = 0;
       tags = RawObject::SizeTag::update(leftover_size, tags);
-      tags = RawObject::ClassIdTag::update(cls.id(), tags);
+      tags = RawObject::ClassIdTag::update(kInstanceCid, tags);
       raw->ptr()->tags_ = tags;
     }
   }
@@ -10865,6 +10901,11 @@ void Closure::set_function(const Function& value) const {
 }
 
 
+const char* DartFunction::ToCString() const {
+  return "Function type class";
+}
+
+
 const char* Closure::ToCString() const {
   const Function& fun = Function::Handle(function());
   const bool is_implicit_closure = fun.IsImplicitClosureFunction();
@@ -11144,7 +11185,7 @@ RawWeakProperty* WeakProperty::New(Heap::Space space) {
 
 
 const char* WeakProperty::ToCString() const {
-  return "WeakProperty";
+  return "_WeakProperty";
 }
 
 }  // namespace dart

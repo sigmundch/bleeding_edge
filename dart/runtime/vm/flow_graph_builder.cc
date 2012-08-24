@@ -1294,11 +1294,14 @@ void EffectGraphVisitor::VisitArrayNode(ArrayNode* node) {
     Append(for_value);
     arguments->Add(PushArgument(for_value.value()));
   }
+  const AbstractTypeArguments& type_args =
+      AbstractTypeArguments::ZoneHandle(node->type().arguments());
   Value* element_type = BuildInstantiatedTypeArguments(node->token_pos(),
-                                                       node->type_arguments());
+                                                       type_args);
   CreateArrayComp* create = new CreateArrayComp(node->token_pos(),
                                                 owner()->try_index(),
                                                 arguments,
+                                                node->type(),
                                                 element_type);
   ReturnComputation(create);
 }
@@ -1973,8 +1976,7 @@ void EffectGraphVisitor::VisitLoadInstanceFieldNode(
   node->instance()->Visit(&for_instance);
   Append(for_instance);
   LoadInstanceFieldComp* load = new LoadInstanceFieldComp(
-      node->field(), for_instance.value(), NULL,
-      false);  // Can not deoptimize.
+      node->field(), for_instance.value(), NULL);  // Can not deoptimize.
   ReturnComputation(load);
 }
 

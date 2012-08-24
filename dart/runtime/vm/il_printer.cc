@@ -381,7 +381,7 @@ void CatchEntryComp::PrintOperandsTo(BufferFormatter* f) const {
 }
 
 
-void BinaryOpComp::PrintOperandsTo(BufferFormatter* f) const {
+void BinarySmiOpComp::PrintOperandsTo(BufferFormatter* f) const {
   f->Print("%s, ", Token::Str(op_kind()));
   left()->PrintTo(f);
   f->Print(", ");
@@ -389,7 +389,23 @@ void BinaryOpComp::PrintOperandsTo(BufferFormatter* f) const {
 }
 
 
-void DoubleBinaryOpComp::PrintOperandsTo(BufferFormatter* f) const {
+void BinaryMintOpComp::PrintOperandsTo(BufferFormatter* f) const {
+  f->Print("%s, ", Token::Str(op_kind()));
+  left()->PrintTo(f);
+  f->Print(", ");
+  right()->PrintTo(f);
+}
+
+
+void UnboxedDoubleBinaryOpComp::PrintOperandsTo(BufferFormatter* f) const {
+  f->Print("%s, ", Token::Str(op_kind()));
+  left()->PrintTo(f);
+  f->Print(", ");
+  right()->PrintTo(f);
+}
+
+
+void BinaryDoubleOpComp::PrintOperandsTo(BufferFormatter* f) const {
   f->Print("%s", Token::Str(op_kind()));
 }
 
@@ -397,6 +413,16 @@ void DoubleBinaryOpComp::PrintOperandsTo(BufferFormatter* f) const {
 void UnarySmiOpComp::PrintOperandsTo(BufferFormatter* f) const {
   f->Print("%s, ", Token::Str(op_kind()));
   value()->PrintTo(f);
+}
+
+
+void CheckClassComp::PrintOperandsTo(BufferFormatter* f) const {
+  value()->PrintTo(f);
+  f->Print(", cid={");
+  for (intptr_t i = 0; i < ic_data()->NumberOfChecks(); i++) {
+    f->Print("%d ", ic_data()->GetReceiverClassIdAt(i));
+  }
+  f->Print("}");
 }
 
 

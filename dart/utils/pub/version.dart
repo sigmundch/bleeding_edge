@@ -9,12 +9,14 @@
  */
 #library('version');
 
+#import('dart:math');
+
 #import('utils.dart');
 
 /** A parsed semantic version number. */
 class Version implements Comparable, Hashable, VersionConstraint {
   /** No released version: i.e. "0.0.0". */
-  static Version get none() => new Version(0, 0, 0);
+  static Version get none => new Version(0, 0, 0);
 
   static final _PARSE_REGEX = const RegExp(
       @'^'                                        // Start at beginning.
@@ -59,9 +61,9 @@ class Version implements Comparable, Hashable, VersionConstraint {
     }
 
     try {
-      int major = Math.parseInt(match[1]);
-      int minor = Math.parseInt(match[2]);
-      int patch = Math.parseInt(match[3]);
+      int major = parseInt(match[1]);
+      int minor = parseInt(match[2]);
+      int patch = parseInt(match[3]);
 
       String preRelease = match[5];
       String build = match[8];
@@ -82,7 +84,7 @@ class Version implements Comparable, Hashable, VersionConstraint {
   bool operator <=(Version other) => compareTo(other) <= 0;
   bool operator >=(Version other) => compareTo(other) >= 0;
 
-  bool get isEmpty() => false;
+  bool get isEmpty => false;
 
   /** Tests if [other] matches this version exactly. */
   bool allows(Version other) => this == other;
@@ -143,7 +145,7 @@ class Version implements Comparable, Hashable, VersionConstraint {
     var aParts = _splitParts(a);
     var bParts = _splitParts(b);
 
-    for (int i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    for (int i = 0; i < max(aParts.length, bParts.length); i++) {
       var aPart = (i < aParts.length) ? aParts[i] : null;
       var bPart = (i < bParts.length) ? bParts[i] : null;
 
@@ -180,7 +182,7 @@ class Version implements Comparable, Hashable, VersionConstraint {
   List _splitParts(String text) {
     return text.split('.').map((part) {
       try {
-        return Math.parseInt(part);
+        return parseInt(part);
       } catch (FormatException ex) {
         // Not a number.
         return part;
@@ -229,7 +231,7 @@ interface VersionConstraint default _VersionConstraintFactory {
   /**
    * Returns `true` if this constraint allows no versions.
    */
-  bool get isEmpty();
+  bool get isEmpty;
 
   /**
    * Returns `true` if this constraint allows [version].
@@ -272,7 +274,7 @@ class VersionRange implements VersionConstraint {
            includeMax == other.includeMax;
   }
 
-  bool get isEmpty() => false;
+  bool get isEmpty => false;
 
   /** Tests if [other] matches falls within this version range. */
   bool allows(Version other) {
@@ -367,7 +369,7 @@ class VersionRange implements VersionConstraint {
 class _EmptyVersion implements VersionConstraint {
   const _EmptyVersion();
 
-  bool get isEmpty() => true;
+  bool get isEmpty => true;
   bool allows(Version other) => false;
   VersionConstraint intersect(VersionConstraint other) => this;
   String toString() => '<empty>';

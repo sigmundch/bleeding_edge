@@ -10,13 +10,18 @@ void renamePlaceholders(
     Compiler compiler,
     PlaceholderCollector placeholderCollector,
     Map<Node, String> renames,
-    Map<LibraryElement, String> imports) {
+    Map<LibraryElement, String> imports,
+    bool minify) {
   final Map<LibraryElement, Map<String, String>> renamed
       = new Map<LibraryElement, Map<String, String>>();
   final Set<String> usedTopLevelIdentifiers = new Set<String>();
+  // TODO(antonm): we should also populate this set with top-level
+  // names from core library.
+  usedTopLevelIdentifiers.add('main'); // Never rename anything to 'main'.
 
   Generator topLevelGenerator =
-      true ? conservativeGenerator : new MinifyingGenerator('ABCD').generate;
+      minify ? new MinifyingGenerator('ABCDEFGHIJKLMNOPQRSTUVWXYZ').generate
+          : conservativeGenerator;
   String generateUniqueName(name) {
     String newName = topLevelGenerator(
         name, usedTopLevelIdentifiers.contains);
@@ -29,12 +34,15 @@ void renamePlaceholders(
           .putIfAbsent(originalName, () => generateUniqueName(originalName));
 
   String renameElement(Element element) {
-    assert(element.isTopLevel() || element is TypeVariableElement);
+    assert(Elements.isStaticOrTopLevel(element)
+           || element is TypeVariableElement);
     // TODO(smok): Make sure that the new name does not conflict with existing
     // local identifiers.
+    // TODO(smok): We may want to reuse class static field and method names.
     String originalName = element.name.slowToString();
     LibraryElement library = element.getLibrary();
     if (isDartCoreLib(compiler, library)) {
+      assert(element.isTopLevel());
       final prefix =
           imports.putIfAbsent(library, () => generateUniqueName('p'));
       return '$prefix.$originalName';
@@ -63,12 +71,30 @@ void renamePlaceholders(
     String renamedElement = renameElement(element);
     renameNodes(nodes, (_) => renamedElement);
   });
-  sortedForEach(placeholderCollector.localPlaceholders,
-      (element, placeholders) {
-    // TODO(smok): Check for conflicts with class fields and take usages
-    // into account.
+  sortedForEach(placeholderCollector.functionScopes,
+      (functionElement, functionScope) {
+    Set<LocalPlaceholder> placeholders = functionScope.localPlaceholders;
+    Generator localGenerator =
+        minify ? new MinifyingGenerator('abcdefghijklmnopqrstuvwxyz').generate
+            : conservativeGenerator;
+    Set<String> memberIdentifiers = new Set<String>();
+    if (functionElement.getEnclosingClass() !== null) {
+      functionElement.getEnclosingClass().forEachMember(
+          (enclosingClass, member) {
+        memberIdentifiers.add(member.name.slowToString());
+      });
+    }
+    Set<String> usedLocalIdentifiers = new Set<String>();
+    // TODO(smok): Take usages into account.
     for (LocalPlaceholder placeholder in placeholders) {
-      renameNodes(placeholder.nodes, (_) => placeholder.identifier);
+      String nextId =
+          localGenerator(placeholder.identifier, (name) =>
+              functionScope.parameterIdentifiers.contains(name)
+                  || usedTopLevelIdentifiers.contains(name)
+                  || usedLocalIdentifiers.contains(name)
+                  || memberIdentifiers.contains(name));
+      usedLocalIdentifiers.add(nextId);
+      renameNodes(placeholder.nodes, (_) => nextId);
     }
   });
   sortedForEach(placeholderCollector.privateNodes, (library, nodes) {

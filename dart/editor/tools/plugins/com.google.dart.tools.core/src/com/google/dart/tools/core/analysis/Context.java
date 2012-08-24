@@ -13,9 +13,9 @@
  */
 package com.google.dart.tools.core.analysis;
 
-import com.google.dart.compiler.SystemLibraryManager;
+import com.google.dart.compiler.PackageLibraryManager;
 import com.google.dart.compiler.ast.LibraryUnit;
-import com.google.dart.tools.core.model.DartSdk;
+import com.google.dart.tools.core.model.DartSdkManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,8 +33,6 @@ public class Context {
 
   private static final String END_CACHE_TAG = "</end-cache>";
 
-  private static final Library[] NO_LIBRARIES = new Library[] {};
-
   protected final AnalysisServer server;
 
   private AnalysisListener[] analysisListeners = new AnalysisListener[0];
@@ -43,7 +41,7 @@ public class Context {
    * The target (VM, Dartium, JS) against which user libraries are resolved. Targets are immutable
    * and can be accessed on any thread.
    */
-  private final SystemLibraryManager libraryManager;
+  private final PackageLibraryManager libraryManager;
 
   /**
    * The libraries in this context, including imported libraries. This should only be accessed on
@@ -51,7 +49,7 @@ public class Context {
    */
   private final HashMap<File, Library> libraryCache;
 
-  Context(AnalysisServer server, SystemLibraryManager libraryManager) {
+  Context(AnalysisServer server, PackageLibraryManager libraryManager) {
     this.server = server;
     this.libraryCache = new HashMap<File, Library>();
     this.libraryManager = libraryManager;
@@ -189,11 +187,9 @@ public class Context {
    *          <code>null</code> if none
    */
   public void resolve(File libraryFile, ResolveCallback callback) {
-
-    if (!DartSdk.isInstalled()) {
+    if (!DartSdkManager.getManager().hasSdk()) {
       return;
     }
-
     if (!libraryFile.isAbsolute()) {
       throw new IllegalArgumentException("File path must be absolute: " + libraryFile);
     }
@@ -256,16 +252,16 @@ public class Context {
    * @return an array of libraries (not <code>null</code>, contains no <code>null</code>s)
    */
   Library[] getLibrariesSourcing(File file) {
-    Library[] result = NO_LIBRARIES;
+    Library[] result = Library.NONE;
     for (Library cachedLibrary : libraryCache.values()) {
       if (cachedLibrary.getSourceFiles().contains(file)) {
-        result = append(result, cachedLibrary);
+        result = AnalysisUtility.append(result, cachedLibrary);
       }
     }
     return result;
   }
 
-  SystemLibraryManager getLibraryManager() {
+  PackageLibraryManager getLibraryManager() {
     return libraryManager;
   }
 
@@ -314,16 +310,5 @@ public class Context {
       }
     }
     writer.writeString(END_CACHE_TAG);
-  }
-
-  private Library[] append(Library[] oldArray, Library library) {
-    if (oldArray.length == 0) {
-      return new Library[] {library};
-    }
-    int oldLen = oldArray.length;
-    Library[] newArray = new Library[oldLen + 1];
-    System.arraycopy(oldArray, 0, newArray, 0, oldLen);
-    newArray[oldLen] = library;
-    return newArray;
   }
 }

@@ -60,11 +60,16 @@ class Parser {
     return token;
   }
 
+  /**
+   * Parse
+   * [: '@' qualified (‘.’ identifier)? (arguments)? :]
+   */
   Token parseMetadata(Token token) {
     listener.beginMetadata(token);
     Token atToken = token;
     assert(optional('@', token));
     token = parseIdentifier(token.next);
+    token = parseQualifiedRestOpt(token);
     token = parseQualifiedRestOpt(token);
     token = parseArgumentsOpt(token);
     listener.endMetadata(atToken, token);
@@ -650,7 +655,17 @@ class Parser {
           (value === '=>')) {
         isField = false;
         break;
-      } else if ((value === '=') || (value === ';') || (value === ',')) {
+      } else if (value === ';') {
+        if (getOrSet != null) {
+          // If we found a "get" keyword, this must be an abstract
+          // getter.
+          isField = (getOrSet.stringValue !== 'get');
+          // TODO(ahe): This feels like a hack.
+        } else {
+          isField = true;
+        }
+        break;
+      } else if ((value === '=') || (value === ',')) {
         isField = true;
         break;
       } else {

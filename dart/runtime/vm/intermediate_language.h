@@ -23,7 +23,7 @@ namespace dart {
   V(StringBase, get:length, StringBaseLength)                                  \
   V(IntegerImplementation, toDouble, IntegerToDouble)                          \
   V(Double, toDouble, DoubleToDouble)                                          \
-  V(Math, sqrt, MathSqrt)                                                      \
+  V(::, sqrt, MathSqrt)                                                        \
 
 // Class that recognizes the name and owner of a function and returns the
 // corresponding enum. See RECOGNIZED_LIST above for list of recognizable
@@ -94,15 +94,21 @@ class LocalVariable;
   M(ChainContext, ChainContextComp)                                            \
   M(CloneContext, CloneContextComp)                                            \
   M(CatchEntry, CatchEntryComp)                                                \
-  M(BinaryOp, BinaryOpComp)                                                    \
-  M(DoubleBinaryOp, DoubleBinaryOpComp)                                        \
+  M(BinarySmiOp, BinarySmiOpComp)                                              \
+  M(BinaryMintOp, BinaryMintOpComp)                                            \
+  M(BinaryDoubleOp, BinaryDoubleOpComp)                                        \
   M(UnarySmiOp, UnarySmiOpComp)                                                \
   M(NumberNegate, NumberNegateComp)                                            \
   M(CheckStackOverflow, CheckStackOverflowComp)                                \
   M(DoubleToDouble, DoubleToDoubleComp)                                        \
   M(SmiToDouble, SmiToDoubleComp)                                              \
   M(CheckClass, CheckClassComp)                                                \
-  M(Materialize, MaterializeComp)
+  M(CheckSmi, CheckSmiComp)                                                    \
+  M(Materialize, MaterializeComp)                                              \
+  M(CheckEitherNonSmi, CheckEitherNonSmiComp)                                  \
+  M(UnboxedDoubleBinaryOp, UnboxedDoubleBinaryOpComp)                          \
+  M(UnboxDouble, UnboxDoubleComp)                                              \
+  M(BoxDouble, BoxDoubleComp)
 
 
 #define FORWARD_DECLARATION(ShortName, ClassName) class ClassName;
@@ -119,6 +125,12 @@ class Definition;
 class Instruction;
 class PushArgumentInstr;
 class Value;
+
+
+enum Representation {
+  kTagged, kUnboxedDouble
+};
+
 
 class Computation : public ZoneAllocated {
  public:
@@ -151,9 +163,10 @@ class Computation : public ZoneAllocated {
   // Returns true, if this computation can deoptimize.
   virtual bool CanDeoptimize() const  = 0;
 
-  // Optimize this computation. Returns a replacement for the instruction
-  // that wraps this computation or NULL if nothing to replace.
-  virtual Definition* TryReplace(BindInstr* instr) { return NULL; }
+  // Returns a replacement for the instruction that wraps this computation.
+  // Returns NULL if instr can be eliminated.
+  // By default returns instr (input parameter) which means no change.
+  virtual Definition* TryReplace(BindInstr* instr) const;
 
   // Compares two computations. Returns true, if:
   // 1. They are of the same kind.
@@ -209,8 +222,6 @@ class Computation : public ZoneAllocated {
   // TODO(fschneider): Make EmitNativeCode and locs const.
   virtual void EmitNativeCode(FlowGraphCompiler* compiler) = 0;
 
-  virtual void RemoveInputUses() = 0;
-
   static LocationSummary* MakeCallSummary();
 
   // Declare an enum value used to define kind-test predicates.
@@ -223,6 +234,10 @@ class Computation : public ZoneAllocated {
   };
 
   virtual ComputationKind computation_kind() const = 0;
+
+  virtual Representation representation() const {
+    return kTagged;
+  }
 
   // Declare predicate for each computation.
 #define DECLARE_PREDICATE(ShortName, ClassName)                                \
@@ -301,12 +316,6 @@ class TemplateComputation : public Computation {
     ASSERT(value != NULL);
     inputs_[i] = value;
   }
-  virtual void RemoveInputUses() {
-    for (intptr_t i = 0; i < N; ++i) {
-      ASSERT(inputs_[i] != NULL);
-      inputs_[i]->RemoveFromUseList();
-    }
-  }
 
  protected:
   EmbeddedArray<Value*, N> inputs_;
@@ -352,9 +361,9 @@ FOR_EACH_VALUE(DECLARE_PREDICATE)
   // specific than any type.
   bool CompileTypeIsMoreSpecificThan(const AbstractType& dst_type) const;
 
-  virtual void RemoveFromUseList() = 0;
-
   virtual bool Equals(Value* other) const = 0;
+
+  virtual Value* CopyValue() = 0;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Value);
@@ -401,12 +410,16 @@ class PhiInstr;
 
 class UseVal : public Value {
  public:
-  explicit UseVal(Definition* definition);
+  explicit UseVal(Definition* definition)
+      : definition_(definition),
+        next_use_(NULL),
+        instruction_(NULL),
+        use_index_(-1) { }
 
   DECLARE_VALUE(Use)
 
-  inline Definition* definition() const;
-  void SetDefinition(Definition* definition);
+  inline Definition* definition() const { return definition_; }
+  void set_definition(Definition* definition) { definition_ = definition; }
 
   // Returns true if the value represents a constant.
   virtual bool BindsToConstant() const;
@@ -418,19 +431,26 @@ class UseVal : public Value {
   virtual bool CanDeoptimize() const { return false; }
 
   UseVal* next_use() const { return next_use_; }
-  UseVal* previous_use() const { return previous_use_; }
-  virtual void RemoveFromUseList();
-  virtual void RemoveInputUses() { RemoveFromUseList(); }
+  void set_next_use(UseVal* next) { next_use_ = next; }
+
+  Instruction* instruction() const { return instruction_; }
+  void set_instruction(Instruction* instruction) { instruction_ = instruction; }
+
+  intptr_t use_index() const { return use_index_; }
+  void set_use_index(intptr_t index) { use_index_ = index; }
+
+  void AddToInputUseList();
+  void AddToEnvUseList();
 
   virtual intptr_t ResultCid() const;
 
+  virtual Value* CopyValue() { return new UseVal(definition_); }
+
  private:
-  void AddToUseList();
   Definition* definition_;
   UseVal* next_use_;
-  UseVal* previous_use_;
-
-  friend class Definition;
+  Instruction* instruction_;
+  intptr_t use_index_;
 
   DISALLOW_COPY_AND_ASSIGN(UseVal);
 };
@@ -457,9 +477,9 @@ class ConstantVal : public Value {
 
   virtual bool CanDeoptimize() const { return false; }
 
-  virtual void RemoveFromUseList() { }
-
   virtual intptr_t ResultCid() const;
+
+  virtual Value* CopyValue() { return this; }
 
  private:
   const Object& value_;
@@ -713,12 +733,13 @@ class InstanceCallComp : public TemplateComputation<0> {
 
 class PolymorphicInstanceCallComp : public TemplateComputation<0> {
  public:
-  explicit PolymorphicInstanceCallComp(InstanceCallComp* comp)
-      : instance_call_(comp) {
+  explicit PolymorphicInstanceCallComp(InstanceCallComp* comp, bool with_checks)
+      : instance_call_(comp), with_checks_(with_checks) {
     ASSERT(instance_call_ != NULL);
   }
 
   InstanceCallComp* instance_call() const { return instance_call_; }
+  bool with_checks() const { return with_checks_; }
 
   void PrintTo(BufferFormatter* f) const;
 
@@ -732,6 +753,7 @@ class PolymorphicInstanceCallComp : public TemplateComputation<0> {
 
  private:
   InstanceCallComp* instance_call_;
+  const bool with_checks_;
 
   DISALLOW_COPY_AND_ASSIGN(PolymorphicInstanceCallComp);
 };
@@ -771,7 +793,8 @@ class StrictCompareComp : public ComparisonComp {
 
   virtual bool CanDeoptimize() const { return false; }
 
-  virtual Definition* TryReplace(BindInstr* instr);
+  virtual Definition* TryReplace(BindInstr* instr) const;
+
   virtual intptr_t ResultCid() const { return kBoolCid; }
 
  private:
@@ -1003,11 +1026,11 @@ class NativeCallComp : public TemplateComputation<0> {
 
 class LoadInstanceFieldComp : public TemplateComputation<1> {
  public:
+  // Set 'original' to NULL if LoadInstanceFieldComp cannot deoptimize.
   LoadInstanceFieldComp(const Field& field,
                         Value* instance,
-                        InstanceCallComp* original,  // Maybe NULL.
-                        bool can_deoptimize)
-      : field_(field), original_(original), can_deoptimize_(can_deoptimize) {
+                        InstanceCallComp* original)
+      : field_(field), original_(original) {
     ASSERT(instance != NULL);
     inputs_[0] = instance;
   }
@@ -1020,12 +1043,11 @@ class LoadInstanceFieldComp : public TemplateComputation<1> {
 
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
-  virtual bool CanDeoptimize() const { return can_deoptimize_; }
+  virtual bool CanDeoptimize() const { return original_ != NULL; }
 
  private:
   const Field& field_;
   const InstanceCallComp* original_;  // For optimizations.
-  const bool can_deoptimize_;
 
   DISALLOW_COPY_AND_ASSIGN(LoadInstanceFieldComp);
 };
@@ -1033,6 +1055,7 @@ class LoadInstanceFieldComp : public TemplateComputation<1> {
 
 class StoreInstanceFieldComp : public TemplateComputation<2> {
  public:
+  // Set 'original' to NULL if StoreInstanceFieldComp cannot deoptimize.
   StoreInstanceFieldComp(const Field& field,
                          Value* instance,
                          Value* value,
@@ -1055,7 +1078,7 @@ class StoreInstanceFieldComp : public TemplateComputation<2> {
 
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
-  virtual bool CanDeoptimize() const { return true; }
+  virtual bool CanDeoptimize() const { return original_ != NULL; }
 
  private:
   const Field& field_;
@@ -1319,15 +1342,20 @@ class CreateArrayComp : public TemplateComputation<1> {
   CreateArrayComp(intptr_t token_pos,
                   intptr_t try_index,
                   ZoneGrowableArray<PushArgumentInstr*>* arguments,
+                  const AbstractType& type,
                   Value* element_type)
       : token_pos_(token_pos),
         try_index_(try_index),
-        arguments_(arguments) {
+        arguments_(arguments),
+        type_(type) {
 #if defined(DEBUG)
     for (int i = 0; i < ArgumentCount(); ++i) {
       ASSERT(ArgumentAt(i) != NULL);
     }
     ASSERT(element_type != NULL);
+    ASSERT(type_.IsZoneHandle());
+    ASSERT(!type_.IsNull());
+    ASSERT(type_.IsFinalized());
 #endif
     inputs_[0] = element_type;
   }
@@ -1339,6 +1367,7 @@ class CreateArrayComp : public TemplateComputation<1> {
   intptr_t token_pos() const { return token_pos_; }
   intptr_t try_index() const { return try_index_; }
   PushArgumentInstr* ArgumentAt(intptr_t i) const { return (*arguments_)[i]; }
+  const AbstractType& type() const { return type_; }
   Value* element_type() const { return inputs_[0]; }
 
   virtual void PrintOperandsTo(BufferFormatter* f) const;
@@ -1349,6 +1378,7 @@ class CreateArrayComp : public TemplateComputation<1> {
   const intptr_t token_pos_;
   const intptr_t try_index_;
   ZoneGrowableArray<PushArgumentInstr*>* const arguments_;
+  const AbstractType& type_;
 
   DISALLOW_COPY_AND_ASSIGN(CreateArrayComp);
 };
@@ -1394,6 +1424,7 @@ class LoadVMFieldComp : public TemplateComputation<1> {
                   const AbstractType& type)
       : offset_in_bytes_(offset_in_bytes),
         type_(type),
+        result_cid_(kDynamicCid),
         original_(NULL) {
     ASSERT(value != NULL);
     ASSERT(type.IsZoneHandle());  // May be null if field is not an instance.
@@ -1407,14 +1438,17 @@ class LoadVMFieldComp : public TemplateComputation<1> {
   const AbstractType& type() const { return type_; }
   const InstanceCallComp* original() const { return original_; }
   void set_original(InstanceCallComp* value) { original_ = value; }
+  void set_result_cid(intptr_t value) { result_cid_ = value; }
 
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
   virtual bool CanDeoptimize() const { return true; }
+  virtual intptr_t ResultCid() const { return result_cid_; }
 
  private:
   const intptr_t offset_in_bytes_;
   const AbstractType& type_;
+  intptr_t result_cid_;
   const InstanceCallComp* original_;  // For optimizations.
   // If non-NULL, the instruction is valid only for the class ids listed.
 
@@ -1464,6 +1498,7 @@ class InstantiateTypeArgumentsComp : public TemplateComputation<1> {
       : token_pos_(token_pos),
         try_index_(try_index),
         type_arguments_(type_arguments) {
+    ASSERT(type_arguments.IsZoneHandle());
     ASSERT(instantiator != NULL);
     inputs_[0] = instantiator;
   }
@@ -1649,22 +1684,130 @@ class CatchEntryComp : public TemplateComputation<0> {
 };
 
 
-class BinaryOpComp : public TemplateComputation<2> {
+class CheckEitherNonSmiComp : public TemplateComputation<2> {
  public:
-  enum OperandsType {
-    kDynamicOperands,
-    kSmiOperands,
-    kMintOperands,
-    kDoubleOperands
-  };
+  CheckEitherNonSmiComp(Value* left,
+                        Value* right,
+                        InstanceCallComp* instance_call)
+      : instance_call_(instance_call) {
+    ASSERT(left != NULL);
+    ASSERT(right != NULL);
+    inputs_[0] = left;
+    inputs_[1] = right;
+  }
 
-  BinaryOpComp(Token::Kind op_kind,
-               OperandsType operands_type,
-               InstanceCallComp* instance_call,
-               Value* left,
-               Value* right)
+  DECLARE_COMPUTATION(CheckEitherNonSmi)
+
+  virtual bool CanDeoptimize() const { return true; }
+
+  virtual bool HasSideEffect() const { return false; }
+
+  Value* left() const { return inputs_[0]; }
+
+  Value* right() const { return inputs_[1]; }
+
+  virtual Definition* TryReplace(BindInstr* instr) const;
+
+ private:
+  InstanceCallComp* instance_call_;
+
+  DISALLOW_COPY_AND_ASSIGN(CheckEitherNonSmiComp);
+};
+
+
+class BoxDoubleComp : public TemplateComputation<1> {
+ public:
+  BoxDoubleComp(Value* value, InstanceCallComp* instance_call)
+      : instance_call_(instance_call) {
+    ASSERT(value != NULL);
+    inputs_[0] = value;
+  }
+
+  Value* value() const { return inputs_[0]; }
+  InstanceCallComp* instance_call() const { return instance_call_; }
+
+  virtual bool CanDeoptimize() const { return false; }
+
+  virtual intptr_t ResultCid() const;
+
+  DECLARE_COMPUTATION(BoxDouble)
+
+ private:
+  InstanceCallComp* instance_call_;
+
+  DISALLOW_COPY_AND_ASSIGN(BoxDoubleComp);
+};
+
+
+class UnboxDoubleComp : public TemplateComputation<1> {
+ public:
+  UnboxDoubleComp(Value* value, InstanceCallComp* instance_call)
+      : instance_call_(instance_call) {
+    ASSERT(value != NULL);
+    inputs_[0] = value;
+  }
+
+  Value* value() const { return inputs_[0]; }
+  InstanceCallComp* instance_call() const { return instance_call_; }
+
+  virtual bool CanDeoptimize() const {
+    return value()->ResultCid() != kDoubleCid;
+  }
+
+  virtual Representation representation() const {
+    return kUnboxedDouble;
+  }
+
+  DECLARE_COMPUTATION(UnboxDouble)
+
+ private:
+  InstanceCallComp* instance_call_;
+
+  DISALLOW_COPY_AND_ASSIGN(UnboxDoubleComp);
+};
+
+
+class UnboxedDoubleBinaryOpComp : public TemplateComputation<2> {
+ public:
+  UnboxedDoubleBinaryOpComp(Token::Kind op_kind,
+                            Value* left,
+                            Value* right)
+      : op_kind_(op_kind) {
+    ASSERT(left != NULL);
+    ASSERT(right != NULL);
+    inputs_[0] = left;
+    inputs_[1] = right;
+  }
+
+  Value* left() const { return inputs_[0]; }
+  Value* right() const { return inputs_[1]; }
+
+  Token::Kind op_kind() const { return op_kind_; }
+
+  virtual void PrintOperandsTo(BufferFormatter* f) const;
+
+  virtual bool CanDeoptimize() const { return false; }
+
+  virtual Representation representation() const {
+    return kUnboxedDouble;
+  }
+
+  DECLARE_COMPUTATION(UnboxedDoubleBinaryOp)
+
+ private:
+  const Token::Kind op_kind_;
+
+  DISALLOW_COPY_AND_ASSIGN(UnboxedDoubleBinaryOpComp);
+};
+
+
+class BinarySmiOpComp : public TemplateComputation<2> {
+ public:
+  BinarySmiOpComp(Token::Kind op_kind,
+                  InstanceCallComp* instance_call,
+                  Value* left,
+                  Value* right)
       : op_kind_(op_kind),
-        operands_type_(operands_type),
         instance_call_(instance_call) {
     ASSERT(left != NULL);
     ASSERT(right != NULL);
@@ -1677,29 +1820,63 @@ class BinaryOpComp : public TemplateComputation<2> {
 
   Token::Kind op_kind() const { return op_kind_; }
 
-  OperandsType operands_type() const { return operands_type_; }
+  InstanceCallComp* instance_call() const { return instance_call_; }
+
+  virtual void PrintOperandsTo(BufferFormatter* f) const;
+
+  DECLARE_COMPUTATION(BinarySmiOp)
+
+  virtual bool CanDeoptimize() const;
+
+  virtual intptr_t ResultCid() const;
+
+ private:
+  const Token::Kind op_kind_;
+  InstanceCallComp* instance_call_;
+
+  DISALLOW_COPY_AND_ASSIGN(BinarySmiOpComp);
+};
+
+
+class BinaryMintOpComp : public TemplateComputation<2> {
+ public:
+  BinaryMintOpComp(Token::Kind op_kind,
+                   InstanceCallComp* instance_call,
+                   Value* left,
+                   Value* right)
+      : op_kind_(op_kind),
+        instance_call_(instance_call) {
+    ASSERT(left != NULL);
+    ASSERT(right != NULL);
+    inputs_[0] = left;
+    inputs_[1] = right;
+  }
+
+  Value* left() const { return inputs_[0]; }
+  Value* right() const { return inputs_[1]; }
+
+  Token::Kind op_kind() const { return op_kind_; }
 
   InstanceCallComp* instance_call() const { return instance_call_; }
 
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
-  DECLARE_COMPUTATION(BinaryOp)
+  DECLARE_COMPUTATION(BinaryMintOp)
 
   virtual bool CanDeoptimize() const { return true; }
   virtual intptr_t ResultCid() const;
 
  private:
   const Token::Kind op_kind_;
-  const OperandsType operands_type_;
   InstanceCallComp* instance_call_;
 
-  DISALLOW_COPY_AND_ASSIGN(BinaryOpComp);
+  DISALLOW_COPY_AND_ASSIGN(BinaryMintOpComp);
 };
 
 
-class DoubleBinaryOpComp : public TemplateComputation<0> {
+class BinaryDoubleOpComp : public TemplateComputation<0> {
  public:
-  DoubleBinaryOpComp(Token::Kind op_kind, InstanceCallComp* instance_call)
+  BinaryDoubleOpComp(Token::Kind op_kind, InstanceCallComp* instance_call)
       : op_kind_(op_kind), instance_call_(instance_call) { }
 
   Token::Kind op_kind() const { return op_kind_; }
@@ -1708,7 +1885,7 @@ class DoubleBinaryOpComp : public TemplateComputation<0> {
 
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
-  DECLARE_CALL_COMPUTATION(DoubleBinaryOp)
+  DECLARE_CALL_COMPUTATION(BinaryDoubleOp)
 
   virtual intptr_t ArgumentCount() const { return 2; }
 
@@ -1719,7 +1896,7 @@ class DoubleBinaryOpComp : public TemplateComputation<0> {
   const Token::Kind op_kind_;
   InstanceCallComp* instance_call_;
 
-  DISALLOW_COPY_AND_ASSIGN(DoubleBinaryOpComp);
+  DISALLOW_COPY_AND_ASSIGN(BinaryDoubleOpComp);
 };
 
 
@@ -1865,10 +2042,42 @@ class CheckClassComp : public TemplateComputation<1> {
   intptr_t deopt_id() const { return original_->deopt_id(); }
   intptr_t try_index() const { return original_->try_index(); }
 
+  virtual void PrintOperandsTo(BufferFormatter* f) const;
+
  private:
   InstanceCallComp* original_;
 
   DISALLOW_COPY_AND_ASSIGN(CheckClassComp);
+};
+
+
+class CheckSmiComp : public TemplateComputation<1> {
+ public:
+  CheckSmiComp(Value* value, InstanceCallComp* original)
+      : original_(original) {
+    ASSERT(value != NULL);
+    inputs_[0] = value;
+  }
+
+  DECLARE_COMPUTATION(CheckSmi)
+
+  virtual bool CanDeoptimize() const { return true; }
+
+  virtual bool AttributesEqual(Computation* other) const { return true; }
+
+  virtual bool HasSideEffect() const { return false; }
+
+  virtual Definition* TryReplace(BindInstr* instr) const;
+
+  Value* value() const { return inputs_[0]; }
+
+  intptr_t deopt_id() const { return original_->deopt_id(); }
+  intptr_t try_index() const { return original_->try_index(); }
+
+ private:
+  InstanceCallComp* original_;
+
+  DISALLOW_COPY_AND_ASSIGN(CheckSmiComp);
 };
 
 
@@ -1996,9 +2205,6 @@ class Instruction : public ZoneAllocated {
   // Removed this instruction from the graph.
   Instruction* RemoveFromGraph(bool return_previous = true);
 
-  // Remove value uses within this instruction and its inputs.
-  virtual void RemoveInputUses() = 0;
-
   // Normal instructions can have 0 (inside a block) or 1 (last instruction in
   // a block) successors. Branch instruction with >1 successors override this
   // function.
@@ -2068,6 +2274,10 @@ FOR_EACH_INSTRUCTION(INSTRUCTION_TYPE_CHECK)
     lifetime_position_ = pos;
   }
 
+  virtual Representation representation() const {
+    return kTagged;
+  }
+
  private:
   friend class BindInstr;  // Needed for BindInstr::InsertBefore.
 
@@ -2099,13 +2309,6 @@ class TemplateInstruction: public Instruction {
   }
 
   virtual LocationSummary* MakeLocationSummary() const = 0;
-
-  virtual void RemoveInputUses() {
-    for (intptr_t i = 0; i < N; ++i) {
-      ASSERT(inputs_[i] != NULL);
-      inputs_[i]->RemoveFromUseList();
-    }
-  }
 
  protected:
   EmbeddedArray<Value*, N> inputs_;
@@ -2283,8 +2486,6 @@ class BlockEntryInstr : public Instruction {
   virtual intptr_t ArgumentCount() const { return 0; }
 
   virtual bool CanDeoptimize() const { return false; }
-
-  virtual void RemoveInputUses() { }
 
  protected:
   BlockEntryInstr()
@@ -2511,7 +2712,8 @@ class Definition : public Instruction {
         ssa_temp_index_(-1),
         propagated_type_(AbstractType::Handle()),
         propagated_cid_(kIllegalCid),
-        use_list_(NULL) { }
+        input_use_list_(NULL),
+        env_use_list_(NULL) { }
 
   virtual bool IsDefinition() const { return true; }
   virtual Definition* AsDefinition() { return this; }
@@ -2557,13 +2759,17 @@ class Definition : public Instruction {
   // Returns true if the propagated cid has changed.
   bool SetPropagatedCid(intptr_t cid);
 
-  UseVal* use_list() { return use_list_; }
-  void set_use_list(UseVal* head) {
-    ASSERT(head == NULL || head->previous_use() == NULL);
-    use_list_ = head;
-  }
+  UseVal* input_use_list() { return input_use_list_; }
+  void set_input_use_list(UseVal* head) { input_use_list_ = head; }
 
+  UseVal* env_use_list() { return env_use_list_; }
+  void set_env_use_list(UseVal* head) { env_use_list_ = head; }
+
+  // Replace uses of this definition with uses of other definition or value.
+  // Precondition: use lists must be properly calculated.
+  // Postcondition: use lists and use values are still valid.
   void ReplaceUsesWith(Definition* other);
+  void ReplaceUsesWith(Value* value);
 
  private:
   intptr_t temp_index_;
@@ -2572,17 +2778,11 @@ class Definition : public Instruction {
   // For now:
   AbstractType& propagated_type_;
   intptr_t propagated_cid_;
-  UseVal* use_list_;
+  UseVal* input_use_list_;
+  UseVal* env_use_list_;
 
   DISALLOW_COPY_AND_ASSIGN(Definition);
 };
-
-
-Definition* UseVal::definition() const {
-  // Check that the definition is either a Phi or a linked in the the IR.
-  ASSERT(definition_ != NULL);
-  return definition_;
-}
 
 
 class BindInstr : public Definition {
@@ -2631,10 +2831,15 @@ class BindInstr : public Definition {
 
   virtual void EmitNativeCode(FlowGraphCompiler* compiler);
 
-  virtual void RemoveInputUses() { computation()->RemoveInputUses(); }
-
   // Insert this instruction before 'next'.
-  void InsertBefore(BindInstr* next);
+  void InsertBefore(Instruction* next);
+
+  // Insert this instruction after 'prev'.
+  void InsertAfter(Instruction* prev);
+
+  virtual Representation representation() const {
+    return computation()->representation();
+  }
 
  private:
   Computation* computation_;
@@ -2665,13 +2870,6 @@ class PhiInstr : public Definition {
   void SetInputAt(intptr_t i, Value* value) { inputs_[i] = value; }
 
   virtual bool CanDeoptimize() const { return false; }
-
-  virtual void RemoveInputUses() {
-    for (intptr_t i = 0; i < inputs_.length(); ++i) {
-      ASSERT(inputs_[i] != NULL);
-      inputs_[i]->RemoveFromUseList();
-    }
-  }
 
   // TODO(regis): This helper will be removed once we support type sets.
   RawAbstractType* LeastSpecificInputType() const;
@@ -2713,8 +2911,6 @@ class ParameterInstr : public Definition {
   void SetInputAt(intptr_t i, Value* value) { UNREACHABLE(); }
 
   virtual bool CanDeoptimize() const { return false; }
-
-  virtual void RemoveInputUses() { }
 
  private:
   const intptr_t index_;
@@ -2764,8 +2960,6 @@ class PushArgumentInstr : public Definition {
   bool WasEliminated() const {
     return next() == NULL;
   }
-
-  virtual void RemoveInputUses() { value_->RemoveFromUseList(); }
 
  private:
   Value* value_;
@@ -3038,9 +3232,16 @@ class Environment : public ZoneAllocated {
     return fixed_parameter_count_;
   }
 
+  Environment* Copy() const;
+
   void PrintTo(BufferFormatter* f) const;
 
  private:
+  Environment(intptr_t length, intptr_t fixed_parameter_count)
+      : values_(length),
+        locations_(NULL),
+        fixed_parameter_count_(fixed_parameter_count) { }
+
   GrowableArray<Value*> values_;
   Location* locations_;
   const intptr_t fixed_parameter_count_;

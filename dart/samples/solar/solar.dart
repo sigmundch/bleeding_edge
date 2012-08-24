@@ -9,6 +9,7 @@
 #library("solar");
 
 #import("dart:html");
+#import("dart:math");
 
 /**
  * The entry point to the application.
@@ -55,9 +56,9 @@ class SolarSystem {
 
   }
 
-  num get width() => _width;
+  num get width => _width;
 
-  num get height() => _height;
+  num get height => _height;
 
   start() {
     // Measure the canvas element.
@@ -145,13 +146,15 @@ class SolarSystem {
   }
 
   void addAsteroidBelt(PlanetaryBody body, int count) {
+    Random random = new Random();
+
     // Asteroids are generally between 2.06 and 3.27 AUs.
     for (int i = 0; i < count; i++) {
-      var radius = 2.06 + Math.random() * (3.27 - 2.06);
+      var radius = 2.06 + random.nextDouble() * (3.27 - 2.06);
 
       body.addPlanet(
           new PlanetaryBody(this, "asteroid", "#777",
-              0.1 * Math.random(),
+              0.1 * random.nextDouble(),
               radius,
               radius * 2));
     }
@@ -162,7 +165,7 @@ class SolarSystem {
   }
 
   num normalizePlanetSize(num r) {
-    return Math.log(r + 1) * (width / 100.0);
+    return log(r + 1) * (width / 100.0);
   }
 }
 
@@ -221,7 +224,7 @@ class PlanetaryBody {
       }
 
       context.beginPath();
-      context.arc(x, y, bodySize, 0, Math.PI * 2, false);
+      context.arc(x, y, bodySize, 0, PI * 2, false);
       context.fill();
       context.closePath();
       context.stroke();
@@ -231,7 +234,7 @@ class PlanetaryBody {
       context.shadowBlur = 0;
 
       context.beginPath();
-      context.arc(x, y, bodySize, 0, Math.PI * 2, false);
+      context.arc(x, y, bodySize, 0, PI * 2, false);
       context.fill();
       context.closePath();
       context.stroke();
@@ -261,8 +264,8 @@ class PlanetaryBody {
       num angle = solarSystem.renderTime * orbitSpeed;
 
       return new Point(
-        orbitRadius * Math.cos(angle) + x,
-        orbitRadius * Math.sin(angle) + y);
+        orbitRadius * cos(angle) + x,
+        orbitRadius * sin(angle) + y);
     }
   }
 

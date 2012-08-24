@@ -114,6 +114,7 @@ public class Parser {
   private static final String IMPORT = "import"; //$NON-NLS-1$
   private static final String LIBRARY = "library"; //$NON-NLS-1$
   private static final String OF = "of"; //$NON-NLS-1$
+  private static final String ON = "on"; //$NON-NLS-1$
   private static final String PART = "part"; //$NON-NLS-1$
   private static final String RESOURCE = "resource"; //$NON-NLS-1$
   private static final String SHOW = "show"; //$NON-NLS-1$
@@ -279,7 +280,7 @@ public class Parser {
     }
     // Remove uses of this method in favor of matches?
     // Pass in the error code to use to report the error?
-    // reportError(ParserErrorCode.?);
+    reportError(ParserErrorCode.EXPECTED_TOKEN, keyword.getSyntax());
     return currentToken;
   }
 
@@ -296,7 +297,7 @@ public class Parser {
     }
     // Remove uses of this method in favor of matches?
     // Pass in the error code to use to report the error?
-    // reportError(ParserErrorCode.?);
+    reportError(ParserErrorCode.EXPECTED_TOKEN, identifier);
     return currentToken;
   }
 
@@ -313,7 +314,7 @@ public class Parser {
     }
     // Remove uses of this method in favor of matches?
     // Pass in the error code to use to report the error?
-    // reportError(ParserErrorCode.?);
+    reportError(ParserErrorCode.EXPECTED_TOKEN, type.getLexeme());
     return currentToken;
   }
 
@@ -723,7 +724,10 @@ public class Parser {
     } else {
       if (!optional) {
         // Report the missing selector.
-        // reportError(ParserErrorCode.?);
+        // TODO (jwren) investigate, enabling this causes tests to fail, logic in
+        // parseAssignableExpression should be updated so that we can enable this, without failures
+        // in the tests
+        //reportError(ParserErrorCode.MISSING_ASSIGNABLE_SELECTOR);
       }
       return prefix;
     }
@@ -904,7 +908,7 @@ public class Parser {
     boolean progress = true;
     while (progress) {
       progress = false;
-      Expression selector = parseAssignableSelector(expression, false);
+      Expression selector = parseAssignableSelector(expression, true);
       if (selector != expression) {
         expression = selector;
         progress = true;
@@ -1054,7 +1058,7 @@ public class Parser {
       return parseSetter(comment, externalKeyword, staticKeyword, null);
     } else if (matches(Keyword.OPERATOR)) {
       if (staticKeyword != null) {
-        reportError(ParserErrorCode.OPERATOR_CANNOT_BE_STATIC, staticKeyword);
+        reportError(ParserErrorCode.STATIC_OPERATOR, staticKeyword);
       }
       return parseOperator(comment, externalKeyword, null);
     } else if (matchesIdentifier()) {
@@ -1085,7 +1089,7 @@ public class Parser {
       return parseSetter(comment, externalKeyword, staticKeyword, returnType);
     } else if (matches(Keyword.OPERATOR)) {
       if (staticKeyword != null) {
-        reportError(ParserErrorCode.OPERATOR_CANNOT_BE_STATIC, staticKeyword);
+        reportError(ParserErrorCode.STATIC_OPERATOR, staticKeyword);
       }
       return parseOperator(comment, externalKeyword, returnType);
     }
@@ -1210,11 +1214,11 @@ public class Parser {
         }
         Directive directive = parseDirective();
         if (declarations.size() > 0) {
-          reportError(ParserErrorCode.DIRECTIVE_OUT_OF_ORDER);
+          reportError(ParserErrorCode.DIRECTIVE_AFTER_DECLARATION);
         }
         if (directive instanceof LibraryDirective) {
           if (libraryDirectiveFound) {
-            reportError(ParserErrorCode.ONLY_ONE_LIBRARY_DIRECTIVE);
+            reportError(ParserErrorCode.MULTIPLE_LIBRARY_DIRECTIVES);
           } else {
             libraryDirectiveFound = true;
           }
@@ -1255,7 +1259,7 @@ public class Parser {
    */
   private CompilationUnitMember parseCompilationUnitMember() {
     if (matches(Keyword.STATIC)) {
-      reportError(ParserErrorCode.TOP_LEVEL_CANNOT_BE_STATIC);
+      reportError(ParserErrorCode.STATIC_TOP_LEVEL_DECLARATION);
       advance();
     }
     if (matches(Keyword.ABSTRACT) || matches(Keyword.CLASS)) {
@@ -1465,7 +1469,7 @@ public class Parser {
       label = parseSimpleIdentifier();
     }
     if (inSwitch && !inLoop && label == null) {
-      reportError(ParserErrorCode.CONTINUE_IN_CASE_MUST_HAVE_LABEL, continueKeyword);
+      reportError(ParserErrorCode.CONTINUE_WITHOUT_LABEL_IN_CASE, continueKeyword);
     }
     Token semicolon = expect(TokenType.SEMICOLON);
     return new ContinueStatement(continueKeyword, label, semicolon);
@@ -2812,7 +2816,7 @@ public class Parser {
       TypeName returnType) {
     Token operatorKeyword = expect(Keyword.OPERATOR);
     if (!currentToken.isUserDefinableOperator()) {
-      reportError(ParserErrorCode.OPERATOR_IS_NOT_USER_DEFINABLE);
+      reportError(ParserErrorCode.NON_USER_DEFINABLE_OPERATOR, currentToken.getLexeme());
     }
     SimpleIdentifier name = new SimpleIdentifier(getAndAdvance());
     FormalParameterList parameters = parseFormalParameterList();
@@ -3444,10 +3448,10 @@ public class Parser {
     Block body = parseBlock();
     ArrayList<CatchClause> catchClauses = new ArrayList<CatchClause>();
     Block finallyClause = null;
-    while (matches(Keyword.ON) || matches(Keyword.CATCH)) {
+    while (matches(ON) || matches(Keyword.CATCH)) {
       Token onKeyword = null;
       TypeName exceptionType = null;
-      if (matches(Keyword.ON)) {
+      if (matches(ON)) {
         onKeyword = getAndAdvance();
         exceptionType = new TypeName(parsePrefixedIdentifier(), null);
       }
@@ -3485,7 +3489,7 @@ public class Parser {
       finallyClause = parseBlock();
     } else {
       if (catchClauses.isEmpty()) {
-        reportError(ParserErrorCode.CATCH_OR_FINALLY_EXPECTED);
+        reportError(ParserErrorCode.MISSING_CATCH_OR_FINALLY);
       }
     }
     return new TryStatement(tryKeyword, body, catchClauses, finallyKeyword, finallyClause);
@@ -3663,7 +3667,7 @@ public class Parser {
       }
       return new PrefixExpression(operator, parseAssignableExpression());
     } else if (matches(TokenType.PLUS)) {
-      reportError(ParserErrorCode.NO_UNARY_PLUS_OPERATOR);
+      reportError(ParserErrorCode.USE_OF_UNARY_PLUS_OPERATOR);
     }
     return parsePostfixExpression();
   }
@@ -4037,7 +4041,7 @@ public class Parser {
     return token;
   }
 
-  /**
+/**
    * Parse a list of type arguments, starting at the given token, without actually creating a type argument list
    * or changing the current token. Return the token following the type argument list that was parsed,
    * or {@code null} if the given token is not the first token in a valid type argument list.
@@ -4255,9 +4259,9 @@ public class Parser {
   private void validateName(SimpleIdentifier name, boolean dynamicAllowed, ParserErrorCode errorCode) {
     Token token = name.getToken();
     if (token.getType() == TokenType.KEYWORD) {
-      reportError(errorCode, token);
+      reportError(errorCode, token, token.getLexeme());
     } else if (!dynamicAllowed && token.getLexeme().equals("Dynamic")) {
-      reportError(errorCode, token);
+      reportError(errorCode, token, token.getLexeme());
     }
   }
 }

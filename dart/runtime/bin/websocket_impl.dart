@@ -727,6 +727,7 @@ class _WebSocketClientConnection
   }
 
   void _generateNonceAndHash() {
+    Random random = new Random();
     assert(_nonce == null);
     void intToBigEndianBytes(int value, List<int> bytes, int offset) {
       bytes[offset] = (value >> 24) & 0xFF;
@@ -738,11 +739,11 @@ class _WebSocketClientConnection
     // Generate 16 random bytes. Use the last four bytes for the hash code.
     List<int> nonce = new List<int>(16);
     for (int i = 0; i < 4; i++) {
-      int r = (Math.random() * 0x100000000).toInt();
+      int r = random.nextInt(0x100000000);
       intToBigEndianBytes(r, nonce, i * 4);
     }
     _nonce = _Base64._encode(nonce);
-    _hash = (Math.random() * 0x100000000).toInt();
+    _hash = random.nextInt(0x100000000);
   }
 
   bool _isWebSocketUpgrade(HttpClientResponse response) {
@@ -832,8 +833,8 @@ class _WebSocket implements WebSocket {
     };
   }
 
-  int get readyState() => _readyState;
-  int get bufferedAmount() => 0;
+  int get readyState => _readyState;
+  int get bufferedAmount => 0;
 
   void set onopen(Function callback) {
     _onopen = callback;
@@ -847,8 +848,8 @@ class _WebSocket implements WebSocket {
     _onclose = callback;
   }
 
-  String get extensions() => null;
-  String get protocol() => null;
+  String get extensions => null;
+  String get protocol => null;
 
   void close(int code, String reason) {
     if (_readyState < WebSocket.CLOSING) _readyState = WebSocket.CLOSING;
@@ -874,16 +875,16 @@ class _WebSocket implements WebSocket {
 
 class _WebSocketMessageEvent implements MessageEvent {
   _WebSocketMessageEvent(this._data);
-  get data() => _data;
+  get data => _data;
   var _data;
 }
 
 
 class _WebSocketCloseEvent implements CloseEvent {
   _WebSocketCloseEvent(this._wasClean, this._code, this._reason);
-  bool get wasClean() => _wasClean;
-  int get code() => _code;
-  String get reason() => _reason;
+  bool get wasClean => _wasClean;
+  int get code => _code;
+  String get reason => _reason;
   bool _wasClean;
   int _code;
   String _reason;

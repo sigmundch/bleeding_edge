@@ -54,7 +54,7 @@ RawPcDescriptors* DescriptorList::FinalizePcDescriptors(uword entry_point) {
 
 void StackmapTableBuilder::AddEntry(intptr_t pc_offset,
                                     BitmapBuilder* bitmap) {
-  stack_map_ = Stackmap::New(pc_offset, entry_length_, bitmap);
+  stack_map_ = Stackmap::New(pc_offset, bitmap);
   list_.Add(stack_map_);
 }
 
