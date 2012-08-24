@@ -70,9 +70,6 @@ void rewirePrototypeChain(nativeElement, closure) {
   // TODO(samhop): worry about field initialization
   // TODO(samhop): worry about perf -- should probably make componentsMetadata
   // a native type.
-  // TODO(samhop): worry about IE9
-  // TODO(samhop): worry about inheriting transitively from a native (may
-  // currently work)
   // TODO(samhop): what happens if someone passes two different closures at
   // two different calls for the same type?
   var componentPrototype = _componentsMetadata[closure];
@@ -88,7 +85,6 @@ void rewirePrototypeChain(nativeElement, closure) {
     // TODO(samhop): consider the possibility of having different rewiring
     // functions for direct and transitive subtypes of native types.
     // Which to call will be known by the webcomponents compiler.
-    var currProto = componentPrototype;
     // check that the browser supports __proto__ mangling and, if so,
     // have we already mangled this proto chain appropriately?
     if (_supportsProto && !(JS(
@@ -99,6 +95,7 @@ void rewirePrototypeChain(nativeElement, closure) {
       // native chain.
       // TODO(samhop): worry about handling of methods that might be living
       // on $.Object, which won't make it into this prototype chain.
+      var currProto = componentPrototype;
       while(!(JS('var', 'Object.getPrototypeOf(#) === Object.prototype',
           currProto))) {
         currProto = JS('var', 'Object.getPrototypeOf(#)', currProto);
@@ -110,8 +107,7 @@ void rewirePrototypeChain(nativeElement, closure) {
   if (_supportsProto) {
     JS('void', '#.__proto__ = #', nativeElement, componentPrototype);
   } else {
-    // TODO(samhop): worry about multiple levels of inheritance.
-    _copyProperties(componentPrototype, nativeElement);
+    _copyProperties(componentPrototype, nativeElement, override: false);
   }
 }
 
@@ -141,11 +137,19 @@ class _ProtoTester {
 
 // see doc for _supportsProto
 // TODO(samhop): migrate this to the JS compiler directive.
-void _copyProperties(source, dest) native
+/**
+ * Copies all members of [source] (and its prototype chain) that are not defined
+ * only on Object to [dest]. If [override] is true, does not
+ * copy members already defined on [dest]. Does not copy empty members or the
+ * 'super' member.
+ */
+void _copyProperties(source, dest, [override = true]) native
 '''
   for (var member in source) {
+    var hasOwnProperty = Object.hasOwnProperty;
     if (member == '' || member == 'super') continue;
-    if (hasOwnProperty.call(source, member)) {
+    if (!(Object.prototype[member] === source[member])
+        && !(!override && hasOwnProperty.call(dest, member))) {
       dest[member] = source[member];
     }
   }
