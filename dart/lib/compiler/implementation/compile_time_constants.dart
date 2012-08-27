@@ -16,6 +16,7 @@ class Constant implements Hashable {
   bool isList() => false;
   bool isMap() => false;
   bool isConstructedObject() => false;
+  bool isFunction() => false;
   /** Returns true if the constant is null, a bool, a number or a string. */
   bool isPrimitive() => false;
   /** Returns true if the constant is a list, a map or a constructed object. */
@@ -31,6 +32,36 @@ class Constant implements Hashable {
   abstract void _writeCanonicalizedJsCode(CodeBuffer buffer,
                                           ConstantHandler handler);
   abstract List<Constant> getDependencies();
+}
+
+class FunctionConstant extends Constant {
+  Element element;
+
+  FunctionConstant(this.element);
+
+  bool isFunction() => true;
+
+  bool operator ==(var other) {
+    if (other is !FunctionConstant) return false;
+    return other.element === element;
+  }
+
+  String toString() => element.toString();
+  List<Constant> getDependencies() => const <Constant>[];
+  DartString toDartString() {
+    return new DartString.literal(element.name.slowToString());
+  }
+
+  void _writeJsCode(CodeBuffer buffer, ConstantHandler handler) {
+    compiler.internalError(
+        "A constant function does not need specific JS code");
+  }
+
+  void _writeCanonicalizedJsCode(CodeBuffer buffer, ConstantHandler handler) {
+    buffer.add(handler.compiler.namer.isolatePropertiesAccess(element));
+  }
+
+  int hashCode() => element.hashCode();
 }
 
 class PrimitiveConstant extends Constant {
@@ -57,7 +88,7 @@ class PrimitiveConstant extends Constant {
 
 class NullConstant extends PrimitiveConstant {
   /** The value a Dart null is compiled to in JavaScript. */
-  static final String JsNull = "null";
+  static const String JsNull = "null";
 
   factory NullConstant() => const NullConstant._internal();
   const NullConstant._internal();
@@ -322,16 +353,16 @@ class MapConstant extends ObjectConstant {
    * The [PROTO_PROPERTY] must not be used as normal property in any JavaScript
    * object. It would change the prototype chain.
    */
-  static final String PROTO_PROPERTY = "__proto__";
+  static const String PROTO_PROPERTY = "__proto__";
 
   /** The dart class implementing constant map literals. */
-  static final SourceString DART_CLASS = const SourceString("ConstantMap");
-  static final SourceString DART_PROTO_CLASS =
+  static const SourceString DART_CLASS = const SourceString("ConstantMap");
+  static const SourceString DART_PROTO_CLASS =
       const SourceString("ConstantProtoMap");
-  static final SourceString LENGTH_NAME = const SourceString("length");
-  static final SourceString JS_OBJECT_NAME = const SourceString("_jsObject");
-  static final SourceString KEYS_NAME = const SourceString("_keys");
-  static final SourceString PROTO_VALUE = const SourceString("_protoValue");
+  static const SourceString LENGTH_NAME = const SourceString("length");
+  static const SourceString JS_OBJECT_NAME = const SourceString("_jsObject");
+  static const SourceString KEYS_NAME = const SourceString("_keys");
+  static const SourceString PROTO_VALUE = const SourceString("_protoValue");
 
   final ListConstant keys;
   final List<Constant> values;
@@ -499,7 +530,10 @@ class ConstantHandler extends CompilerTask {
   String get name => 'ConstantHandler';
 
   void registerCompileTimeConstant(Constant constant) {
-    Function ifAbsentThunk = (() => compiler.namer.getFreshGlobalName("CTC"));
+    Function ifAbsentThunk = (() {
+      return constant.isFunction()
+          ? null : compiler.namer.getFreshGlobalName("CTC");
+    });
     compiledConstants.putIfAbsent(constant, ifAbsentThunk);
   }
 
@@ -598,7 +632,7 @@ class ConstantHandler extends CompilerTask {
   }
 
   /**
-   * Returns a [List] of static final fields that need to be initialized. The
+   * Returns a [List] of static const fields that need to be initialized. The
    * list must be evaluated in order since the fields might depend on each
    * other.
    */
@@ -844,6 +878,12 @@ class CompileTimeConstantEvaluator extends AbstractVisitor {
         error(send);
       }
       return compiler.compileVariable(element);
+    } else if (Elements.isStaticOrTopLevelFunction(element)
+               && send.isPropertyAccess) {
+      compiler.codegenWorld.staticFunctionsNeedingGetter.add(element);
+      Constant constant = new FunctionConstant(element);
+      compiler.constantHandler.registerCompileTimeConstant(constant);
+      return constant;
     } else if (send.isPrefix) {
       assert(send.isOperator);
       Constant receiverConstant = evaluate(send.receiver);

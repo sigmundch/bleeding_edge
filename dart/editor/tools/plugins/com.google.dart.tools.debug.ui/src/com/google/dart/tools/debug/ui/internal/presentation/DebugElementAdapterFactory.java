@@ -14,12 +14,16 @@
 
 package com.google.dart.tools.debug.ui.internal.presentation;
 
+import com.google.dart.tools.core.DartCore;
 import com.google.dart.tools.debug.core.dartium.DartiumDebugVariable;
 import com.google.dart.tools.debug.core.server.ServerDebugVariable;
 
 import org.eclipse.core.runtime.IAdapterFactory;
 import org.eclipse.core.runtime.IAdapterManager;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.debug.core.ILaunch;
+import org.eclipse.debug.core.Launch;
+import org.eclipse.debug.internal.ui.viewers.model.provisional.IElementContentProvider;
 import org.eclipse.debug.internal.ui.viewers.model.provisional.IElementLabelProvider;
 
 /**
@@ -37,10 +41,19 @@ public class DebugElementAdapterFactory implements IAdapterFactory {
 
     manager.registerAdapters(factory, DartiumDebugVariable.class);
     manager.registerAdapters(factory, ServerDebugVariable.class);
+
+    if (!DartCore.isPluginsBuild()) {
+      manager.registerAdapters(factory, Launch.class);
+    }
   }
+
+  private IAdapterFactory defaultAdapter = new org.eclipse.debug.internal.ui.views.launch.DebugElementAdapterFactory();
 
   private DartiumVariableLabelProvider dartiumLabelProvider = new DartiumVariableLabelProvider();
   private ServerVariableLabelProvider serverLabelProvider = new ServerVariableLabelProvider();
+
+  private static IElementContentProvider launchContentProvider = new DartLaunchContentProvider();
+  private static IElementLabelProvider debugElementLabelProvider = new DartLaunchElementLabelProvider();
 
   public DebugElementAdapterFactory() {
 
@@ -49,6 +62,15 @@ public class DebugElementAdapterFactory implements IAdapterFactory {
   @SuppressWarnings("rawtypes")
   @Override
   public Object getAdapter(Object adaptableObject, Class adapterType) {
+    if (adapterType.equals(IElementContentProvider.class)) {
+      if (adaptableObject instanceof ILaunch) {
+        return launchContentProvider;
+      }
+
+      // If we don't return the default debug adapter we won't be able to expand any variables.
+      return defaultAdapter.getAdapter(adaptableObject, adapterType);
+    }
+
     if (adaptableObject instanceof DartiumDebugVariable) {
       if (adapterType == IElementLabelProvider.class) {
         return dartiumLabelProvider;
@@ -61,13 +83,23 @@ public class DebugElementAdapterFactory implements IAdapterFactory {
       }
     }
 
+    if (adapterType.equals(IElementLabelProvider.class)) {
+      if (adaptableObject instanceof ILaunch) {
+        return debugElementLabelProvider;
+      }
+    }
+
     return null;
   }
 
   @SuppressWarnings("rawtypes")
   @Override
   public Class[] getAdapterList() {
-    return new Class[] {IElementLabelProvider.class};
+    if (DartCore.isPluginsBuild()) {
+      return new Class[] {IElementLabelProvider.class};
+    } else {
+      return new Class[] {IElementLabelProvider.class, IElementContentProvider.class};
+    }
   }
 
 }

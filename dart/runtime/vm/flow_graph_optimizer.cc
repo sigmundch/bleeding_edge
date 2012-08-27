@@ -154,6 +154,7 @@ static void RemovePushArguments(InstanceCallComp* comp) {
   // Remove original push arguments.
   for (intptr_t i = 0; i < comp->ArgumentCount(); ++i) {
     PushArgumentInstr* push = comp->ArgumentAt(i);
+    push->ReplaceUsesWith(push->value());
     push->RemoveFromGraph();
   }
 }
@@ -201,9 +202,6 @@ void FlowGraphOptimizer::AddCheckClass(BindInstr* instr,
       ICData::ZoneHandle(comp->ic_data()->AsUnaryClassChecks());
   check->set_ic_data(&unary_checks);
   InsertBefore(instr, check, instr->env(), BindInstr::kUnused);
-  // Detach environment from the original instruction because it can't
-  // deoptimize.
-  instr->set_env(NULL);
 }
 
 
@@ -222,18 +220,21 @@ bool FlowGraphOptimizer::TryReplaceWithArrayOp(BindInstr* instr,
       // Fall through.
     case kArrayCid:
     case kGrowableObjectArrayCid: {
+      Value* array = comp->ArgumentAt(0)->value();
+      Value* index = comp->ArgumentAt(1)->value();
+      // Insert class check and index smi checks and attach a copy of the
+      // original environment because the operation can still deoptimize.
+      AddCheckClass(instr, comp, array->CopyValue());
+      InsertBefore(instr,
+                   new CheckSmiComp(index->CopyValue(), comp),
+                   instr->env(),
+                   BindInstr::kUnused);
       Computation* array_op = NULL;
       if (op_kind == Token::kINDEX) {
-        array_op = new LoadIndexedComp(comp->ArgumentAt(0)->value(),
-                                       comp->ArgumentAt(1)->value(),
-                                       class_id,
-                                       comp);
+        array_op = new LoadIndexedComp(array, index, class_id, comp);
       } else {
-        array_op = new StoreIndexedComp(comp->ArgumentAt(0)->value(),
-                                        comp->ArgumentAt(1)->value(),
-                                        comp->ArgumentAt(2)->value(),
-                                        class_id,
-                                        comp);
+        Value* value = comp->ArgumentAt(2)->value();
+        array_op = new StoreIndexedComp(array, index, value, class_id, comp);
       }
       array_op->set_ic_data(comp->ic_data());
       instr->set_computation(array_op);
@@ -251,7 +252,7 @@ BindInstr* FlowGraphOptimizer::InsertBefore(Instruction* instr,
                                             Environment* env,
                                             BindInstr::UseKind use_kind) {
   BindInstr* bind = new BindInstr(use_kind, comp);
-  if (env != NULL) bind->set_env(env->Copy());
+  if (env != NULL) env->CopyTo(bind);
   if (use_kind == BindInstr::kUsed) {
     bind->set_ssa_temp_index(flow_graph_->alloc_ssa_temp_index());
   }
@@ -265,7 +266,7 @@ BindInstr* FlowGraphOptimizer::InsertAfter(Instruction* instr,
                                            Environment* env,
                                            BindInstr::UseKind use_kind) {
   BindInstr* bind = new BindInstr(use_kind, comp);
-  if (env != NULL) bind->set_env(env->Copy());
+  if (env != NULL) env->CopyTo(bind);
   if (use_kind == BindInstr::kUsed) {
     bind->set_ssa_temp_index(flow_graph_->alloc_ssa_temp_index());
   }
@@ -417,7 +418,14 @@ bool FlowGraphOptimizer::TryReplaceWithUnaryOp(BindInstr* instr,
   ASSERT(comp->ArgumentCount() == 1);
   Computation* unary_op = NULL;
   if (HasOneSmi(*comp->ic_data())) {
-    unary_op = new UnarySmiOpComp(op_kind, comp, comp->ArgumentAt(0)->value());
+    Value* value = comp->ArgumentAt(0)->value();
+    InsertBefore(instr,
+                 new CheckSmiComp(value->CopyValue(), comp),
+                 instr->env(),
+                 BindInstr::kUnused);
+    unary_op = new UnarySmiOpComp(op_kind,
+                                  (op_kind == Token::kNEGATE) ? comp : NULL,
+                                  value);
   } else if (HasOneDouble(*comp->ic_data()) && (op_kind == Token::kNEGATE)) {
     unary_op = new NumberNegateComp(comp, comp->ArgumentAt(0)->value());
   }
@@ -471,10 +479,11 @@ bool FlowGraphOptimizer::TryInlineInstanceGetter(BindInstr* instr,
     ASSERT(!field.IsNull());
 
     AddCheckClass(instr, comp, comp->ArgumentAt(0)->value()->CopyValue());
+    // Detach environment from the original instruction because it can't
+    // deoptimize.
+    instr->set_env(NULL);
     LoadInstanceFieldComp* load =
-        new LoadInstanceFieldComp(field,
-                                  comp->ArgumentAt(0)->value(),
-                                  NULL);  // Can not deoptimize.
+        new LoadInstanceFieldComp(field, comp->ArgumentAt(0)->value());
     instr->set_computation(load);
     RemovePushArguments(comp);
     return true;
@@ -605,11 +614,8 @@ void FlowGraphOptimizer::VisitInstanceCall(InstanceCallComp* comp,
       // TODO(srdjan): Add check class comp for mixed smi/non-smi.
       if (HasOneTarget(unary_checks) &&
           (unary_checks.GetReceiverClassIdAt(0) != kSmiCid)) {
-        Value* value = comp->ArgumentAt(0)->value()->CopyValue();
         // Type propagation has not run yet, we cannot eliminate the check.
-        CheckClassComp* check = new CheckClassComp(value, comp);
-        check->set_ic_data(&unary_checks);
-        InsertBefore(instr, check, instr->env(), BindInstr::kUnused);
+        AddCheckClass(instr, comp, comp->ArgumentAt(0)->value()->CopyValue());
         // Call can still deoptimize, do not detach environment from instr.
         call_with_checks = false;
       } else {
@@ -668,11 +674,13 @@ bool FlowGraphOptimizer::TryInlineInstanceSetter(BindInstr* instr,
   ASSERT(!field.IsNull());
 
   AddCheckClass(instr, comp, comp->ArgumentAt(0)->value()->CopyValue());
+  // Detach environment from the original instruction because it can't
+  // deoptimize.
+  instr->set_env(NULL);
   StoreInstanceFieldComp* store = new StoreInstanceFieldComp(
       field,
       comp->ArgumentAt(0)->value(),
-      comp->ArgumentAt(1)->value(),
-      NULL);  // Can not deoptimize.
+      comp->ArgumentAt(1)->value());
   instr->set_computation(store);
   RemovePushArguments(comp);
   return true;
@@ -728,21 +736,6 @@ void FlowGraphOptimizer::VisitEqualityCompare(EqualityCompareComp* comp,
   } else if (comp->ic_data()->AllReceiversAreNumbers()) {
     comp->set_receiver_class_id(kNumberCid);
   }
-}
-
-
-void FlowGraphOptimizer::VisitBranch(BranchInstr* instr) {
-  if ((instr->kind() != Token::kEQ) &&
-      (instr->kind() != Token::kNE)) {
-    return;
-  }
-  if (!instr->left()->BindsToConstantNull() &&
-      !instr->right()->BindsToConstantNull()) {
-    return;
-  }
-  Token::Kind strict_kind = (instr->kind() == Token::kEQ) ?
-      Token::kEQ_STRICT : Token::kNE_STRICT;
-  instr->set_kind(strict_kind);
 }
 
 
@@ -922,7 +915,7 @@ void FlowGraphTypePropagator::VisitBind(BindInstr* bind) {
       still_changing_ = true;
     }
     // Propagate class ids.
-    intptr_t cid = bind->computation()->ResultCid();
+    const intptr_t cid = bind->computation()->ResultCid();
     changed = bind->SetPropagatedCid(cid);
     if (changed) {
       still_changing_ = true;

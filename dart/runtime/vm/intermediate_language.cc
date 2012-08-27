@@ -168,7 +168,7 @@ FOR_EACH_INSTRUCTION(DEFINE_ACCEPT)
 
 Instruction* Instruction::RemoveFromGraph(bool return_previous) {
   ASSERT(!IsBlockEntry());
-  ASSERT(!IsBranch());
+  ASSERT(!IsControl());
   ASSERT(!IsThrow());
   ASSERT(!IsReturn());
   ASSERT(!IsReThrow());
@@ -292,6 +292,15 @@ bool Value::CompileTypeIsMoreSpecificThan(const AbstractType& dst_type) const {
 }
 
 
+bool Value::NeedsStoreBuffer() const {
+  const intptr_t cid = ResultCid();
+  if ((cid == kSmiCid) || (cid == kBoolCid) || (cid == kNullCid)) {
+    return false;
+  }
+  return !BindsToConstant();
+}
+
+
 RawAbstractType* PhiInstr::CompileType() const {
   ASSERT(!HasPropagatedType());
   // Since type propagation has not yet occured, we are reaching this phi via a
@@ -386,6 +395,7 @@ void UseVal::AddToEnvUseList() {
 
 void Definition::ReplaceUsesWith(Definition* other) {
   ASSERT(other != NULL);
+  ASSERT(this != other);
   while (input_use_list_ != NULL) {
     UseVal* current = input_use_list_;
     input_use_list_ = input_use_list_->next_use();
@@ -423,7 +433,9 @@ void Definition::ReplaceUsesWith(Value* value) {
 
 
 bool Definition::SetPropagatedCid(intptr_t cid) {
-  ASSERT(cid != kIllegalCid);
+  if (cid == kIllegalCid) {
+    return false;
+  }
   if (propagated_cid_ == kIllegalCid) {
     // First setting, nothing has changed.
     propagated_cid_ = cid;
@@ -546,7 +558,7 @@ void BlockEntryInstr::DiscoverBlocks(
   Instruction* next_instr = next();
   while ((next_instr != NULL) &&
          !next_instr->IsBlockEntry() &&
-         !next_instr->IsBranch()) {
+         !next_instr->IsControl()) {
     if (vars != NULL) {
       next_instr->RecordAssignedVars(vars, fixed_parameter_count);
     }
@@ -567,7 +579,7 @@ void BlockEntryInstr::DiscoverBlocks(
 }
 
 
-void BranchInstr::DiscoverBlocks(
+void ControlInstruction::DiscoverBlocks(
     BlockEntryInstr* current_block,
     GrowableArray<BlockEntryInstr*>* preorder,
     GrowableArray<BlockEntryInstr*>* postorder,
@@ -647,12 +659,12 @@ BlockEntryInstr* GraphEntryInstr::SuccessorAt(intptr_t index) const {
 }
 
 
-intptr_t BranchInstr::SuccessorCount() const {
+intptr_t ControlInstruction::SuccessorCount() const {
   return 2;
 }
 
 
-BlockEntryInstr* BranchInstr::SuccessorAt(intptr_t index) const {
+BlockEntryInstr* ControlInstruction::SuccessorAt(intptr_t index) const {
   if (index == 0) return true_successor_;
   if (index == 1) return false_successor_;
   UNREACHABLE();
@@ -1119,6 +1131,18 @@ Definition* StrictCompareComp::TryReplace(BindInstr* instr) const {
 }
 
 
+Definition* CheckClassComp::TryReplace(BindInstr* instr) const {
+  const intptr_t v_cid = value()->ResultCid();
+  const intptr_t num_checks = ic_data()->NumberOfChecks();
+  if ((num_checks == 1) &&
+      (v_cid == ic_data()->GetReceiverClassIdAt(0))) {
+    // No checks needed.
+    return NULL;
+  }
+  return instr;
+}
+
+
 Definition* CheckSmiComp::TryReplace(BindInstr* instr) const {
   return (value()->ResultCid() == kSmiCid) ?  NULL : instr;
 }
@@ -1162,41 +1186,6 @@ void TargetEntryInstr::PrepareEntry(FlowGraphCompiler* compiler) {
   if (HasParallelMove()) {
     compiler->parallel_move_resolver()->EmitNativeCode(parallel_move());
   }
-}
-
-
-LocationSummary* StoreInstanceFieldComp::MakeLocationSummary() const {
-  const intptr_t kNumInputs = 2;
-  const intptr_t num_temps = HasICData() ? 1 : 0;
-  LocationSummary* summary =
-      new LocationSummary(kNumInputs, num_temps, LocationSummary::kNoCall);
-  summary->set_in(0, Location::RequiresRegister());
-  summary->set_in(1, Location::RequiresRegister());
-  if (HasICData()) {
-    summary->set_temp(0, Location::RequiresRegister());
-  }
-  return summary;
-}
-
-
-void StoreInstanceFieldComp::EmitNativeCode(FlowGraphCompiler* compiler) {
-  Register instance_reg = locs()->in(0).reg();
-  Register value_reg = locs()->in(1).reg();
-
-  if (HasICData()) {
-    ASSERT(original() != NULL);
-    Label* deopt = compiler->AddDeoptStub(original()->deopt_id(),
-                                          original()->try_index(),
-                                          kDeoptInstanceGetterSameTarget);
-    // Smis do not have instance fields (Smi class is always first).
-    Register temp_reg = locs()->temp(0).reg();
-    ASSERT(temp_reg != instance_reg);
-    ASSERT(temp_reg != value_reg);
-    ASSERT(ic_data() != NULL);
-    compiler->EmitClassChecksNoSmi(*ic_data(), instance_reg, temp_reg, deopt);
-  }
-  __ StoreIntoObject(instance_reg, FieldAddress(instance_reg, field().Offset()),
-                     value_reg);
 }
 
 
@@ -1269,8 +1258,8 @@ static Condition NegateCondition(Condition condition) {
 }
 
 
-void BranchInstr::EmitBranchOnCondition(FlowGraphCompiler* compiler,
-                                        Condition true_condition) {
+void ControlInstruction::EmitBranchOnCondition(FlowGraphCompiler* compiler,
+                                               Condition true_condition) {
   if (compiler->IsNextBlock(false_successor())) {
     // If the next block is the false successor we will fall through to it.
     __ j(true_condition, compiler->GetBlockLabel(true_successor()));
@@ -1414,25 +1403,6 @@ void AssertAssignableComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-LocationSummary* StoreStaticFieldComp::MakeLocationSummary() const {
-  LocationSummary* locs = new LocationSummary(1, 1, LocationSummary::kNoCall);
-  locs->set_in(0, Location::RequiresRegister());
-  locs->set_temp(0, Location::RequiresRegister());
-  locs->set_out(Location::SameAsFirstInput());
-  return locs;
-}
-
-
-void StoreStaticFieldComp::EmitNativeCode(FlowGraphCompiler* compiler) {
-  Register value = locs()->in(0).reg();
-  Register temp = locs()->temp(0).reg();
-  ASSERT(locs()->out().reg() == value);
-
-  __ LoadObject(temp, field());
-  __ StoreIntoObject(temp, FieldAddress(temp, Field::value_offset()), value);
-}
-
-
 LocationSummary* BooleanNegateComp::MakeLocationSummary() const {
   return LocationSummary::Make(1,
                                Location::RequiresRegister(),
@@ -1484,8 +1454,13 @@ void StoreVMFieldComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   Register dest_reg = locs()->in(1).reg();
   ASSERT(value_reg == locs()->out().reg());
 
-  __ StoreIntoObject(dest_reg, FieldAddress(dest_reg, offset_in_bytes()),
-                     value_reg);
+  if (value()->NeedsStoreBuffer()) {
+    __ StoreIntoObject(dest_reg, FieldAddress(dest_reg, offset_in_bytes()),
+                       value_reg);
+  } else {
+    __ StoreIntoObjectNoBarrier(
+        dest_reg, FieldAddress(dest_reg, offset_in_bytes()), value_reg);
+  }
 }
 
 
@@ -1567,17 +1542,22 @@ Environment::Environment(const GrowableArray<Definition*>& definitions,
 }
 
 
-Environment* Environment::Copy() const {
+// Copies the environment and updates the environment use lists.
+void Environment::CopyTo(Instruction* instr) const {
   Environment* copy = new Environment(values().length(),
                                       fixed_parameter_count());
   GrowableArray<Value*>* values_copy = copy->values_ptr();
   for (intptr_t i = 0; i < values().length(); ++i) {
-    Value* val = values()[i];
-    values_copy->Add(val->IsUse()
-                     ? UseDefinition(values()[i]->AsUse()->definition())
-                     : val);
+    Value* value = values()[i]->CopyValue();
+    values_copy->Add(value);
+    UseVal* use = value->AsUse();
+    if (use != NULL) {
+      use->set_instruction(instr);
+      use->set_use_index(i);
+      use->AddToEnvUseList();
+    }
   }
-  return copy;
+  instr->set_env(copy);
 }
 
 

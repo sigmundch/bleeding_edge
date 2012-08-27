@@ -188,7 +188,6 @@ Language/10_Expressions/20_Equality_A02_t02: Fail # Compile-time error: unexpect
 Language/10_Expressions/20_Equality_A02_t03: Fail # Compile-time error: unexpected token 'equals'
 Language/10_Expressions/20_Equality_A02_t04: Fail # Compile-time error: unexpected token 'equals'
 Language/10_Expressions/20_Equality_A03_t01: Fail # Compile-time error: unexpected token 'equals'
-Language/10_Expressions/20_Equality_A03_t02: Fail # Compile-time error: unexpected token 'equals'
 Language/10_Expressions/20_Equality_A03_t03: Fail # Compile-time error: unexpected token 'equals'
 LibTest/core/Futures/wait_A01_t02: Fail # Runtime error: 1
 Language/07_Classes/4_Instance_Variables_A02_t01: Fail # Runtime error: Expect.equals(expected: <1.2>, actual: <1.1>) fails.
@@ -301,6 +300,8 @@ LibTest/core/Date/Date.withTimeZone_A01_t03: Fail, Pass
 
 LibTest/core/TimeZone/TimeZone.local_A01_t01: Fail, Pass
 LibTest/core/TimeZone/TimeZone.utc_A01_t01: Fail, Pass
+
+Language/10_Expressions/01_Constants_A15_t48: Fail # co19 issue 171
 
 
 [ $compiler == dart2js && $checked ]
@@ -626,13 +627,6 @@ Language/07_Classes/07_Classes_A02_t07: Fail # @compile-error
 Language/07_Classes/07_Classes_A02_t09: Fail # @compile-error
 Language/07_Classes/07_Classes_A02_t10: Fail # @compile-error
 Language/07_Classes/07_Classes_A02_t11: Fail # @compile-error
-Language/07_Classes/07_Classes_A02_t25: Fail # @compile-error
-Language/07_Classes/07_Classes_A02_t26: Fail # @compile-error
-Language/07_Classes/07_Classes_A02_t27: Fail # @compile-error
-Language/07_Classes/07_Classes_A02_t28: Fail # @compile-error
-Language/07_Classes/07_Classes_A02_t29: Fail # @compile-error
-Language/07_Classes/07_Classes_A02_t31: Fail # @compile-error
-Language/07_Classes/07_Classes_A02_t33: Fail # @compile-error
 Language/07_Classes/07_Classes_A03_t02: Fail # @compile-error
 Language/07_Classes/07_Classes_A03_t03: Fail # @compile-error
 Language/07_Classes/07_Classes_A03_t04: Fail # @compile-error
@@ -680,16 +674,11 @@ Language/07_Classes/3_Setters_A03_t05: Fail # @compile-error
 Language/07_Classes/3_Setters_A03_t06: Fail # @compile-error
 Language/07_Classes/3_Setters_A03_t07: Fail # @compile-error
 Language/07_Classes/3_Setters_A03_t08: Fail # @compile-error
-Language/07_Classes/5_Constructors/1_Generative_Constructors_A01_t04: Fail # @compile-error
-Language/07_Classes/5_Constructors/1_Generative_Constructors_A01_t05: Fail # @compile-error
 Language/07_Classes/5_Constructors/1_Generative_Constructors_A03_t05: Fail # @compile-error
 Language/07_Classes/5_Constructors/1_Generative_Constructors_A09_t01: Fail # @compile-error
-Language/07_Classes/5_Constructors/2_Factories_A01_t05: Fail # @compile-error
 Language/07_Classes/5_Constructors/2_Factories_A02_t01: Fail # @compile-error
 Language/07_Classes/5_Constructors/2_Factories_A05_t01: Fail # @compile-error
 Language/07_Classes/5_Constructors/2_Factories_A05_t03: Fail # @compile-error
-Language/07_Classes/5_Constructors/3_Constant_Constructors_A01_t05: Fail # @compile-error
-Language/07_Classes/5_Constructors/3_Constant_Constructors_A01_t06: Fail # @compile-error
 Language/07_Classes/5_Constructors/3_Constant_Constructors_A02_t01: Fail # @compile-error
 Language/07_Classes/5_Constructors/3_Constant_Constructors_A02_t03: Fail # @compile-error
 Language/07_Classes/5_Constructors/3_Constant_Constructors_A03_t01: Fail # @compile-error

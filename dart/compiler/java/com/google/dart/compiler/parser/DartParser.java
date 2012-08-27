@@ -699,6 +699,7 @@ public class DartParser extends CompletionHooksParserBase {
     expect(Token.LPAREN);
     beginLiteral();
     expect(Token.STRING);
+    @SuppressWarnings("unused")
     DartStringLiteral resourceUri = done(DartStringLiteral.get(ctx.getTokenString()));
     expectCloseParen();
     expect(Token.SEMICOLON);
@@ -1456,6 +1457,25 @@ public class DartParser extends CompletionHooksParserBase {
     }
     done(name);
     List<DartParameter> formals = parseFormalParameterList();
+
+    // Parse redirecting factory
+    if (match(Token.ASSIGN)) {
+      next();
+      if (!modifiers.isFactory()) {
+        reportError(position(), ParserErrorCode.ONLY_FACTORIES_CAN_REDIRECT);
+      }
+      modifiers = modifiers.makeRedirectedConstructor();
+      DartTypeNode redirectedTypeName = parseTypeAnnotation();
+      DartIdentifier redirectedConstructorName = null;
+      if (optional(Token.PERIOD)) {
+        redirectedConstructorName = parseIdentifier();
+      }
+      expect(Token.SEMICOLON);
+      DartFunction function = doneWithoutConsuming(new DartFunction(formals, null, null));
+      return DartMethodDefinition.create(name, function, modifiers, redirectedTypeName, 
+                                         redirectedConstructorName);
+    }
+
     DartFunction function;
     if (peekPseudoKeyword(0, NATIVE_KEYWORD)) {
       modifiers = modifiers.makeNative();
@@ -1618,6 +1638,25 @@ public class DartParser extends CompletionHooksParserBase {
           reportError(parameter, ParserErrorCode.NAMED_PARAMETER_NOT_ALLOWED);
         }
       }
+    }
+
+    // Parse redirecting factory
+    DartTypeNode redirectedTypeName = null;
+    DartIdentifier redirectedConstructorName = null;
+    if (match(Token.ASSIGN)) {
+      next();
+      if (!modifiers.isFactory()) {
+        reportError(position(), ParserErrorCode.ONLY_FACTORIES_CAN_REDIRECT);
+      }
+      modifiers = modifiers.makeRedirectedConstructor();
+      redirectedTypeName = parseTypeAnnotation();
+      if (optional(Token.PERIOD)) {
+        redirectedConstructorName = parseIdentifier();
+      }
+      expect(Token.SEMICOLON);
+      DartFunction function = doneWithoutConsuming(new DartFunction(parameters, null, returnType));
+      return DartMethodDefinition.create(name, function, modifiers, redirectedTypeName, 
+                                         redirectedConstructorName);
     }
 
     // Parse initializer expressions for constructors.
@@ -3056,6 +3095,8 @@ public class DartParser extends CompletionHooksParserBase {
    * error that needs to be handled in an enclosing context.
    */
   private static class StringInterpolationParseError extends RuntimeException {
+    private static final long serialVersionUID = 1L;
+
     public StringInterpolationParseError() {
       super();
     }
@@ -3426,10 +3467,20 @@ public class DartParser extends CompletionHooksParserBase {
       case STRING_LAST_SEGMENT:
         throw new StringInterpolationParseError();
 
+      case CONDITIONAL:
+        return parseArgumentDefinitionTest();
+
       default: {
         return parseLiteral();
       }
     }
+  }
+
+  private DartExpression parseArgumentDefinitionTest() {
+    beginArgumentDefinitionTest();
+    int operatorOffset = position();
+    expect(Token.CONDITIONAL);
+    return done(new DartUnaryExpression(Token.CONDITIONAL, operatorOffset, parseIdentifier(), true));
   }
 
   private DartExpression parseConstructorInvocation(boolean isConst) {

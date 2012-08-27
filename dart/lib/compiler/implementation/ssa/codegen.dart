@@ -3,7 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 class SsaCodeGeneratorTask extends CompilerTask {
+
   final JavaScriptBackend backend;
+
   SsaCodeGeneratorTask(JavaScriptBackend backend)
       : this.backend = backend,
         super(backend.compiler);
@@ -129,9 +131,9 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
    *   variable = expression
    * which are also valid as parts of a "var" declaration.
    */
-  static final int TYPE_STATEMENT = 0;
-  static final int TYPE_EXPRESSION = 1;
-  static final int TYPE_DECLARATION = 2;
+  static const int TYPE_STATEMENT = 0;
+  static const int TYPE_EXPRESSION = 1;
+  static const int TYPE_DECLARATION = 2;
 
   /**
    * Whether we are currently generating expressions instead of statements.
@@ -1681,8 +1683,15 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
         CodeBuffer buffer = new CodeBuffer();
         handler.writeConstant(buffer, constant);
         push(new js.LiteralString(buffer.toString()));
+      } else if (constant.isFunction()) {
+        FunctionConstant function = constant;
+        world.registerStaticUse(function.element);
+        push(new js.VariableUse(
+            compiler.namer.isolateAccess(function.element)));
       } else {
-        compiler.internalError("Forgot constant $constant");
+        compiler.internalError(
+            "The compiler does not know how generate code for "
+            "constant $constant");
       }
     } else {
       js.VariableUse currentIsolateUse =

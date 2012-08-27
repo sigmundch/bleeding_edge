@@ -9,8 +9,8 @@
 #import('../js_backend/js_backend.dart');
 #import('../leg.dart');
 
-final bool GENERATE_SSA_TRACE = false;
-final String SSA_TRACE_FILTER = null;
+const bool GENERATE_SSA_TRACE = false;
+const String SSA_TRACE_FILTER = null;
 
 class HTracer extends HGraphVisitor implements Tracer {
   JavaScriptItemCompilationContext context;
@@ -266,12 +266,13 @@ class HInstructionStringifier implements HVisitor<String> {
   String visitExit(HExit node) => "exit";
 
   String visitFieldGet(HFieldGet node) {
-    return 'get ${temporaryId(node.receiver)}.${node.fieldName.slowToString()}';
+    String fieldName = node.element.name.slowToString();
+    return 'get ${temporaryId(node.receiver)}.$fieldName}';
   }
 
   String visitFieldSet(HFieldSet node) {
     String valueId = temporaryId(node.value);
-    String fieldName = node.fieldName.slowToString();
+    String fieldName = node.element.name.slowToString();
     return 'set ${temporaryId(node.receiver)}.$fieldName to $valueId';
   }
 
