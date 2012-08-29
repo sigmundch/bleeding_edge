@@ -34,7 +34,7 @@ class CustomDiv extends DivElementImpl {
       _$constructorThunk = (() => new CustomDiv._internal());
     }
     var div = new DivElement();
-    rewirePrototypeChain(div, _$constructorThunk);
+    rewirePrototypeChain(div, _$constructorThunk, 'CustomDiv');
     return div;
   }
 }

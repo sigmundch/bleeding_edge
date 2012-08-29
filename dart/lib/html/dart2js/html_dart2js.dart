@@ -39525,78 +39525,36 @@ class _Lists {
 // html_dart2js in a post-processing step to enable webcomponents
 // functionality.
 
-/**
- * _ListMap class so that we have a dictionary usable with non-hashable keys.
- * Note: this class does NOT yet have full Map functionality
- */
-class _ListMap<K, V> {
-
-  List<_Pair<K, V>> _list;
-
-  _ListMap()
-    : _list = new List<_Pair<K, V>>() { }
-
-  void operator []=(K key, V value) {
-    for (var pair in _list) {
-      if (pair._key == key) {
-        pair._value = value;
-        return;
-      }
-    }
-    _list.add(new _Pair<K,V>(key, value));
-  }
-
-  V operator [](K key) {
-    for (var pair in _list) {
-      if (pair._key == key)
-        return pair._value;
-    }
-    return null;
-  }
-}
-
-class _Pair<K, V> {
-  final K _key;
-  V _value;
-
-  _Pair(this._key, this._value);
-}
-
-// TODO(samhop): add some types
-
-get _componentsMetadata() {
+get _componentsMetadata {
   if (JS('var', 'typeof(\$componentsMetadata)') === 'undefined') {
-    _componentsMetadata = new _ListMap();
+    _componentsMetadata = JS('var', 'Object.create(null)');
   }
   return JS('var', '\$componentsMetadata');
 }
 
 void set _componentsMetadata(m) {
-  JS('void', '\$componentsMetadata = #', m);
+ JS('void', '\$componentsMetadata = #', m);
 }
 
 /**
- * Takes [nativeElement] of type NativeType, and [closure], a thunk
- * returning a webcomponent of type T and does prototype
- * mangling to achieve the following inheritance hierarchy
+ * Takes [nativeElement] of type NativeType, [closure], a thunk returning a
+ * webcomponent of type T, and a string [name], the name of type T, and does
+ * prototype mangling to achieve the following inheritance hierarchy
  *
  * [nativeElement] is T <: *classes between T and NativeType* <: NativeType
- *
- * For optimal performance, each call with the same type T should pass the
- * same closure.
  */
-void rewirePrototypeChain(nativeElement, closure) {
+void rewirePrototypeChain(nativeElement, closure, String name) {
   // TODO(samhop): worry about field initialization
   // TODO(samhop): worry about perf -- should probably make componentsMetadata
   // a native type.
   // TODO(samhop): what happens if someone passes two different closures at
   // two different calls for the same type?
-  var componentPrototype = _componentsMetadata[closure];
+  var componentPrototype = JS('var', '#[#]', _componentsMetadata, name);
   if (componentPrototype == null) {
     var nonNativeElement = closure();
     componentPrototype = JS('var', 'Object.getPrototypeOf(#)',
         nonNativeElement);
-    _componentsMetadata[closure] = componentPrototype;
+    JS('void', '#[#] = #', _componentsMetadata, name, componentPrototype);
     // We rely on the __proto__.__proto__ of a nonnative direct subtype of
     // a native type
     // being Object.prototype to detect whether or not we are at what should
@@ -39635,19 +39593,26 @@ void rewirePrototypeChain(nativeElement, closure) {
 // be a way to refactor to get it into a shared library (although it will
 // be tricky, since the functionality there is needed at initialization time).
 // (See documentation in emitter.dart)
+
+// Singleton
+bool _supportsProtoCache;
 bool get _supportsProto() {
-  var supportsProto = false;
-  var tmp = new _ProtoTester();
-  var tmpPrototype = JS('var', '#.constructor.prototype', tmp);
-  var protoFieldExists = JS('var', '!!(#.__proto__)', tmpPrototype);
-  if (protoFieldExists) {
-    JS('void', '#.__proto__ = {}', tmpPrototype);
-    var undefinedCheck = JS('var', 'typeof # === "undefined"', tmpPrototype.f);
-    if (undefinedCheck) {
-      supportsProto = true;
+  if (_supportsProtoCache == null) {
+    var supportsProto = false;
+    var tmp = new _ProtoTester();
+    var tmpPrototype = JS('var', '#.constructor.prototype', tmp);
+    var protoFieldExists = JS('var', '!!(#.__proto__)', tmpPrototype);
+    if (protoFieldExists) {
+      JS('void', '#.__proto__ = {}', tmpPrototype);
+      var undefinedCheck = 
+          JS('var', 'typeof # === "undefined"', tmpPrototype.f);
+      if (undefinedCheck) {
+        supportsProto = true;
+      }
     }
+    _supportsProtoCache = supportsProto;
   }
-  return supportsProto;
+  return _supportsProtoCache;
 }
 
 class _ProtoTester {

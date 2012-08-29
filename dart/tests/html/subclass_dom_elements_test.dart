@@ -51,6 +51,11 @@ main() {
       normaldiv.nodes.add(mydiv);
       expect(mydiv == normaldiv.query('div'));
     });
+
+    test('names should not conflict with js names', () {
+      hasOwnProperty p = new hasOwnProperty();
+      expect(p.razzle() == 'razzle');
+    });
   });
 }
 
@@ -67,7 +72,24 @@ class CustomDiv extends DivElementImpl {
       _$constructorThunk = (() => new CustomDiv._internal());
     }
     var div = new DivElement();
-    rewirePrototypeChain(div, _$constructorThunk);
+    rewirePrototypeChain(div, _$constructorThunk, 'CustomDiv');
+    return div;
+  }
+}
+
+class hasOwnProperty extends DivElementImpl {
+  String razzle() {
+    return 'razzle';
+  }
+
+  static var _$constructorThunk;
+  hasOwnProperty._internal();
+  factory hasOwnProperty() {
+    if (_$constructorThunk == null) {
+      _$constructorThunk = (() => new hasOwnProperty._internal());
+    }
+    var div = new DivElement();
+    rewirePrototypeChain(div, _$constructorThunk, 'hasOwnProperty');
     return div;
   }
 }

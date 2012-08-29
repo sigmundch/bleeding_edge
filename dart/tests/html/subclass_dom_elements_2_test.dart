@@ -93,7 +93,7 @@ class Foo extends ParagraphElementImpl {
       _$constructorThunk = (() => new Foo._internal());
     }
     var paragraph = new ParagraphElement();
-    rewirePrototypeChain(paragraph, _$constructorThunk);
+    rewirePrototypeChain(paragraph, _$constructorThunk, 'Foo');
     return paragraph;
   }
 }
@@ -115,7 +115,7 @@ class Bar extends Foo {
       _$constructorThunk = (() => new Bar._internal());
     }
     var paragraph = new ParagraphElement();
-    rewirePrototypeChain(paragraph, _$constructorThunk);
+    rewirePrototypeChain(paragraph, _$constructorThunk, 'Bar');
     return paragraph;
   }
 }
@@ -133,7 +133,7 @@ class Baz extends Bar {
       _$constructorThunk = (() => new Baz._internal());
     }
     var paragraph = new ParagraphElement();
-    rewirePrototypeChain(paragraph, _$constructorThunk);
+    rewirePrototypeChain(paragraph, _$constructorThunk, 'Baz');
     return paragraph;
   }
 }
