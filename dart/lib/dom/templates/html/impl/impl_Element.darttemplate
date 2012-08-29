@@ -107,10 +107,6 @@ class _ChildrenElementList implements ElementList {
     throw const UnsupportedOperationException('TODO(jacobr): should we impl?');
   }
 
-  void copyFrom(List<Object> src, int srcStart, int dstStart, int count) {
-    throw 'Not impl yet. todo(jacobr)';
-  }
-
   void setRange(int start, int rangeLength, List from, [int startFrom = 0]) {
     throw const NotImplementedException();
   }
@@ -470,7 +466,7 @@ class _DataAttributeMap implements AttributeMap {
   String _strip(String key) => key.substring(5);
 }
 
-class _CssClassSet implements Set<String> {
+class _CssClassSet implements CSSClassSet {
 
   final _ElementImpl _element;
 
@@ -497,6 +493,8 @@ class _CssClassSet implements Set<String> {
 
   bool isEmpty() => _read().isEmpty();
 
+  bool get isFrozen() => false;
+
   int get length() =>_read().length;
 
   // interface Collection - END
@@ -513,6 +511,19 @@ class _CssClassSet implements Set<String> {
   bool remove(String value) {
     Set<String> s = _read();
     bool result = s.remove(value);
+    _write(s);
+    return result;
+  }
+
+  bool toggle(String value) {
+    Set<String> s = _read();
+    bool result = false;
+    if (s.contains(value)) {
+      s.remove(value);
+    } else {
+      s.add(value);
+      result = true;
+    }
     _write(s);
     return result;
   }

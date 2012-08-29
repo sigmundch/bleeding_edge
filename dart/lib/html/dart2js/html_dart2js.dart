@@ -5127,10 +5127,6 @@ class FilteredElementList implements ElementList {
     throw const UnsupportedOperationException('TODO(jacobr): should we impl?');
   }
 
-  void copyFrom(List<Object> src, int srcStart, int dstStart, int count) {
-    throw const NotImplementedException();
-  }
-
   void setRange(int start, int rangeLength, List from, [int startFrom = 0]) {
     throw const NotImplementedException();
   }
@@ -5191,6 +5187,18 @@ class EmptyElementRect implements ElementRect {
   final List<ClientRect> clientRects = const <ClientRect>[];
 
   const EmptyElementRect();
+}
+
+class _FrozenCSSClassSet extends _CssClassSet {
+  _FrozenCSSClassSet() : super(null);
+
+  void _write(Set s) {
+    throw const UnsupportedOperationException(
+        'frozen class set cannot be modified');
+  }
+  Set<String> _read() => new Set<String>();
+
+  bool get isFrozen() => true;
 }
 
 class DocumentFragmentImpl extends NodeImpl implements DocumentFragment native "*DocumentFragment" {
@@ -5299,8 +5307,7 @@ class DocumentFragmentImpl extends NodeImpl implements DocumentFragment native "
   Element get offsetParent() => null;
   Element get parent() => null;
   Map<String, String> get attributes() => const {};
-  // Issue 174: this should be a const set.
-  Set<String> get classes() => new Set<String>();
+  CSSClassSet get classes() => new _FrozenCSSClassSet();
   Map<String, String> get dataAttributes() => const {};
   CSSStyleDeclaration get style() => new Element.tag('div').style;
   Future<CSSStyleDeclaration> get computedStyle() =>
@@ -5570,10 +5577,6 @@ class _ChildrenElementList implements ElementList {
 
   void sort(int compare(Element a, Element b)) {
     throw const UnsupportedOperationException('TODO(jacobr): should we impl?');
-  }
-
-  void copyFrom(List<Object> src, int srcStart, int dstStart, int count) {
-    throw 'Not impl yet. todo(jacobr)';
   }
 
   void setRange(int start, int rangeLength, List from, [int startFrom = 0]) {
@@ -5935,7 +5938,7 @@ class _DataAttributeMap implements AttributeMap {
   String _strip(String key) => key.substring(5);
 }
 
-class _CssClassSet implements Set<String> {
+class _CssClassSet implements CSSClassSet {
 
   final ElementImpl _element;
 
@@ -5962,6 +5965,8 @@ class _CssClassSet implements Set<String> {
 
   bool isEmpty() => _read().isEmpty();
 
+  bool get isFrozen() => false;
+
   int get length() =>_read().length;
 
   // interface Collection - END
@@ -5978,6 +5983,19 @@ class _CssClassSet implements Set<String> {
   bool remove(String value) {
     Set<String> s = _read();
     bool result = s.remove(value);
+    _write(s);
+    return result;
+  }
+
+  bool toggle(String value) {
+    Set<String> s = _read();
+    bool result = false;
+    if (s.contains(value)) {
+      s.remove(value);
+    } else {
+      s.add(value);
+      result = true;
+    }
     _write(s);
     return result;
   }
@@ -9716,6 +9734,9 @@ class ModElementImpl extends ElementImpl implements ModElement native "*HTMLModE
 
   String dateTime;
 }
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
 
 class MouseEventImpl extends UIEventImpl implements MouseEvent native "*MouseEvent" {
 
@@ -9734,10 +9755,6 @@ class MouseEventImpl extends UIEventImpl implements MouseEvent native "*MouseEve
   final NodeImpl fromElement;
 
   final bool metaKey;
-
-  final int offsetX;
-
-  final int offsetY;
 
   final EventTargetImpl relatedTarget;
 
@@ -9758,6 +9775,38 @@ class MouseEventImpl extends UIEventImpl implements MouseEvent native "*MouseEve
   final int y;
 
   void $dom_initMouseEvent(String type, bool canBubble, bool cancelable, WindowImpl view, int detail, int screenX, int screenY, int clientX, int clientY, bool ctrlKey, bool altKey, bool shiftKey, bool metaKey, int button, EventTargetImpl relatedTarget) native "initMouseEvent";
+
+
+  int get offsetX() {
+    if (JS('bool', '!!this.offsetX')) {
+      return this._offsetX;
+    } else {
+      // Firefox does not support offsetX.
+      var target = this.target;
+      if (!(target is Element)) {
+        throw const UnsupportedOperationException(
+            'offsetX is only supported on elements');
+      }
+      return this.clientX - this.target.$dom_getBoundingClientRect().left;
+    }
+  }
+
+  int get offsetY() {
+    if (JS('bool', '!!this.offsetY')) {
+      return this._offsetY;
+    } else {
+      // Firefox does not support offsetY.
+      var target = this.target;
+      if (!(target is Element)) {
+        throw const UnsupportedOperationException(
+            'offsetX is only supported on elements');
+      }
+      return this.clientY - this.target.$dom_getBoundingClientRect().top;
+    }
+  }
+
+  int get _offsetX() native 'return this.offsetX';
+  int get _offsetY() native 'return this.offsetY';
 }
 
 class MutationEventImpl extends EventImpl implements MutationEvent native "*MutationEvent" {
@@ -10174,8 +10223,8 @@ class NodeImpl extends EventTargetImpl implements Node native "*Node" {
     try {
       final NodeImpl parent = this.parent;
       parent.$dom_replaceChild(otherNode, this);
-    } catch(var e) {
-      
+    } catch (e) {
+
     };
     return this;
   }
@@ -11753,7 +11802,7 @@ class _AttributeClassSet extends _CssClassSet {
 }
 
 class SVGElementImpl extends ElementImpl implements SVGElement native "*SVGElement" {
-  Set<String> get classes() {
+  CSSClassSet get classes() {
     if (_cssClassSet === null) {
       _cssClassSet = new _AttributeClassSet(_ptr);
     }
@@ -17317,7 +17366,7 @@ class WindowImpl extends EventTargetImpl implements Window native "@*DOMWindow" 
     // stub on Object.prototype and throws an exception.
     try {
       return thing is Location;
-    } catch (var e) {
+    } catch (e) {
       return false;
     }
   }
@@ -23828,6 +23877,20 @@ interface NodeSelector {
   List<Element> queryAll(String selectors);
 }
 
+interface CSSClassSet extends Set<String> {
+  /**
+   * Adds the class [token] to the element if it is not on it, removes it if it
+   * is.
+   */
+  bool toggle(String token);
+
+  /**
+   * Returns [:true:] classes cannot be added or removed from this
+   * [:CSSClassSet:].
+   */
+  bool get isFrozen();
+}
+
 /// @domName Element
 interface Element extends Node, NodeSelector default _ElementFactoryProvider {
   Element.html(String html);
@@ -23845,7 +23908,7 @@ interface Element extends Node, NodeSelector default _ElementFactoryProvider {
   void set elements(Collection<Element> value);
 
   /** @domName className, classList */
-  Set<String> get classes();
+  CSSClassSet get classes();
 
   void set classes(Collection<String> value);
 
@@ -37814,6 +37877,11 @@ class _JsSerializer extends _Serializer {
  }
 
   visitFunction(Function func) {
+    // Look for a cached serialization first.  The cached version
+    // should point to the original port.
+    var serialized = _deserializedFunctionTable.find(func);
+    if (serialized != null) return serialized;
+    // Create a new serialization forwarding to this port.
     return [ 'funcref',
              _functionRegistry._add(func),
              visitSendPortSync(_functionRegistry._sendPort), null ];
@@ -37910,6 +37978,34 @@ _deserialize(var message) {
   return new _JsDeserializer().deserialize(message);
 }
 
+// TODO(vsm): Replace this with a hash map once functions are
+// hashable.
+class _DeserializedFunctionTable {
+  List data;
+  _DeserializedFunctionTable() {
+    data = [];
+  }
+
+  find(Function f) {
+    for (var item in data) {
+      if (f == item[0]) return item[1];
+    }
+    return null;
+  }
+
+  add(Function f, x) {
+    data.add([f, x]);
+  }
+}
+
+_DeserializedFunctionTable __deserializedFunctionTable = null;
+get _deserializedFunctionTable {
+  if (__deserializedFunctionTable == null) {
+    __deserializedFunctionTable = new _DeserializedFunctionTable();
+  }
+  return __deserializedFunctionTable;
+}
+
 class _JsDeserializer extends _Deserializer {
 
   static const _UNSPECIFIED = const Object();
@@ -37941,9 +38037,15 @@ class _JsDeserializer extends _Deserializer {
 
   deserializeFunction(List x) {
     var id = x[1];
+    // If the sendPort is local, just return the underlying function.
+    // Otherwise, create a new function that forwards to the remote
+    // port.
     SendPortSync port = deserializeSendPort(x[2]);
+    if (port is _LocalSendPortSync) {
+      return _functionRegistry._get(id);
+    }
     // TODO: Support varargs when there is support in the language.
-    return ([arg0 = _UNSPECIFIED, arg1 = _UNSPECIFIED,
+    var f = ([arg0 = _UNSPECIFIED, arg1 = _UNSPECIFIED,
               arg2 = _UNSPECIFIED, arg3 = _UNSPECIFIED]) {
       var args = [arg0, arg1, arg2, arg3];
       var last = args.indexOf(_UNSPECIFIED);
@@ -37951,6 +38053,8 @@ class _JsDeserializer extends _Deserializer {
       var message = [id, args];
       return port.callSync(message);
     };
+    _deserializedFunctionTable.add(f, x);
+    return f;
   }
 
   deserializeProxy(x) {
@@ -38203,7 +38307,7 @@ void _completeMeasurementFutures() {
     for (_MeasurementRequest request in _pendingRequests) {
       try {
         request.value = request.computeValue();
-      } catch(var e) {
+      } catch (e) {
         request.value = e;
         request.exception = true;
       }

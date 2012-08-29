@@ -114,7 +114,7 @@ class Node implements Hashable {
     Unparser unparser = new Unparser();
     try {
       return unparser.unparse(this);
-    } catch (var e, var trace) {
+    } catch (e, trace) {
       print(trace);
       return '<<unparse error: ${getObjectDescription()}: ${unparser.sb}>>';
     }
@@ -665,7 +665,7 @@ class LiteralInt extends Literal<int> {
       Token valueToken = token;
       if (valueToken.kind === PLUS_TOKEN) valueToken = valueToken.next;
       return parseInt(valueToken.value.slowToString());
-    } catch (FormatException ex) {
+    } on FormatException catch (ex) {
       (this.handler)(token, ex);
     }
   }
@@ -684,7 +684,7 @@ class LiteralDouble extends Literal<double> {
       Token valueToken = token;
       if (valueToken.kind === PLUS_TOKEN) valueToken = valueToken.next;
       return parseDouble(valueToken.value.slowToString());
-    } catch (FormatException ex) {
+    } on FormatException catch (ex) {
       (this.handler)(token, ex);
     }
   }
@@ -1141,7 +1141,7 @@ class Modifiers extends Node {
   bool isExternal() => (flags & FLAG_EXTERNAL) != 0;
 
   /**
-   * Use this to check if the declaration is either explicitly or implicitly 
+   * Use this to check if the declaration is either explicitly or implicitly
    * final.
    */
   bool isFinalOrConst() => isFinal() || isConst();
@@ -1570,7 +1570,6 @@ class ScriptTag extends Node {
   bool isImport() => tag.source == const SourceString("import");
   bool isSource() => tag.source == const SourceString("source");
   bool isLibrary() => tag.source == const SourceString("library");
-  bool isResource() => tag.source == const SourceString("resource");
 
   ScriptTag asScriptTag() => this;
 

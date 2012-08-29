@@ -26,6 +26,8 @@ DECLARE_FLAG(bool, trace_functions);
 
 void DeoptimizationStub::GenerateCode(FlowGraphCompiler* compiler,
                                       intptr_t stub_ix) {
+  // Calls do not need stubs, they share a deoptimization trampoline.
+  if (reason_ == kDeoptAtCall) return;
   Assembler* assem = compiler->assembler();
 #define __ assem->
   __ Comment("Deopt stub for id %d", deopt_id_);
@@ -231,7 +233,7 @@ bool FlowGraphCompiler::GenerateInstantiatedTypeNoArgumentsTest(
   }
   // Bool interface can be implemented only by core class Bool.
   // (see ClassFinalizer::ResolveInterfaces for list of restricted interfaces).
-  if (type.IsBoolInterface()) {
+  if (type.IsBoolType()) {
     __ cmpl(kClassIdReg, Immediate(kBoolCid));
     __ j(EQUAL, is_instance_lbl);
     __ jmp(is_not_instance_lbl);
@@ -447,7 +449,6 @@ RawSubtypeTestCache* FlowGraphCompiler::GenerateInlineInstanceof(
 // - true or false in EAX.
 void FlowGraphCompiler::GenerateInstanceOf(intptr_t deopt_id,
                                            intptr_t token_pos,
-                                           intptr_t try_index,
                                            const AbstractType& type,
                                            bool negate_result,
                                            LocationSummary* locs) {
@@ -490,8 +491,7 @@ void FlowGraphCompiler::GenerateInstanceOf(intptr_t deopt_id,
     __ pushl(EDX);  // Instantiator type arguments.
     __ LoadObject(EAX, test_cache);
     __ pushl(EAX);
-    GenerateCallRuntime(deopt_id, token_pos, try_index,
-                        kInstanceofRuntimeEntry, locs);
+    GenerateCallRuntime(deopt_id, token_pos, kInstanceofRuntimeEntry, locs);
     // Pop the parameters supplied to the runtime entry. The result of the
     // instanceof runtime call will be left as the result of the operation.
     __ Drop(5);
@@ -532,7 +532,6 @@ void FlowGraphCompiler::GenerateInstanceOf(intptr_t deopt_id,
 // as they throw an exception.
 void FlowGraphCompiler::GenerateAssertAssignable(intptr_t deopt_id,
                                                  intptr_t token_pos,
-                                                 intptr_t try_index,
                                                  const AbstractType& dst_type,
                                                  const String& dst_name,
                                                  LocationSummary* locs) {
@@ -562,7 +561,6 @@ void FlowGraphCompiler::GenerateAssertAssignable(intptr_t deopt_id,
     __ PushObject(error_message);
     GenerateCallRuntime(deopt_id,
                         token_pos,
-                        try_index,
                         kMalformedTypeErrorRuntimeEntry,
                         locs);
     // We should never return here.
@@ -590,11 +588,7 @@ void FlowGraphCompiler::GenerateAssertAssignable(intptr_t deopt_id,
   __ PushObject(dst_name);  // Push the name of the destination.
   __ LoadObject(EAX, test_cache);
   __ pushl(EAX);
-  GenerateCallRuntime(deopt_id,
-                      token_pos,
-                      try_index,
-                      kTypeCheckRuntimeEntry,
-                      locs);
+  GenerateCallRuntime(deopt_id, token_pos, kTypeCheckRuntimeEntry, locs);
   // Pop the parameters supplied to the runtime entry. The result of the
   // type check runtime call is the checked value.
   __ Drop(6);
@@ -773,8 +767,7 @@ void FlowGraphCompiler::CopyParameters() {
     __ CallRuntime(kClosureArgumentMismatchRuntimeEntry);
     AddCurrentDescriptor(PcDescriptors::kOther,
                          Isolate::kNoDeoptId,
-                         0,  // No token position.
-                         CatchClauseNode::kInvalidTryIndex);
+                         0);  // No token position.
   } else {
     ASSERT(!IsLeaf());
     // Invoke noSuchMethod function.
@@ -808,8 +801,7 @@ void FlowGraphCompiler::CopyParameters() {
     __ CallRuntime(kTraceFunctionExitRuntimeEntry);
     AddCurrentDescriptor(PcDescriptors::kOther,
                          Isolate::kNoDeoptId,
-                         0,  // No token position.
-                         CatchClauseNode::kInvalidTryIndex);
+                         0);  // No token position.
     if (is_optimizing()) {
       stackmap_table_builder_->AddEntry(assembler()->CodeSize(),
                                         empty_stack_bitmap);
@@ -946,7 +938,6 @@ void FlowGraphCompiler::CompileGraph() {
       if (function.IsClosureFunction()) {
         GenerateCallRuntime(Isolate::kNoDeoptId,
                             function.token_pos(),
-                            CatchClauseNode::kInvalidTryIndex,
                             kClosureArgumentMismatchRuntimeEntry,
                             prologue_locs);
       } else {
@@ -990,32 +981,29 @@ void FlowGraphCompiler::CompileGraph() {
   // at entry point.
   AddCurrentDescriptor(PcDescriptors::kPatchCode,
                        Isolate::kNoDeoptId,
-                       0,  // No token position.
-                       CatchClauseNode::kInvalidTryIndex);
+                       0);  // No token position.
   __ jmp(&StubCode::FixCallersTargetLabel());
 }
 
 
 void FlowGraphCompiler::GenerateCall(intptr_t token_pos,
-                                     intptr_t try_index,
                                      const ExternalLabel* label,
                                      PcDescriptors::Kind kind,
                                      LocationSummary* locs) {
   ASSERT(!IsLeaf());
   __ call(label);
-  AddCurrentDescriptor(kind, Isolate::kNoDeoptId, token_pos, try_index);
+  AddCurrentDescriptor(kind, Isolate::kNoDeoptId, token_pos);
   RecordSafepoint(locs);
 }
 
 
 void FlowGraphCompiler::GenerateCallRuntime(intptr_t deopt_id,
                                             intptr_t token_pos,
-                                            intptr_t try_index,
                                             const RuntimeEntry& entry,
                                             LocationSummary* locs) {
   ASSERT(!IsLeaf());
   __ CallRuntime(entry);
-  AddCurrentDescriptor(PcDescriptors::kOther, deopt_id, token_pos, try_index);
+  AddCurrentDescriptor(PcDescriptors::kOther, deopt_id, token_pos);
   RecordSafepoint(locs);
 }
 
@@ -1026,14 +1014,13 @@ void FlowGraphCompiler::EmitInstanceCall(ExternalLabel* target_label,
                                          intptr_t argument_count,
                                          intptr_t deopt_id,
                                          intptr_t token_pos,
-                                         intptr_t try_index,
                                          LocationSummary* locs) {
   ASSERT(!IsLeaf());
   __ LoadObject(ECX, ic_data);
   __ LoadObject(EDX, arguments_descriptor);
 
   __ call(target_label);
-  AddCurrentDescriptor(PcDescriptors::kIcCall, deopt_id, token_pos, try_index);
+  AddCurrentDescriptor(PcDescriptors::kIcCall, deopt_id, token_pos);
   RecordSafepoint(locs);
 
   __ Drop(argument_count);
@@ -1045,15 +1032,16 @@ void FlowGraphCompiler::EmitStaticCall(const Function& function,
                                        intptr_t argument_count,
                                        intptr_t deopt_id,
                                        intptr_t token_pos,
-                                       intptr_t try_index,
                                        LocationSummary* locs) {
   ASSERT(!IsLeaf());
   __ LoadObject(ECX, function);
   __ LoadObject(EDX, arguments_descriptor);
   __ call(&StubCode::CallStaticFunctionLabel());
-  AddCurrentDescriptor(PcDescriptors::kFuncCall, deopt_id, token_pos,
-                       try_index);
+  AddCurrentDescriptor(PcDescriptors::kFuncCall, deopt_id, token_pos);
   RecordSafepoint(locs);
+  if (is_optimizing()) {
+    AddDeoptIndexAtCall(deopt_id, token_pos);
+  }
   __ Drop(argument_count);
 }
 

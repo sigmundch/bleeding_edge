@@ -79,33 +79,28 @@ class FlowGraphCompiler : public ValueObject {
 
   void GenerateCallRuntime(intptr_t deopt_id,
                            intptr_t token_pos,
-                           intptr_t try_index,
                            const RuntimeEntry& entry,
                            LocationSummary* locs);
 
   void GenerateCall(intptr_t token_pos,
-                    intptr_t try_index,
                     const ExternalLabel* label,
                     PcDescriptors::Kind kind,
                     LocationSummary* locs);
 
   void GenerateAssertAssignable(intptr_t deopt_id,
                                 intptr_t token_pos,
-                                intptr_t try_index,
                                 const AbstractType& dst_type,
                                 const String& dst_name,
                                 LocationSummary* locs);
 
   void GenerateInstanceOf(intptr_t deopt_id,
                           intptr_t token_pos,
-                          intptr_t try_index,
                           const AbstractType& type,
                           bool negate_result,
                           LocationSummary* locs);
 
   void GenerateInstanceCall(intptr_t deopt_id,
                             intptr_t token_pos,
-                            intptr_t try_index,
                             const String& function_name,
                             intptr_t argument_count,
                             const Array& argument_names,
@@ -114,7 +109,6 @@ class FlowGraphCompiler : public ValueObject {
 
   void GenerateStaticCall(intptr_t deopt_id,
                           intptr_t token_pos,
-                          intptr_t try_index,
                           const Function& function,
                           intptr_t argument_count,
                           const Array& argument_names,
@@ -145,7 +139,6 @@ class FlowGraphCompiler : public ValueObject {
                         intptr_t argument_count,
                         intptr_t deopt_id,
                         intptr_t token_pos,
-                        intptr_t try_index,
                         LocationSummary* locs);
 
   void EmitTestAndCall(const ICData& ic_data,
@@ -153,10 +146,8 @@ class FlowGraphCompiler : public ValueObject {
                        intptr_t arg_count,
                        const Array& arg_names,
                        Label* deopt,
-                       Label* done,  // Can be NULL, which means fallthrough.
                        intptr_t deopt_id,
                        intptr_t token_index,
-                       intptr_t try_index,
                        LocationSummary* locs);
 
   void EmitDoubleCompareBranch(Condition true_condition,
@@ -180,14 +171,13 @@ class FlowGraphCompiler : public ValueObject {
   void AddExceptionHandler(intptr_t try_index, intptr_t pc_offset);
   void AddCurrentDescriptor(PcDescriptors::Kind kind,
                             intptr_t deopt_id,
-                            intptr_t token_pos,
-                            intptr_t try_index);
+                            intptr_t token_pos);
 
   void RecordSafepoint(LocationSummary* locs);
 
-  Label* AddDeoptStub(intptr_t deopt_id,
-                      intptr_t try_index_,
-                      DeoptReasonId reason);
+  Label* AddDeoptStub(intptr_t deopt_id, DeoptReasonId reason);
+
+  void AddDeoptIndexAtCall(intptr_t deopt_id, intptr_t token_pos);
 
   void AddSlowPathCode(SlowPathCode* slow_path);
 
@@ -210,6 +200,13 @@ class FlowGraphCompiler : public ValueObject {
   void SaveLiveRegisters(LocationSummary* locs);
   void RestoreLiveRegisters(LocationSummary* locs);
 
+  intptr_t CurrentTryIndex() const {
+    if (current_block_ == NULL) {
+      return CatchClauseNode::kInvalidTryIndex;
+    }
+    return current_block_->try_index();
+  }
+
  private:
   friend class DeoptimizationStub;
 
@@ -225,7 +222,6 @@ class FlowGraphCompiler : public ValueObject {
                       intptr_t argument_count,
                       intptr_t deopt_id,
                       intptr_t token_pos,
-                      intptr_t try_index,
                       LocationSummary* locs);
 
   // Type checking helper methods.

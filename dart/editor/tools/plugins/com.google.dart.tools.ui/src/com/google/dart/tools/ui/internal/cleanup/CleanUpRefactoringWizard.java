@@ -35,6 +35,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
@@ -578,7 +579,6 @@ public class CleanUpRefactoringWizard extends RefactoringWizard {
     @Override
     public void createControl(Composite parent) {
       restoreSettings();
-      // TODO(scheglov)
       initializeDialogUnits(parent);
       Composite composite = new Composite(parent, SWT.NONE);
       GridLayoutFactory.create(composite);
@@ -596,11 +596,13 @@ public class CleanUpRefactoringWizard extends RefactoringWizard {
                 syntaxComposite,
                 ID_MIGRATE_SYNTAX_1M1_CATCH,
                 "Migrate 'catch' blocks");
+            createCheckButton(syntaxComposite, ID_MIGRATE_SYNTAX_1M1_GET, "Migrate getters");
+            new Label(syntaxComposite, SWT.NONE);
+            new Label(syntaxComposite, SWT.NONE).setText("Work in progress... not fully implemented:");
             createCheckButton(
                 syntaxComposite,
                 ID_MIGRATE_SYNTAX_1M1_EQUALS,
                 "Migrate 'operator equals()'");
-            createCheckButton(syntaxComposite, ID_MIGRATE_SYNTAX_1M1_GET, "Migrate getters");
             createCheckButton(
                 syntaxComposite,
                 ID_MIGRATE_SYNTAX_1M1_LIBRARY,
@@ -686,7 +688,11 @@ public class CleanUpRefactoringWizard extends RefactoringWizard {
     }
 
     public boolean getBoolean(String key) {
-      return "TRUE".equals(map.get(key));
+      String str = map.get(key);
+      if (str == null) {
+        str = defaultMap.get(key);
+      }
+      return "TRUE".equals(str);
     }
 
     public void set(String key, boolean value) {

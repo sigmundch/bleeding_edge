@@ -49,8 +49,7 @@ RawDeoptInfo* DeoptimizationStub::CreateDeoptInfo(FlowGraphCompiler* compiler) {
   // Assign locations to values pushed above spill slots with PushArgument.
   intptr_t height = compiler->StackSize();
   for (intptr_t i = 0; i < values.length(); i++) {
-    if (deoptimization_env_->LocationAt(i).IsInvalid() &&
-        !values[i]->IsConstant()) {
+    if (deoptimization_env_->LocationAt(i).IsInvalid()) {
       ASSERT(values[i]->AsUse()->definition()->IsPushArgument());
       *deoptimization_env_->LocationSlotAt(i) = Location::StackSlot(height++);
     }
@@ -160,6 +159,7 @@ void FlowGraphCompiler::VisitBlocks() {
       }
     }
   }
+  set_current_block(NULL);
 }
 
 
@@ -223,13 +223,27 @@ void FlowGraphCompiler::AddExceptionHandler(intptr_t try_index,
 // Uses current pc position and try-index.
 void FlowGraphCompiler::AddCurrentDescriptor(PcDescriptors::Kind kind,
                                              intptr_t deopt_id,
-                                             intptr_t token_pos,
-                                             intptr_t try_index) {
+                                             intptr_t token_pos) {
   pc_descriptors_list()->AddDescriptor(kind,
                                        assembler()->CodeSize(),
                                        deopt_id,
                                        token_pos,
-                                       try_index);
+                                       CurrentTryIndex());
+}
+
+
+void FlowGraphCompiler::AddDeoptIndexAtCall(intptr_t deopt_id,
+                                            intptr_t token_pos) {
+  // TODO(srdjan): Temporary use deopt stubs to maintain deopt-indexes.
+  // kDeoptAtCall will not emit code, but will only generate deoptimization
+  // information.
+  const intptr_t deopt_index = deopt_stubs_.length();
+  AddDeoptStub(deopt_id, kDeoptAtCall);
+  pc_descriptors_list()->AddDescriptor(PcDescriptors::kDeoptIndex,
+                                       assembler()->CodeSize(),
+                                       deopt_id,
+                                       token_pos,
+                                       deopt_index);
 }
 
 
@@ -244,10 +258,8 @@ void FlowGraphCompiler::RecordSafepoint(LocationSummary* locs) {
 
 
 Label* FlowGraphCompiler::AddDeoptStub(intptr_t deopt_id,
-                                       intptr_t try_index,
                                        DeoptReasonId reason) {
-  DeoptimizationStub* stub =
-      new DeoptimizationStub(deopt_id, try_index, reason);
+  DeoptimizationStub* stub = new DeoptimizationStub(deopt_id, reason);
   ASSERT(is_optimizing_);
   ASSERT(pending_deoptimization_env_ != NULL);
   stub->set_deoptimization_env(pending_deoptimization_env_);
@@ -357,7 +369,6 @@ bool FlowGraphCompiler::TryIntrinsify() {
 void FlowGraphCompiler::GenerateInstanceCall(
     intptr_t deopt_id,
     intptr_t token_pos,
-    intptr_t try_index,
     const String& function_name,
     intptr_t argument_count,
     const Array& argument_names,
@@ -385,13 +396,12 @@ void FlowGraphCompiler::GenerateInstanceCall(
   ExternalLabel target_label("InlineCache", label_address);
 
   EmitInstanceCall(&target_label, ic_data, arguments_descriptor, argument_count,
-                   deopt_id, token_pos, try_index, locs);
+                   deopt_id, token_pos, locs);
 }
 
 
 void FlowGraphCompiler::GenerateStaticCall(intptr_t deopt_id,
                                            intptr_t token_pos,
-                                           intptr_t try_index,
                                            const Function& function,
                                            intptr_t argument_count,
                                            const Array& argument_names,
@@ -399,7 +409,7 @@ void FlowGraphCompiler::GenerateStaticCall(intptr_t deopt_id,
   const Array& arguments_descriptor =
       DartEntry::ArgumentsDescriptor(argument_count, argument_names);
   EmitStaticCall(function, arguments_descriptor, argument_count,
-                 deopt_id, token_pos, try_index, locs);
+                 deopt_id, token_pos, locs);
 }
 
 
@@ -461,10 +471,8 @@ void FlowGraphCompiler::EmitTestAndCall(const ICData& ic_data,
                                         intptr_t arg_count,
                                         const Array& arg_names,
                                         Label* deopt,
-                                        Label* done,
                                         intptr_t deopt_id,
                                         intptr_t token_index,
-                                        intptr_t try_index,
                                         LocationSummary* locs) {
   ASSERT(!ic_data.IsNull() && (ic_data.NumberOfChecks() > 0));
   Label match_found;
@@ -480,7 +488,6 @@ void FlowGraphCompiler::EmitTestAndCall(const ICData& ic_data,
     const Function& target = Function::ZoneHandle(ic_data.GetTargetAt(i));
     GenerateStaticCall(deopt_id,
                        token_index,
-                       try_index,
                        target,
                        arg_count,
                        arg_names,
@@ -491,9 +498,6 @@ void FlowGraphCompiler::EmitTestAndCall(const ICData& ic_data,
     assembler()->Bind(&next_test);
   }
   assembler()->Bind(&match_found);
-  if (done != NULL) {
-    assembler()->jmp(done);
-  }
 }
 
 

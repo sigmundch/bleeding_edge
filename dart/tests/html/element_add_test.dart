@@ -16,20 +16,17 @@ main() {
 
   group('addHTML', () {
     test('htmlelement', () {
-      // Adding a <tr/> to a table should auto-wrap it into a tbody element.
-      var el = new TableElement();
-      el.addHTML('<tr>test</tr>');
+      var el = new DivElement();
+      el.addHTML('<span></span>');
       expect(el.elements.length, equals(1));
-      var section = el.elements[0];
-      expect(section is TableSectionElement);
-      expect(section.elements.length, equals(1));
-      expect(section.elements[0] is TableRowElement);
+      var span = el.elements[0];
+      expect(span is SpanElement);
 
-      el.addHTML('<tr>test</tr>');
+      el.addHTML('<div></div>');
       expect(el.elements.length, equals(2));
       // Validate that the first item is still first.
-      expect(el.elements[0] == section);
-      expect(el.elements[1] is TableSectionElement);
+      expect(el.elements[0] == span);
+      expect(el.elements[1] is DivElement);
     });
 
     test('documentFragment', () {

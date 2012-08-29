@@ -50,12 +50,6 @@ bool UseVal::Equals(Value* other) const {
 }
 
 
-bool ConstantVal::Equals(Value* other) const {
-  return other->IsConstant()
-      && value().raw() == other->AsConstant()->value().raw();
-}
-
-
 bool CheckClassComp::AttributesEqual(Computation* other) const {
   CheckClassComp* other_check = other->AsCheckClass();
   if (other_check == NULL) return false;
@@ -73,13 +67,17 @@ bool CheckClassComp::AttributesEqual(Computation* other) const {
 }
 
 
+bool CheckArrayBoundComp::AttributesEqual(Computation* other) const {
+  CheckArrayBoundComp* other_check = other->AsCheckArrayBound();
+  if (other_check == NULL) return false;
+  return array_type() == other_check->array_type();
+}
+
+
 // Returns true if the value represents a constant.
 bool UseVal::BindsToConstant() const {
   BindInstr* bind = definition()->AsBind();
-  if (bind == NULL) {
-    return false;
-  }
-  return bind->computation()->AsMaterialize() != NULL;
+  return (bind != NULL) && (bind->computation()->AsConstant() != NULL);
 }
 
 
@@ -89,11 +87,8 @@ bool UseVal::BindsToConstantNull() const {
   if (bind == NULL) {
     return false;
   }
-  MaterializeComp* constant = bind->computation()->AsMaterialize();
-  if (constant != NULL) {
-    return constant->constant_val()->value().IsNull();
-  }
-  return false;
+  ConstantComp* constant = bind->computation()->AsConstant();
+  return (constant != NULL) && constant->value().IsNull();
 }
 
 
@@ -101,9 +96,27 @@ const Object& UseVal::BoundConstant() const {
   ASSERT(BindsToConstant());
   BindInstr* bind = definition()->AsBind();
   ASSERT(bind != NULL);
-  MaterializeComp* constant = bind->computation()->AsMaterialize();
+  ConstantComp* constant = bind->computation()->AsConstant();
   ASSERT(constant != NULL);
-  return constant->constant_val()->value();
+  return constant->value();
+}
+
+
+bool ConstantComp::AttributesEqual(Computation* other) const {
+  ConstantComp* other_constant = other->AsConstant();
+  return (other_constant != NULL) &&
+      (value().raw() == other_constant->value().raw());
+}
+
+
+GraphEntryInstr::GraphEntryInstr(TargetEntryInstr* normal_entry)
+    : BlockEntryInstr(CatchClauseNode::kInvalidTryIndex),
+      normal_entry_(normal_entry),
+      catch_entries_(),
+      start_env_(NULL),
+      constant_null_(new BindInstr(BindInstr::kUsed,
+                         new ConstantComp(Object::ZoneHandle()))),
+      spill_slot_count_(0) {
 }
 
 
@@ -411,27 +424,6 @@ void Definition::ReplaceUsesWith(Definition* other) {
 }
 
 
-void Definition::ReplaceUsesWith(Value* value) {
-  ASSERT(value != NULL);
-  if (value->IsUse()) {
-    ReplaceUsesWith(value->AsUse()->definition());
-    return;
-  }
-  ASSERT(value->IsConstant());
-  while (input_use_list_ != NULL) {
-    Instruction* instr = input_use_list_->instruction();
-    instr->SetInputAt(input_use_list_->use_index(), value);
-    input_use_list_ = input_use_list_->next_use();
-  }
-  while (env_use_list_ != NULL) {
-    Environment* env = env_use_list_->instruction()->env();
-    ASSERT(env != NULL);
-    env->values()[env_use_list_->use_index()] = value;
-    env_use_list_ = env_use_list_->next_use();
-  }
-}
-
-
 bool Definition::SetPropagatedCid(intptr_t cid) {
   if (cid == kIllegalCid) {
     return false;
@@ -688,32 +680,6 @@ void Instruction::Goto(JoinEntryInstr* entry) {
 }
 
 
-RawAbstractType* ConstantVal::CompileType() const {
-  if (value().IsNull()) {
-    return Type::NullType();
-  }
-  if (value().IsInstance()) {
-    return Instance::Cast(value()).GetType();
-  } else {
-    ASSERT(value().IsAbstractTypeArguments());
-    return AbstractType::null();
-  }
-}
-
-
-intptr_t ConstantVal::ResultCid() const {
-  if (value().IsNull()) {
-    return kNullCid;
-  }
-  if (value().IsInstance()) {
-    return Class::Handle(value().clazz()).id();
-  } else {
-    ASSERT(value().IsAbstractTypeArguments());
-    return kDynamicCid;
-  }
-}
-
-
 RawAbstractType* UseVal::CompileType() const {
   if (definition()->HasPropagatedType()) {
     return definition()->PropagatedType();
@@ -733,13 +699,29 @@ intptr_t UseVal::ResultCid() const {
 
 
 
-RawAbstractType* MaterializeComp::CompileType() const {
-  return constant_val()->CompileType();
+RawAbstractType* ConstantComp::CompileType() const {
+  if (value().IsNull()) {
+    return Type::NullType();
+  }
+  if (value().IsInstance()) {
+    return Instance::Cast(value()).GetType();
+  } else {
+    ASSERT(value().IsAbstractTypeArguments());
+    return AbstractType::null();
+  }
 }
 
 
-intptr_t MaterializeComp::ResultCid() const {
-  return constant_val()->ResultCid();
+intptr_t ConstantComp::ResultCid() const {
+  if (value().IsNull()) {
+    return kNullCid;
+  }
+  if (value().IsInstance()) {
+    return Class::Handle(value().clazz()).id();
+  } else {
+    ASSERT(value().IsAbstractTypeArguments());
+    return kDynamicCid;
+  }
 }
 
 
@@ -755,7 +737,7 @@ RawAbstractType* AssertAssignableComp::CompileType() const {
 
 
 RawAbstractType* AssertBooleanComp::CompileType() const {
-  return Type::BoolInterface();
+  return Type::BoolType();
 }
 
 
@@ -812,7 +794,7 @@ RawAbstractType* StoreLocalComp::CompileType() const {
 
 
 RawAbstractType* StrictCompareComp::CompileType() const {
-  return Type::BoolInterface();
+  return Type::BoolType();
 }
 
 
@@ -821,10 +803,7 @@ RawAbstractType* EqualityCompareComp::CompileType() const {
   if ((receiver_class_id() == kSmiCid) ||
       (receiver_class_id() == kDoubleCid) ||
       (receiver_class_id() == kNumberCid)) {
-    return Type::BoolInterface();
-  }
-  if (HasICData() && ic_data()->AllTargetsHaveSameOwner(kInstanceCid)) {
-    return Type::BoolInterface();
+    return Type::BoolType();
   }
   return Type::DynamicType();
 }
@@ -837,9 +816,6 @@ intptr_t EqualityCompareComp::ResultCid() const {
     // Known/library equalities that are guaranteed to return Boolean.
     return kBoolCid;
   }
-  if (HasICData() && ic_data()->AllTargetsHaveSameOwner(kInstanceCid)) {
-    return kBoolCid;
-  }
   return kDynamicCid;
 }
 
@@ -849,7 +825,7 @@ RawAbstractType* RelationalOpComp::CompileType() const {
       (operands_class_id() == kDoubleCid) ||
       (operands_class_id() == kNumberCid)) {
     // Known/library relational ops that are guaranteed to return Boolean.
-    return Type::BoolInterface();
+    return Type::BoolType();
   }
   return Type::DynamicType();
 }
@@ -911,12 +887,12 @@ RawAbstractType* StoreStaticFieldComp::CompileType() const {
 
 
 RawAbstractType* BooleanNegateComp::CompileType() const {
-  return Type::BoolInterface();
+  return Type::BoolType();
 }
 
 
 RawAbstractType* InstanceOfComp::CompileType() const {
-  return Type::BoolInterface();
+  return Type::BoolType();
 }
 
 
@@ -1096,6 +1072,11 @@ RawAbstractType* CheckSmiComp::CompileType() const {
 }
 
 
+RawAbstractType* CheckArrayBoundComp::CompileType() const {
+  return AbstractType::null();
+}
+
+
 RawAbstractType* CheckEitherNonSmiComp::CompileType() const {
   return AbstractType::null();
 }
@@ -1179,8 +1160,8 @@ void JoinEntryInstr::PrepareEntry(FlowGraphCompiler* compiler) {
 
 void TargetEntryInstr::PrepareEntry(FlowGraphCompiler* compiler) {
   __ Bind(compiler->GetBlockLabel(this));
-  if (HasTryIndex()) {
-    compiler->AddExceptionHandler(try_index(),
+  if (IsCatchEntry()) {
+    compiler->AddExceptionHandler(catch_try_index(),
                                   compiler->assembler()->CodeSize());
   }
   if (HasParallelMove()) {
@@ -1198,7 +1179,6 @@ LocationSummary* ThrowInstr::MakeLocationSummary() const {
 void ThrowInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   compiler->GenerateCallRuntime(deopt_id(),
                                 token_pos(),
-                                try_index(),
                                 kThrowRuntimeEntry,
                                 locs());
   __ int3();
@@ -1213,7 +1193,6 @@ LocationSummary* ReThrowInstr::MakeLocationSummary() const {
 void ReThrowInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   compiler->GenerateCallRuntime(deopt_id(),
                                 token_pos(),
-                                try_index(),
                                 kReThrowRuntimeEntry,
                                 locs());
   __ int3();
@@ -1327,6 +1306,17 @@ void StrictCompareComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
+void StrictCompareComp::EmitBranchCode(FlowGraphCompiler* compiler,
+                                       BranchInstr* branch) {
+  Register left = locs()->in(0).reg();
+  Register right = locs()->in(1).reg();
+  ASSERT(kind() == Token::kEQ_STRICT || kind() == Token::kNE_STRICT);
+  Condition true_condition = (kind() == Token::kEQ_STRICT) ? EQUAL : NOT_EQUAL;
+  __ CompareRegisters(left, right);
+  branch->EmitBranchOnCondition(compiler, true_condition);
+}
+
+
 void ClosureCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   // The arguments to the stub include the closure.  The arguments
   // descriptor describes the closure's arguments (and so does not include
@@ -1339,7 +1329,6 @@ void ClosureCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   __ LoadObject(temp_reg, arguments_descriptor);
 
   compiler->GenerateCall(token_pos(),
-                         try_index(),
                          &StubCode::CallClosureFunctionLabel(),
                          PcDescriptors::kOther,
                          locs());
@@ -1355,11 +1344,9 @@ LocationSummary* InstanceCallComp::MakeLocationSummary() const {
 void InstanceCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   compiler->AddCurrentDescriptor(PcDescriptors::kDeopt,
                                  deopt_id(),
-                                 token_pos(),
-                                 try_index());
+                                 token_pos());
   compiler->GenerateInstanceCall(deopt_id(),
                                  token_pos(),
-                                 try_index(),
                                  function_name(),
                                  ArgumentCount(),
                                  argument_names(),
@@ -1381,7 +1368,6 @@ void StaticCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   }
   compiler->GenerateStaticCall(deopt_id(),
                                token_pos(),
-                               try_index(),
                                function(),
                                ArgumentCount(),
                                argument_names(),
@@ -1394,7 +1380,6 @@ void AssertAssignableComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   if (!is_eliminated()) {
     compiler->GenerateAssertAssignable(deopt_id(),
                                        token_pos(),
-                                       try_index(),
                                        dst_type(),
                                        dst_name(),
                                        locs());
@@ -1474,7 +1459,6 @@ void AllocateObjectComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   const Code& stub = Code::Handle(StubCode::GetAllocationStubForClass(cls));
   const ExternalLabel label(cls.ToCString(), stub.EntryPoint());
   compiler->GenerateCall(token_pos(),
-                         try_index(),
                          &label,
                          PcDescriptors::kOther,
                          locs());
@@ -1492,7 +1476,8 @@ void CreateClosureComp::EmitNativeCode(FlowGraphCompiler* compiler) {
   const Code& stub = Code::Handle(
       StubCode::GetAllocationStubForClosure(closure_function));
   const ExternalLabel label(closure_function.ToCString(), stub.EntryPoint());
-  compiler->GenerateCall(token_pos(), try_index(), &label,
+  compiler->GenerateCall(token_pos(),
+                         &label,
                          PcDescriptors::kOther,
                          locs());
   __ Drop(2);  // Discard type arguments and receiver.
@@ -1521,23 +1506,13 @@ void PushArgumentInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-// Helper to either use the constant value of a definition or the definition.
-static Value* UseDefinition(Definition* defn) {
-  if (defn->IsBind() && defn->AsBind()->computation()->IsMaterialize()) {
-    return defn->AsBind()->computation()->AsMaterialize()->constant_val();
-  } else {
-    return new UseVal(defn);
-  }
-}
-
-
 Environment::Environment(const GrowableArray<Definition*>& definitions,
                          intptr_t fixed_parameter_count)
     : values_(definitions.length()),
       locations_(NULL),
       fixed_parameter_count_(fixed_parameter_count) {
   for (intptr_t i = 0; i < definitions.length(); ++i) {
-    values_.Add(UseDefinition(definitions[i]));
+    values_.Add(new UseVal(definitions[i]));
   }
 }
 

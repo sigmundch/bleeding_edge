@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, the Dart project authors.
+ * Copyright (c) 2012, the Dart project authors.
  * 
  * Licensed under the Eclipse Public License v1.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -108,7 +108,7 @@ public class ContentAssistPreference {
    */
   public static void configure(ContentAssistant assistant, IPreferenceStore store) {
 
-    DartTextTools textTools = DartToolsPlugin.getDefault().getJavaTextTools();
+    DartTextTools textTools = DartToolsPlugin.getDefault().getDartTextTools();
     IColorManager manager = textTools.getColorManager();
 
     boolean enabled = store.getBoolean(AUTOACTIVATION);
@@ -136,6 +136,7 @@ public class ContentAssistPreference {
 
     enabled = store.getBoolean(PREFIX_COMPLETION);
     assistant.enablePrefixCompletion(enabled);
+    assistant.enableColoredLabels(true);
 
     configureJavaProcessor(assistant, store);
     DartX.todo("dartdoc");
@@ -218,7 +219,7 @@ public class ContentAssistPreference {
   }
 
   private static Color getColor(IPreferenceStore store, String key) {
-    DartTextTools textTools = DartToolsPlugin.getDefault().getJavaTextTools();
+    DartTextTools textTools = DartToolsPlugin.getDefault().getDartTextTools();
     return getColor(store, key, textTools.getColorManager());
   }
 

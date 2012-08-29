@@ -47,7 +47,7 @@ class _Null {
   const _Null();
 }
 
-const _null = const _Null();
+final _null = const _Null();
 
 int _getNewIsolateId() => _Utils._getNewIsolateId();
 
@@ -5781,10 +5781,6 @@ class FilteredElementList implements ElementList {
     throw const UnsupportedOperationException('TODO(jacobr): should we impl?');
   }
 
-  void copyFrom(List<Object> src, int srcStart, int dstStart, int count) {
-    throw const NotImplementedException();
-  }
-
   void setRange(int start, int rangeLength, List from, [int startFrom = 0]) {
     throw const NotImplementedException();
   }
@@ -5845,6 +5841,18 @@ class EmptyElementRect implements ElementRect {
   final List<ClientRect> clientRects = const <ClientRect>[];
 
   const EmptyElementRect();
+}
+
+class _FrozenCSSClassSet extends _CssClassSet {
+  _FrozenCSSClassSet() : super(null);
+
+  void _write(Set s) {
+    throw const UnsupportedOperationException(
+        'frozen class set cannot be modified');
+  }
+  Set<String> _read() => new Set<String>();
+
+  bool get isFrozen() => true;
 }
 
 class _DocumentFragmentImpl extends _NodeImpl implements DocumentFragment {
@@ -5953,8 +5961,7 @@ class _DocumentFragmentImpl extends _NodeImpl implements DocumentFragment {
   Element get offsetParent() => null;
   Element get parent() => null;
   Map<String, String> get attributes() => const {};
-  // Issue 174: this should be a const set.
-  Set<String> get classes() => new Set<String>();
+  CSSClassSet get classes() => new _FrozenCSSClassSet();
   Map<String, String> get dataAttributes() => const {};
   CSSStyleDeclaration get style() => new Element.tag('div').style;
   Future<CSSStyleDeclaration> get computedStyle() =>
@@ -6595,10 +6602,6 @@ class _ChildrenElementList implements ElementList {
     throw const UnsupportedOperationException('TODO(jacobr): should we impl?');
   }
 
-  void copyFrom(List<Object> src, int srcStart, int dstStart, int count) {
-    throw 'Not impl yet. todo(jacobr)';
-  }
-
   void setRange(int start, int rangeLength, List from, [int startFrom = 0]) {
     throw const NotImplementedException();
   }
@@ -6958,7 +6961,7 @@ class _DataAttributeMap implements AttributeMap {
   String _strip(String key) => key.substring(5);
 }
 
-class _CssClassSet implements Set<String> {
+class _CssClassSet implements CSSClassSet {
 
   final _ElementImpl _element;
 
@@ -6985,6 +6988,8 @@ class _CssClassSet implements Set<String> {
 
   bool isEmpty() => _read().isEmpty();
 
+  bool get isFrozen() => false;
+
   int get length() =>_read().length;
 
   // interface Collection - END
@@ -7001,6 +7006,19 @@ class _CssClassSet implements Set<String> {
   bool remove(String value) {
     Set<String> s = _read();
     bool result = s.remove(value);
+    _write(s);
+    return result;
+  }
+
+  bool toggle(String value) {
+    Set<String> s = _read();
+    bool result = false;
+    if (s.contains(value)) {
+      s.remove(value);
+    } else {
+      s.add(value);
+      result = true;
+    }
     _write(s);
     return result;
   }
@@ -7337,9 +7355,9 @@ class _ElementImpl extends _NodeImpl implements Element {
 // Temporary dispatch hook to support WebComponents.
 Function dynamicUnknownElementDispatcher;
 
-const _START_TAG_REGEXP = const RegExp('<(\\w+)');
+final _START_TAG_REGEXP = const RegExp('<(\\w+)');
 class _ElementFactoryProvider {
-  static const _CUSTOM_PARENT_TAG_MAP = const {
+  static final _CUSTOM_PARENT_TAG_MAP = const {
     'body' : 'html',
     'head' : 'html',
     'caption' : 'table',
@@ -13025,7 +13043,7 @@ class _MutationObserverImpl extends NativeFieldWrapperClass1 implements Mutation
   }
 
    // TODO: Change to a set when const Sets are available.
-  static const _boolKeys =
+  static final _boolKeys =
     const {'childList': true,
            'attributes': true,
            'characterData': true,
@@ -13380,8 +13398,8 @@ class _NodeImpl extends _EventTargetImpl implements Node {
     try {
       final _NodeImpl parent = this.parent;
       parent.$dom_replaceChild(otherNode, this);
-    } catch(var e) {
-      
+    } catch (e) {
+
     };
     return this;
   }
@@ -14967,7 +14985,7 @@ class _AttributeClassSet extends _CssClassSet {
 }
 
 class _SVGElementImpl extends _ElementImpl implements SVGElement {
-  Set<String> get classes() {
+  CSSClassSet get classes() {
     if (_cssClassSet === null) {
       _cssClassSet = new _AttributeClassSet(_ptr);
     }
@@ -26653,6 +26671,20 @@ interface NodeSelector {
   List<Element> queryAll(String selectors);
 }
 
+interface CSSClassSet extends Set<String> {
+  /**
+   * Adds the class [token] to the element if it is not on it, removes it if it
+   * is.
+   */
+  bool toggle(String token);
+
+  /**
+   * Returns [:true:] classes cannot be added or removed from this
+   * [:CSSClassSet:].
+   */
+  bool get isFrozen();
+}
+
 /// @domName Element
 interface Element extends Node, NodeSelector default _ElementFactoryProvider {
   Element.html(String html);
@@ -26670,7 +26702,7 @@ interface Element extends Node, NodeSelector default _ElementFactoryProvider {
   void set elements(Collection<Element> value);
 
   /** @domName className, classList */
-  Set<String> get classes();
+  CSSClassSet get classes();
 
   void set classes(Collection<String> value);
 
@@ -40870,6 +40902,11 @@ class _JsSerializer extends _Serializer {
  }
 
   visitFunction(Function func) {
+    // Look for a cached serialization first.  The cached version
+    // should point to the original port.
+    var serialized = _deserializedFunctionTable.find(func);
+    if (serialized != null) return serialized;
+    // Create a new serialization forwarding to this port.
     return [ 'funcref',
              _functionRegistry._add(func),
              visitSendPortSync(_functionRegistry._sendPort), null ];
@@ -40966,6 +41003,34 @@ _deserialize(var message) {
   return new _JsDeserializer().deserialize(message);
 }
 
+// TODO(vsm): Replace this with a hash map once functions are
+// hashable.
+class _DeserializedFunctionTable {
+  List data;
+  _DeserializedFunctionTable() {
+    data = [];
+  }
+
+  find(Function f) {
+    for (var item in data) {
+      if (f == item[0]) return item[1];
+    }
+    return null;
+  }
+
+  add(Function f, x) {
+    data.add([f, x]);
+  }
+}
+
+_DeserializedFunctionTable __deserializedFunctionTable = null;
+get _deserializedFunctionTable {
+  if (__deserializedFunctionTable == null) {
+    __deserializedFunctionTable = new _DeserializedFunctionTable();
+  }
+  return __deserializedFunctionTable;
+}
+
 class _JsDeserializer extends _Deserializer {
 
   static const _UNSPECIFIED = const Object();
@@ -40997,9 +41062,15 @@ class _JsDeserializer extends _Deserializer {
 
   deserializeFunction(List x) {
     var id = x[1];
+    // If the sendPort is local, just return the underlying function.
+    // Otherwise, create a new function that forwards to the remote
+    // port.
     SendPortSync port = deserializeSendPort(x[2]);
+    if (port is _LocalSendPortSync) {
+      return _functionRegistry._get(id);
+    }
     // TODO: Support varargs when there is support in the language.
-    return ([arg0 = _UNSPECIFIED, arg1 = _UNSPECIFIED,
+    var f = ([arg0 = _UNSPECIFIED, arg1 = _UNSPECIFIED,
               arg2 = _UNSPECIFIED, arg3 = _UNSPECIFIED]) {
       var args = [arg0, arg1, arg2, arg3];
       var last = args.indexOf(_UNSPECIFIED);
@@ -41007,6 +41078,8 @@ class _JsDeserializer extends _Deserializer {
       var message = [id, args];
       return port.callSync(message);
     };
+    _deserializedFunctionTable.add(f, x);
+    return f;
   }
 
   deserializeProxy(x) {
@@ -41259,7 +41332,7 @@ void _completeMeasurementFutures() {
     for (_MeasurementRequest request in _pendingRequests) {
       try {
         request.value = request.computeValue();
-      } catch(var e) {
+      } catch (e) {
         request.value = e;
         request.exception = true;
       }
@@ -41657,7 +41730,7 @@ class _Utils {
     // FIXME: [possible optimization]: do not copy the array if Dart_IsArray is fine w/ it.
     final length = list.length;
     List result = new List(length);
-    result.copyFrom(list, 0, 0, length);
+    result.setRange(0, length, list);
     return result;
   }
 

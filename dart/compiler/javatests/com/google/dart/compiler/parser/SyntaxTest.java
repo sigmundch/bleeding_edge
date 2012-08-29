@@ -176,6 +176,26 @@ public class SyntaxTest extends AbstractParserTest {
     }
   }
 
+  public void test_constructor_named() {
+    DartUnit unit = parseUnit("test.dart", makeCode(
+        "class A {",
+        "  A.named() {}",
+        "}",
+        "",
+        "class B {",
+        "  factory B() = A.named;",
+        "}"));
+    assertNotNull(unit);
+    DartNode classB = unit.getTopLevelNodes().get(1);
+    assertTrue(classB instanceof DartClass);
+    DartNode member = ((DartClass) classB).getMembers().get(0);
+    assertTrue(member instanceof DartMethodDefinition);
+    DartTypeNode typeName = ((DartMethodDefinition) member).getRedirectedTypeName();
+    assertTrue(typeName.getIdentifier() instanceof DartIdentifier);
+    DartExpression constructorName = ((DartMethodDefinition) member).getRedirectedConstructorName();
+    assertTrue(constructorName instanceof DartIdentifier);
+  }
+
   /**
    * There was bug when "identA.identB" always considered as constructor declaration. But it can be
    * constructor only if "identA" is name of enclosing class.
@@ -941,6 +961,20 @@ public class SyntaxTest extends AbstractParserTest {
     assertTrue(firstNode instanceof DartMethodDefinition);
     DartStatement statement = ((DartMethodDefinition) firstNode).getFunction().getBody().getStatements().get(0);
     assertTrue(((DartVariableStatement) statement).getModifiers().isConstant());
+  }
+
+  public void test_localVariable_final_prefixedType() {
+    DartUnit unit = parseUnit("finalVar.dart", makeCode(
+        "main() {",
+        "  final p.T v = 1;",
+        "}"));
+    assertNotNull(unit);
+    DartNode firstNode = unit.getTopLevelNodes().get(0);
+    assertTrue(firstNode instanceof DartMethodDefinition);
+    DartStatement statement = ((DartMethodDefinition) firstNode).getFunction().getBody().getStatements().get(0);
+    DartVariableStatement variableStatement = (DartVariableStatement) statement;
+    assertTrue(variableStatement.getModifiers().isFinal());
+    assertEquals("v", variableStatement.getVariables().get(0).getVariableName());
   }
 
   public void test_metadata_identifier() {
