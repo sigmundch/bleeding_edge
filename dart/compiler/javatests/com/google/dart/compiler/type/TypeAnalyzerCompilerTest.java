@@ -42,7 +42,6 @@ import com.google.dart.compiler.ast.DartUnqualifiedInvocation;
 import com.google.dart.compiler.common.SourceInfo;
 import com.google.dart.compiler.parser.ParserErrorCode;
 import com.google.dart.compiler.resolver.ClassElement;
-import com.google.dart.compiler.resolver.ClassNodeElement;
 import com.google.dart.compiler.resolver.Element;
 import com.google.dart.compiler.resolver.ElementKind;
 import com.google.dart.compiler.resolver.MethodElement;
@@ -79,6 +78,24 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     assertErrors(
         libraryResult.getErrors(),
         errEx(ResolverErrorCode.MAIN_FUNCTION_PARAMETERS, 2, 1, 4));
+  }
+
+  /**
+   * <p>
+   * http://code.google.com/p/dart/issues/detail?id=4785
+   */
+  public void test_labelForBlockInSWitchCase() throws Exception {
+    AnalyzeLibraryResult libraryResult = analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "main() {",
+        "  switch (0) {",
+        "    case 0: qwerty: {",
+        "      break qwerty;",
+        "    }",
+        "  }",
+        "}",
+        "");
+    assertErrors(libraryResult.getErrors());
   }
 
   /**
@@ -1768,7 +1785,7 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
       assertTrue(message.contains("'bool'"));
     }
   }
-  
+
   /**
    * <p>
    * http://code.google.com/p/dart/issues/detail?id=4394
@@ -2050,6 +2067,24 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     assertInferredElementTypeString(testUnit, "d1", "bool");
   }
 
+  public void test_typesPropagation_multiAssign_IfThenElse_whenAsTypeCondition() throws Exception {
+    analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "f(var v) {",
+        "  if (v is String) {",
+        "    var v1 = v;",
+        "    v = null;",
+        "  } else {",
+        "    var v2 = v;",
+        "  }",
+        "  var v3 = v;",
+        "}",
+        "");
+    assertInferredElementTypeString(testUnit, "v1", "String");
+    assertInferredElementTypeString(testUnit, "v2", "Dynamic");
+    assertInferredElementTypeString(testUnit, "v3", "Dynamic");
+  }
+
   public void test_typesPropagation_multiAssign_While() throws Exception {
     analyzeLibrary(
         "// filler filler filler filler filler filler filler filler filler filler",
@@ -2129,6 +2164,52 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     assertInferredElementTypeString(testUnit, "v2", "bool");
     assertInferredElementTypeString(testUnit, "v3", "int");
     assertInferredElementTypeString(testUnit, "v4", "Object");
+  }
+
+  /**
+   * We should understand type with type arguments and choose the most generic version.
+   * <p>
+   * http://code.google.com/p/dart/issues/detail?id=4792
+   */
+  public void test_typesPropagation_multiAssign_withGenerics_type_type() throws Exception {
+    analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "f() {",
+        "  var a = new List<String>();",
+        "  var b = <Object>[];",
+        "  if (true) {",
+        "    a = <Object>[];",
+        "    b = new List<String>();",
+        "  }",
+        "  var a1 = a;",
+        "  var b1 = b;",
+        "}",
+        "");
+    assertInferredElementTypeString(testUnit, "a1", "List<Object>");
+    assertInferredElementTypeString(testUnit, "b1", "List<Object>");
+  }
+  
+  /**
+   * Prefer specific type, not Dynamic type argument.
+   * <p>
+   * http://code.google.com/p/dart/issues/detail?id=4792
+   */
+  public void test_typesPropagation_multiAssign_withGenerics_type_dynamic() throws Exception {
+    analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "f() {",
+        "  var a = new List<String>();",
+        "  var b = [];",
+        "  if (true) {",
+        "    a = [];",
+        "    b = new List<String>();",
+        "  }",
+        "  var a1 = a;",
+        "  var b1 = b;",
+        "}",
+        "");
+    assertInferredElementTypeString(testUnit, "a1", "List<String>");
+    assertInferredElementTypeString(testUnit, "b1", "List<String>");
   }
 
   /**
@@ -4130,6 +4211,29 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     assertErrors(
         libraryResult.getErrors(),
         errEx(ResolverErrorCode.REDIRECTION_CONSTRUCTOR_TARGET_MUST_BE_CONST, 7, 29, 5));
+  }
+
+  /**
+   * <p>
+   * http://code.google.com/p/dart/issues/detail?id=4778
+   */
+  public void test_unqualifiedAccessToGenericTypeField() throws Exception {
+    AnalyzeLibraryResult libraryResult = analyzeLibrary(makeCode(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "class Game {}",
+        "class GameRenderer<G extends Game> {",
+        "  G get game => null;",
+        "}",
+        "class SpaceShooterGame extends Game {",
+        "  int score;",
+        "}",
+        "class SpaceShooterRenderer extends GameRenderer<SpaceShooterGame> {",
+        "  someMethod() {",
+        "    var a = game.score;",
+        "  }",
+        "}",
+        ""));
+    assertErrors(libraryResult.getErrors());
   }
 
   private <T extends DartNode> T findNode(final Class<T> clazz, String pattern) {

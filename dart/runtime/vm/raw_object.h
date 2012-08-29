@@ -1127,6 +1127,7 @@ class RawExternalOneByteString : public RawString {
   RAW_HEAP_OBJECT_IMPLEMENTATION(ExternalOneByteString);
 
   ExternalStringData<uint8_t>* external_data_;
+  friend bool ExternalStringGetPeerHelper(Dart_Handle, void**);
 };
 
 
@@ -1134,6 +1135,7 @@ class RawExternalTwoByteString : public RawString {
   RAW_HEAP_OBJECT_IMPLEMENTATION(ExternalTwoByteString);
 
   ExternalStringData<uint16_t>* external_data_;
+  friend bool ExternalStringGetPeerHelper(Dart_Handle, void**);
 };
 
 
@@ -1141,6 +1143,7 @@ class RawExternalFourByteString : public RawString {
   RAW_HEAP_OBJECT_IMPLEMENTATION(ExternalFourByteString);
 
   ExternalStringData<uint32_t>* external_data_;
+  friend bool ExternalStringGetPeerHelper(Dart_Handle, void**);
 };
 
 
