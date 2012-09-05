@@ -22,6 +22,9 @@ int CELL_SIZE = 20;
 /** How many pixels from the game should the control panel be? */
 int PANEL_OFFSET = 20;
 
+/** How many milliseconds between steps? */
+int STEP_TIME = 100;
+
 /** Singletons */
 CellCoordinator get COORDINATOR {
   if (CellCoordinator._ONLY == null) {
@@ -63,11 +66,13 @@ class CellCoordinator {
       lastRefresh = 0;
 
   void increment(int time) {
-   // if (new Date.now().millisecondsSinceEpoch - lastRefresh > 200) {
+    // TODO(samhop): factor this functionality out so that we can benchmark it
+    // running as fast as possible
+    if (new Date.now().millisecondsSinceEpoch - lastRefresh > 100) {
       on.step.forEach((f) => f());
       on.resolve.forEach((f) => f());
       lastRefresh = new Date.now().millisecondsSinceEpoch;
-    // }
+    }
     if (!_stop) {
        window.requestAnimationFrame(increment);
     }
