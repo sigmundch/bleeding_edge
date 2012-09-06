@@ -5,7 +5,7 @@
 # BSD-style license that can be found in the LICENSE file.
 
 import datetime
-import math		
+import math
 import optparse
 import os
 from os.path import dirname, abspath
@@ -95,25 +95,30 @@ class TestRunner(object):
         if line.startswith('?'):
           to_remove = line.split()[1]
           if os.path.isdir(to_remove):
-            shutil.rmtree(to_remove)#, ignore_errors=True)
+            shutil.rmtree(to_remove, ignore_errors=True)
           else:
             os.remove(to_remove)
+        elif any(line.startswith(status) for status in ['A', 'M', 'C', 'D']):
+          self.RunCmd(['svn', 'revert', line.split()[1]])
 
   def GetArchive(self, archive_name):
     """Wrapper around the pulling down a specific archive from Google Storage.
     Adds a specific revision argument as needed.
-    Returns: The stdout and stderr from running this command."""
+    Returns: A tuple of a boolean (True if we successfully downloaded the
+    binary), and the stdout and stderr from running this command."""
+    num_fails = 0
     while True:
       cmd = ['python', os.path.join(DART_REPO_LOC, 'tools', 'get_archive.py'),
              archive_name]
       if int(self.current_revision_num) != -1:
         cmd += ['-r', str(self.current_revision_num)]
       stdout, stderr = self.RunCmd(cmd)
-      if 'Please try again later' in stdout:
+      if 'Please try again later' in stdout and num_fails < 20:
         time.sleep(100)
+        num_fails += 1
       else:
         break
-    return (stdout, stderr)
+    return (num_fails < 20, stdout, stderr)
 
   def _Sync(self, revision_num=None):
     """Update the repository to the latest or specified revision."""
@@ -146,9 +151,9 @@ class TestRunner(object):
       revision_num = SearchForRevision()
 
     self.current_revision_num = revision_num
-    stdout, stderr = self.GetArchive('sdk')
+    success, stdout, stderr = self.GetArchive('sdk')
     if (not os.path.exists(os.path.join(
-        DART_REPO_LOC, 'tools', 'get_archive.py'))
+        DART_REPO_LOC, 'tools', 'get_archive.py')) or not success
         or 'InvalidUriError' in stderr or "Couldn't download" in stdout):
       # Couldn't find the SDK on Google Storage. Build it locally.
 
@@ -249,8 +254,12 @@ class TestRunner(object):
       return (HasPerfAffectingResults(GetFileList(
           revision_num)), revision_num)
     else:
-      results, _ = self.RunCmd(['svn', 'st', '-u'], std_in='p\r\n')
-      latest_interesting_server_rev = int(results.split('\n')[-2].split()[-1])
+      latest_interesting_server_rev = None
+      while not latest_interesting_server_rev:
+        results, _ = self.RunCmd(['svn', 'st', '-u'], std_in='p\r\n')
+        if len(results.split('\n')) >= 2:
+          latest_interesting_server_rev = int(
+              results.split('\n')[-2].split()[-1])
       if self.backfill:
         done_cls = list(UpdateSetOfDoneCls())
         done_cls.sort()
@@ -802,6 +811,9 @@ class DromaeoTest(RuntimePerformanceTest):
       shenanigans once we're back to both versions of Chrome using the same
       version of ChromeDriver. IMPORTANT NOTE: This assumes your chromedriver is
       in the default location (inside depot_tools).
+
+      Returns: True if we were successfully able to download a new version of
+      chromedriver and/or move the correct chromedriver into position.
       """
       current_dir = os.getcwd()
       self.test.test_runner.GetArchive('chromedriver')
@@ -831,6 +843,8 @@ class DromaeoTest(RuntimePerformanceTest):
         print >> sys.stderr, to_dir
         if not os.path.exists(os.path.dirname(to_dir)):
           os.makedirs(os.path.dirname(to_dir))
+        if not os.path.exists(os.path.dirname(from_dir)):
+          os.makedirs(os.path.dirname(from_dir))
         shutil.copyfile(from_dir, to_dir)
 
       for loc in path:
@@ -843,11 +857,15 @@ class DromaeoTest(RuntimePerformanceTest):
                 FIRST_CHROMEDRIVER):
               # If we don't have a stashed a different chromedriver just use
               # the regular chromedriver.
+              if not os.path.exists(os.path.dirname(orig_chromedriver_path)):
+                os.makedirs(os.path.dirname(orig_chromedriver_path))
               self.test.test_runner.RunCmd([os.path.join(
                   TOP_LEVEL_DIR, 'tools', 'testing', 'webdriver_test_setup.py'),
                   '-f', '-p', '-s'])
             elif not os.path.exists(dartium_chromedriver_path):
-              stdout, _ = self.test.test_runner.GetArchive('chromedriver')
+              success, _, _ = self.test.test_runner.GetArchive('chromedriver')
+              if not success:
+                return False
             # Move original chromedriver for storage.
             if not os.path.exists(orig_chromedriver_path):
               MoveChromedriver(loc, copy_to_depot_tools_dir=False)
@@ -856,11 +874,15 @@ class DromaeoTest(RuntimePerformanceTest):
               MoveChromedriver(loc, from_path=os.path.join(
                                 dartium_chromedriver_path, 'chromedriver'))
       os.chdir(current_dir)
+      return True
 
     def RunTests(self):
       """Run dromaeo in the browser."""
       
-      self.test.test_runner.GetArchive('dartium')
+      success, _, _ = self.test.test_runner.GetArchive('dartium')
+      if not success:
+        # Unable to download dartium. Try later.
+        return
 
       # Build tests.
       dromaeo_path = os.path.join('samples', 'third_party', 'dromaeo')
@@ -878,7 +900,9 @@ class DromaeoTest(RuntimePerformanceTest):
       versions = DromaeoTester.GetDromaeoVersions()
 
       for browser in BrowserTester.GetBrowsers():
-        self.MoveChromeDriverIfNeeded(browser)
+        success = self.MoveChromeDriverIfNeeded(browser)
+        if not success:
+          return
         for version_name in versions:
           if not self.test.IsValidCombination(browser, version_name):
             continue
@@ -927,7 +951,7 @@ class DromaeoTest(RuntimePerformanceTest):
 
       upload_success = True
       for line in lines:
-        rev = re.match(revision_pattern, line.strip())
+        rev = re.match(revision_pattern, line.strip().replace('"', ''))
         if rev:
           revision_num = int(rev.group(1))
           continue
@@ -1048,7 +1072,7 @@ def FillInBackHistory(results_set, runner):
           num_reruns=reruns)
     if num_results >= 10 or run == 0 and num_results + reruns >= 10:
       results_set = UpdateSetOfDoneCls(revision_number)
-    else:
+    elif run != 0:
       return False
     return True
 

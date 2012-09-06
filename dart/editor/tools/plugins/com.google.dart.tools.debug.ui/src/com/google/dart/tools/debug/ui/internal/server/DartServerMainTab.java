@@ -20,6 +20,7 @@ import com.google.dart.tools.debug.ui.internal.DartDebugUIPlugin;
 import com.google.dart.tools.debug.ui.internal.util.AppSelectionDialog;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -55,6 +56,8 @@ public class DartServerMainTab extends AbstractLaunchConfigurationTab {
   private Text heapText;
   private Button checkedModeButton;
   private Button enableDebuggingButton;
+  private Label workingDirText;
+  private IPath scriptPath;
 
   private ModifyListener textModifyListener = new ModifyListener() {
     @Override
@@ -76,12 +79,22 @@ public class DartServerMainTab extends AbstractLaunchConfigurationTab {
     Group group = new Group(composite, SWT.NONE);
     group.setText("Application");
     GridDataFactory.fillDefaults().grab(true, false).applyTo(group);
-    GridLayoutFactory.swtDefaults().numColumns(3).extendedMargins(0, 0, 0, 4).applyTo(group);
+    GridLayoutFactory.swtDefaults().numColumns(3).applyTo(group);
 
     Label label = new Label(group, SWT.NONE);
+    label.setText("Working directory:");
+    label.pack();
+    int labelWidth = label.getSize().x;
+    workingDirText = new Label(group, SWT.NONE);
+    GridDataFactory.swtDefaults().span(2, 1).align(SWT.FILL, SWT.CENTER).grab(true, false).applyTo(
+        workingDirText);
+
+    label = new Label(group, SWT.NONE);
     label.setText("Dart script:");
 
     scriptText = new Text(group, SWT.BORDER | SWT.SINGLE);
+    scriptText.setEditable(false);
+    scriptText.setCursor(composite.getShell().getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
     scriptText.addModifyListener(textModifyListener);
     GridDataFactory.swtDefaults().align(SWT.FILL, SWT.CENTER).grab(true, false).applyTo(scriptText);
 
@@ -99,13 +112,11 @@ public class DartServerMainTab extends AbstractLaunchConfigurationTab {
 
     label = new Label(group, SWT.NONE);
     label.setText("Script arguments:");
-    label.pack();
-    int labelWidth = label.getSize().x;
     GridDataFactory.swtDefaults().align(SWT.FILL, SWT.BEGINNING).applyTo(label);
 
     argsText = new Text(group, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL);
     argsText.addModifyListener(textModifyListener);
-    GridDataFactory.swtDefaults().align(SWT.FILL, SWT.FILL).grab(true, false).hint(400, 75).applyTo(
+    GridDataFactory.swtDefaults().align(SWT.FILL, SWT.FILL).grab(true, false).hint(400, 74).applyTo(
         argsText);
 
     // spacer
@@ -115,11 +126,23 @@ public class DartServerMainTab extends AbstractLaunchConfigurationTab {
     group = new Group(composite, SWT.NONE);
     group.setText("VM settings");
     GridDataFactory.fillDefaults().grab(true, false).applyTo(group);
-    GridLayoutFactory.swtDefaults().numColumns(2).extendedMargins(0, 0, 0, 4).applyTo(group);
+    GridLayoutFactory.swtDefaults().numColumns(3).applyTo(group);
+
+    label = new Label(group, SWT.NONE);
+    label.setText("Max heap (MB):");
+    GridDataFactory.swtDefaults().hint(labelWidth, -1).applyTo(label);
+
+    heapText = new Text(group, SWT.BORDER | SWT.SINGLE);
+    //heapText.setTextLimit(5);
+    heapText.addModifyListener(textModifyListener);
+    GridDataFactory.swtDefaults().align(SWT.FILL, SWT.CENTER).grab(true, false).applyTo(heapText);
+
+    Label spacer = new Label(group, SWT.NONE);
+    GridDataFactory.swtDefaults().align(SWT.FILL, SWT.BEGINNING).hint(widthHint, -1).applyTo(spacer);
 
     checkedModeButton = new Button(group, SWT.CHECK);
     checkedModeButton.setText("Run in checked mode");
-    GridDataFactory.swtDefaults().span(2, 1).applyTo(checkedModeButton);
+    GridDataFactory.swtDefaults().span(3, 1).applyTo(checkedModeButton);
     checkedModeButton.addSelectionListener(new SelectionAdapter() {
       @Override
       public void widgetSelected(SelectionEvent e) {
@@ -129,7 +152,7 @@ public class DartServerMainTab extends AbstractLaunchConfigurationTab {
 
     enableDebuggingButton = new Button(group, SWT.CHECK);
     enableDebuggingButton.setText("Enable debugging");
-    GridDataFactory.swtDefaults().span(2, 1).applyTo(enableDebuggingButton);
+    GridDataFactory.swtDefaults().span(3, 1).applyTo(enableDebuggingButton);
     enableDebuggingButton.addSelectionListener(new SelectionAdapter() {
       @Override
       public void widgetSelected(SelectionEvent e) {
@@ -143,14 +166,6 @@ public class DartServerMainTab extends AbstractLaunchConfigurationTab {
       String message = "not yet supported on win32";
       enableDebuggingButton.setText(enableDebuggingButton.getText() + " (" + message + ")");
     }
-
-    label = new Label(group, SWT.NONE);
-    label.setText("Heap (MB):");
-    GridDataFactory.swtDefaults().hint(labelWidth, -1).applyTo(label);
-
-    heapText = new Text(group, SWT.BORDER | SWT.SINGLE);
-    heapText.setTextLimit(5);
-    heapText.addModifyListener(textModifyListener);
 
     setControl(composite);
   }
@@ -184,7 +199,12 @@ public class DartServerMainTab extends AbstractLaunchConfigurationTab {
   public void initializeFrom(ILaunchConfiguration configuration) {
     DartLaunchConfigWrapper dartLauncher = new DartLaunchConfigWrapper(configuration);
 
-    scriptText.setText(dartLauncher.getApplicationName());
+    scriptPath = new Path(dartLauncher.getApplicationName());
+    IResource resource = dartLauncher.getApplicationResource();
+    if (resource != null) {
+      scriptText.setText(resource.getProjectRelativePath().toPortableString());
+    }
+    workingDirText.setText(getWorkingDir(dartLauncher));
     argsText.setText(dartLauncher.getArguments());
 
     checkedModeButton.setSelection(dartLauncher.getCheckedMode());
@@ -203,7 +223,7 @@ public class DartServerMainTab extends AbstractLaunchConfigurationTab {
   public void performApply(ILaunchConfigurationWorkingCopy configuration) {
     DartLaunchConfigWrapper dartLauncher = new DartLaunchConfigWrapper(configuration);
 
-    dartLauncher.setApplicationName(scriptText.getText());
+    dartLauncher.setApplicationName(scriptPath.toPortableString());
     dartLauncher.setArguments(argsText.getText());
 
     dartLauncher.setCheckedMode(checkedModeButton.getSelection());
@@ -242,9 +262,31 @@ public class DartServerMainTab extends AbstractLaunchConfigurationTab {
 
     Object[] results = dialog.getResult();
     if ((results != null) && (results.length > 0) && (results[0] instanceof IFile)) {
-      String pathStr = ((IFile) results[0]).getFullPath().toPortableString();
+      IFile resource = (IFile) results[0];
+      scriptPath = (resource.getFullPath());
+      scriptText.setText(resource.getProjectRelativePath().toPortableString());
+      workingDirText.setText(getWorkingDir(resource));
+    }
+  }
 
-      scriptText.setText(pathStr);
+  private String getWorkingDir(DartLaunchConfigWrapper dartLauncher) {
+    IResource resource = dartLauncher.getApplicationResource();
+    if (resource != null) {
+      return getWorkingDir(resource);
+    } else {
+      IProject project = dartLauncher.getProject();
+      if (project != null) {
+        return dartLauncher.getProject().getLocation().toPortableString();
+      }
+    }
+    return "";
+  }
+
+  private String getWorkingDir(IResource resource) {
+    if (resource.isLinked()) {
+      return resource.getLocation().toFile().getParentFile().toString();
+    } else {
+      return resource.getProject().getLocation().toFile().toString();
     }
   }
 

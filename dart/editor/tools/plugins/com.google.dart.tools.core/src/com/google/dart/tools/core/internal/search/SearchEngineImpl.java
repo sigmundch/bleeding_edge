@@ -142,7 +142,9 @@ public class SearchEngineImpl implements SearchEngine {
         if (unit != null) {
           DartElement dartElement = findElement(unit, targetElement);
           SourceRange range = new SourceRangeImpl(location.getOffset(), location.getLength());
-          SearchMatch match = new SearchMatch(MatchQuality.EXACT, matchKind, dartElement, range);
+          MatchQuality quality = element.getResource() != IndexConstants.DYNAMIC
+              ? MatchQuality.EXACT : MatchQuality.NAME;
+          SearchMatch match = new SearchMatch(quality, matchKind, dartElement, range);
           match.setQualified(relationship == IndexConstants.IS_ACCESSED_BY_QUALIFIED
               || relationship == IndexConstants.IS_MODIFIED_BY_QUALIFIED
               || relationship == IndexConstants.IS_INVOKED_BY_QUALIFIED);
@@ -358,6 +360,14 @@ public class SearchEngineImpl implements SearchEngine {
      * @throws SearchException if the results could not be computed
      */
     public void performSearch(SearchListener listener) throws SearchException;
+  }
+
+  private static Resource getResource(CompilationUnit compilationUnit) throws SearchException {
+    try {
+      return ResourceFactory.getResource(compilationUnit);
+    } catch (DartModelException exception) {
+      throw new SearchException(exception);
+    }
   }
 
   /**
@@ -577,23 +587,32 @@ public class SearchEngineImpl implements SearchEngine {
     if (listener == null) {
       throw new IllegalArgumentException("listener cannot be null");
     }
-    SearchListener filteredListener = new CountingSearchListener(4, applyFilter(filter, listener));
-    index.getRelationships(
-        createElement(variable),
-        IndexConstants.IS_ACCESSED_BY_QUALIFIED,
-        new RelationshipCallbackImpl(MatchKind.FIELD_READ, filteredListener));
-    index.getRelationships(
-        createElement(variable),
-        IndexConstants.IS_MODIFIED_BY_QUALIFIED,
-        new RelationshipCallbackImpl(MatchKind.FIELD_WRITE, filteredListener));
-    index.getRelationships(
-        createElement(variable),
-        IndexConstants.IS_ACCESSED_BY_UNQUALIFIED,
-        new RelationshipCallbackImpl(MatchKind.FIELD_READ, filteredListener));
-    index.getRelationships(
-        createElement(variable),
-        IndexConstants.IS_MODIFIED_BY_UNQUALIFIED,
-        new RelationshipCallbackImpl(MatchKind.FIELD_WRITE, filteredListener));
+    if (variable.isParameter()) {
+      SearchListener filteredListener = new CountingSearchListener(1, applyFilter(filter, listener));
+      Element element = createMethodParameterElement(variable);
+      index.getRelationships(
+          element,
+          IndexConstants.IS_REFERENCED_BY,
+          new RelationshipCallbackImpl(MatchKind.NAMED_PARAMETER_REFERENCE, filteredListener));
+    } else {
+      SearchListener filteredListener = new CountingSearchListener(4, applyFilter(filter, listener));
+      index.getRelationships(
+          createElement(variable),
+          IndexConstants.IS_ACCESSED_BY_QUALIFIED,
+          new RelationshipCallbackImpl(MatchKind.FIELD_READ, filteredListener));
+      index.getRelationships(
+          createElement(variable),
+          IndexConstants.IS_MODIFIED_BY_QUALIFIED,
+          new RelationshipCallbackImpl(MatchKind.FIELD_WRITE, filteredListener));
+      index.getRelationships(
+          createElement(variable),
+          IndexConstants.IS_ACCESSED_BY_UNQUALIFIED,
+          new RelationshipCallbackImpl(MatchKind.FIELD_READ, filteredListener));
+      index.getRelationships(
+          createElement(variable),
+          IndexConstants.IS_MODIFIED_BY_UNQUALIFIED,
+          new RelationshipCallbackImpl(MatchKind.FIELD_WRITE, filteredListener));
+    }
   }
 
   @Override
@@ -613,24 +632,39 @@ public class SearchEngineImpl implements SearchEngine {
     if (listener == null) {
       throw new IllegalArgumentException("listener cannot be null");
     }
-    Element fieldElement = createElement(field);
-    SearchListener filteredListener = new CountingSearchListener(4, applyFilter(filter, listener));
-    index.getRelationships(
-        fieldElement,
-        IndexConstants.IS_ACCESSED_BY_QUALIFIED,
-        new RelationshipCallbackImpl(MatchKind.FIELD_READ, filteredListener));
-    index.getRelationships(
-        fieldElement,
-        IndexConstants.IS_ACCESSED_BY_UNQUALIFIED,
-        new RelationshipCallbackImpl(MatchKind.FIELD_READ, filteredListener));
-    index.getRelationships(
-        fieldElement,
-        IndexConstants.IS_MODIFIED_BY_QUALIFIED,
-        new RelationshipCallbackImpl(MatchKind.FIELD_WRITE, filteredListener));
-    index.getRelationships(
-        fieldElement,
-        IndexConstants.IS_MODIFIED_BY_UNQUALIFIED,
-        new RelationshipCallbackImpl(MatchKind.FIELD_WRITE, filteredListener));
+    SearchListener filteredListener = new CountingSearchListener(6, applyFilter(filter, listener));
+    // exact matches
+    {
+      Element exactElement = createElement(field);
+      index.getRelationships(
+          exactElement,
+          IndexConstants.IS_ACCESSED_BY_QUALIFIED,
+          new RelationshipCallbackImpl(MatchKind.FIELD_READ, filteredListener));
+      index.getRelationships(
+          exactElement,
+          IndexConstants.IS_ACCESSED_BY_UNQUALIFIED,
+          new RelationshipCallbackImpl(MatchKind.FIELD_READ, filteredListener));
+      index.getRelationships(
+          exactElement,
+          IndexConstants.IS_MODIFIED_BY_QUALIFIED,
+          new RelationshipCallbackImpl(MatchKind.FIELD_WRITE, filteredListener));
+      index.getRelationships(
+          exactElement,
+          IndexConstants.IS_MODIFIED_BY_UNQUALIFIED,
+          new RelationshipCallbackImpl(MatchKind.FIELD_WRITE, filteredListener));
+    }
+    // inexact matches by name
+    {
+      Element inexactElement = new Element(IndexConstants.DYNAMIC, field.getElementName());
+      index.getRelationships(
+          inexactElement,
+          IndexConstants.IS_ACCESSED_BY_QUALIFIED,
+          new RelationshipCallbackImpl(MatchKind.FIELD_READ, filteredListener));
+      index.getRelationships(
+          inexactElement,
+          IndexConstants.IS_MODIFIED_BY_QUALIFIED,
+          new RelationshipCallbackImpl(MatchKind.FIELD_WRITE, filteredListener));
+    }
   }
 
   @Override
@@ -673,24 +707,30 @@ public class SearchEngineImpl implements SearchEngine {
     if (listener == null) {
       throw new IllegalArgumentException("listener cannot be null");
     }
-    SearchListener filteredListener = new CountingSearchListener(4, applyFilter(filter, listener));
-    Element element = createElement(method);
+    SearchListener filteredListener = new CountingSearchListener(5, applyFilter(filter, listener));
+    // exact matches
+    Element exactElement = createElement(method);
     index.getRelationships(
-        element,
+        exactElement,
         IndexConstants.IS_INVOKED_BY_QUALIFIED,
         new RelationshipCallbackImpl(MatchKind.METHOD_INVOCATION, filteredListener));
     index.getRelationships(
-        element,
+        exactElement,
         IndexConstants.IS_INVOKED_BY_UNQUALIFIED,
         new RelationshipCallbackImpl(MatchKind.METHOD_INVOCATION, filteredListener));
     index.getRelationships(
-        element,
+        exactElement,
         IndexConstants.IS_ACCESSED_BY_QUALIFIED,
         new RelationshipCallbackImpl(MatchKind.METHOD_REFERENCE, filteredListener));
     index.getRelationships(
-        element,
+        exactElement,
         IndexConstants.IS_ACCESSED_BY_UNQUALIFIED,
         new RelationshipCallbackImpl(MatchKind.METHOD_REFERENCE, filteredListener));
+    // inexact matches
+    index.getRelationships(
+        new Element(IndexConstants.DYNAMIC, method.getElementName()),
+        IndexConstants.IS_INVOKED_BY_QUALIFIED,
+        new RelationshipCallbackImpl(MatchKind.METHOD_INVOCATION, filteredListener));
   }
 
   @Override
@@ -945,6 +985,14 @@ public class SearchEngineImpl implements SearchEngine {
     return new Element[] {IndexConstants.UNIVERSE};
   }
 
+  private Element createMethodParameterElement(DartVariableDeclaration parameter)
+      throws SearchException {
+    DartFunction function = (DartFunction) parameter.getParent();
+    Element functionElement = createElement(function);
+    return new Element(functionElement.getResource(), functionElement.getElementId()
+        + ResourceFactory.SEPARATOR_CHAR + parameter.getElementName());
+  }
+
   /**
    * Use the given runner to perform the given number of asynchronous searches, then wait until the
    * search has completed and return the results that were produced.
@@ -960,14 +1008,6 @@ public class SearchEngineImpl implements SearchEngine {
       Thread.yield();
     }
     return listener.getMatches();
-  }
-
-  private Resource getResource(CompilationUnit compilationUnit) throws SearchException {
-    try {
-      return ResourceFactory.getResource(compilationUnit);
-    } catch (DartModelException exception) {
-      throw new SearchException(exception);
-    }
   }
 
   private Resource getResource(IFile file) throws SearchException {

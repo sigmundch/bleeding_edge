@@ -24,16 +24,16 @@ DECLARE_FLAG(bool, print_scopes);
 DECLARE_FLAG(bool, trace_functions);
 
 
-void DeoptimizationStub::GenerateCode(FlowGraphCompiler* compiler,
-                                      intptr_t stub_ix) {
+void CompilerDeoptInfoWithStub::GenerateCode(FlowGraphCompiler* compiler,
+                                             intptr_t stub_ix) {
   // Calls do not need stubs, they share a deoptimization trampoline.
-  if (reason_ == kDeoptAtCall) return;
+  ASSERT(reason() != kDeoptAtCall);
   Assembler* assem = compiler->assembler();
 #define __ assem->
-  __ Comment("Deopt stub for id %d", deopt_id_);
+  __ Comment("Deopt stub for id %"Pd"", deopt_id());
   __ Bind(entry_label());
 
-  ASSERT(deoptimization_env_ != NULL);
+  ASSERT(deoptimization_env() != NULL);
 
   if (compiler->IsLeaf()) {
     Label L;
@@ -49,10 +49,10 @@ void DeoptimizationStub::GenerateCode(FlowGraphCompiler* compiler,
   }
   __ call(&StubCode::DeoptimizeLabel());
   const intptr_t deopt_info_index = stub_ix;
-  compiler->pc_descriptors_list()->AddDeoptInfo(
+  compiler->pc_descriptors_list()->AddDeoptIndex(
       compiler->assembler()->CodeSize(),
-      deopt_id_,
-      reason_,
+      deopt_id(),
+      reason(),
       deopt_info_index);
 #undef __
 }
@@ -447,8 +447,7 @@ RawSubtypeTestCache* FlowGraphCompiler::GenerateInlineInstanceof(
 // Clobbers ECX and EDX.
 // Returns:
 // - true or false in EAX.
-void FlowGraphCompiler::GenerateInstanceOf(intptr_t deopt_id,
-                                           intptr_t token_pos,
+void FlowGraphCompiler::GenerateInstanceOf(intptr_t token_pos,
                                            const AbstractType& type,
                                            bool negate_result,
                                            LocationSummary* locs) {
@@ -491,7 +490,7 @@ void FlowGraphCompiler::GenerateInstanceOf(intptr_t deopt_id,
     __ pushl(EDX);  // Instantiator type arguments.
     __ LoadObject(EAX, test_cache);
     __ pushl(EAX);
-    GenerateCallRuntime(deopt_id, token_pos, kInstanceofRuntimeEntry, locs);
+    GenerateCallRuntime(token_pos, kInstanceofRuntimeEntry, locs);
     // Pop the parameters supplied to the runtime entry. The result of the
     // instanceof runtime call will be left as the result of the operation.
     __ Drop(5);
@@ -530,8 +529,7 @@ void FlowGraphCompiler::GenerateInstanceOf(intptr_t deopt_id,
 // - object in EAX for successful assignable check (or throws TypeError).
 // Performance notes: positive checks must be quick, negative checks can be slow
 // as they throw an exception.
-void FlowGraphCompiler::GenerateAssertAssignable(intptr_t deopt_id,
-                                                 intptr_t token_pos,
+void FlowGraphCompiler::GenerateAssertAssignable(intptr_t token_pos,
                                                  const AbstractType& dst_type,
                                                  const String& dst_name,
                                                  LocationSummary* locs) {
@@ -559,8 +557,7 @@ void FlowGraphCompiler::GenerateAssertAssignable(intptr_t deopt_id,
     __ pushl(EAX);  // Push the source object.
     __ PushObject(dst_name);  // Push the name of the destination.
     __ PushObject(error_message);
-    GenerateCallRuntime(deopt_id,
-                        token_pos,
+    GenerateCallRuntime(token_pos,
                         kMalformedTypeErrorRuntimeEntry,
                         locs);
     // We should never return here.
@@ -588,7 +585,7 @@ void FlowGraphCompiler::GenerateAssertAssignable(intptr_t deopt_id,
   __ PushObject(dst_name);  // Push the name of the destination.
   __ LoadObject(EAX, test_cache);
   __ pushl(EAX);
-  GenerateCallRuntime(deopt_id, token_pos, kTypeCheckRuntimeEntry, locs);
+  GenerateCallRuntime(token_pos, kTypeCheckRuntimeEntry, locs);
   // Pop the parameters supplied to the runtime entry. The result of the
   // type check runtime call is the checked value.
   __ Drop(6);
@@ -603,6 +600,15 @@ void FlowGraphCompiler::GenerateAssertAssignable(intptr_t deopt_id,
 void FlowGraphCompiler::EmitInstructionPrologue(Instruction* instr) {
   if (!is_optimizing()) {
     AllocateRegistersLocally(instr);
+  }
+}
+
+
+void FlowGraphCompiler::EmitInstructionEpilogue(Instruction* instr) {
+  if (is_optimizing()) return;
+  Definition* defn = instr->AsDefinition();
+  if ((defn != NULL) && defn->is_used()) {
+    __ pushl(defn->locs()->out().reg());
   }
 }
 
@@ -789,7 +795,8 @@ void FlowGraphCompiler::CopyParameters() {
   }
   if (is_optimizing()) {
     stackmap_table_builder_->AddEntry(assembler()->CodeSize(),
-                                      empty_stack_bitmap);
+                                      empty_stack_bitmap,
+                                      0);  // No registers.
   }
 
 
@@ -804,7 +811,8 @@ void FlowGraphCompiler::CopyParameters() {
                          0);  // No token position.
     if (is_optimizing()) {
       stackmap_table_builder_->AddEntry(assembler()->CodeSize(),
-                                        empty_stack_bitmap);
+                                        empty_stack_bitmap,
+                                        0);  // No registers.
     }
     __ popl(EAX);  // Remove argument.
     __ popl(EAX);  // Restore result.
@@ -921,6 +929,8 @@ void FlowGraphCompiler::CompileGraph() {
   // the presence of optional named parameters.
   // No such checking code is generated if only fixed parameters are declared,
   // unless we are debug mode or unless we are compiling a closure.
+  LocalVariable* saved_args_desc_var =
+      parsed_function().GetSavedArgumentsDescriptorVar();
   if (copied_parameter_count == 0) {
 #ifdef DEBUG
     const bool check_arguments = true;
@@ -936,8 +946,7 @@ void FlowGraphCompiler::CompileGraph() {
       __ cmpl(EAX, Immediate(Smi::RawValue(parameter_count)));
       __ j(EQUAL, &argc_in_range, Assembler::kNearJump);
       if (function.IsClosureFunction()) {
-        GenerateCallRuntime(Isolate::kNoDeoptId,
-                            function.token_pos(),
+        GenerateCallRuntime(function.token_pos(),
                             kClosureArgumentMismatchRuntimeEntry,
                             prologue_locs);
       } else {
@@ -945,12 +954,26 @@ void FlowGraphCompiler::CompileGraph() {
       }
       __ Bind(&argc_in_range);
     }
+    // The arguments descriptor is never saved in the absence of optional
+    // parameters, since any argument definition test would always yield true.
+    ASSERT(saved_args_desc_var == NULL);
   } else {
+    if (saved_args_desc_var != NULL) {
+      __ Comment("Save arguments descriptor");
+      const Register kArgumentsDescriptorReg = EDX;
+      // The saved_args_desc_var is allocated one slot before the first local.
+      const intptr_t slot = parsed_function().first_stack_local_index() + 1;
+      // If the saved_args_desc_var is captured, it is first moved to the stack
+      // and later to the context, once the context is allocated.
+      ASSERT(saved_args_desc_var->is_captured() ||
+             (saved_args_desc_var->index() == slot));
+      __ movl(Address(EBP, slot * kWordSize), kArgumentsDescriptorReg);
+    }
     CopyParameters();
   }
 
   // In unoptimized code, initialize (non-argument) stack allocated slots to
-  // null.
+  // null. This does not cover the saved_args_desc_var slot.
   if (!is_optimizing() && (local_count > 0)) {
     __ Comment("Initialize spill slots");
     const intptr_t slot_base = parsed_function().first_stack_local_index();
@@ -997,13 +1020,35 @@ void FlowGraphCompiler::GenerateCall(intptr_t token_pos,
 }
 
 
-void FlowGraphCompiler::GenerateCallRuntime(intptr_t deopt_id,
-                                            intptr_t token_pos,
+void FlowGraphCompiler::GenerateDartCall(intptr_t deopt_id,
+                                         intptr_t token_pos,
+                                         const ExternalLabel* label,
+                                         PcDescriptors::Kind kind,
+                                         LocationSummary* locs) {
+  ASSERT(!IsLeaf());
+  __ call(label);
+  AddCurrentDescriptor(kind, deopt_id, token_pos);
+  RecordSafepoint(locs);
+  // Marks either the continuation point in unoptimized code or the
+  // deoptimization point in optimized code, after call.
+  if (is_optimizing()) {
+    AddDeoptIndexAtCall(deopt_id, token_pos);
+  } else {
+    // Add deoptimization continuation point after the call and before the
+    // arguments are removed.
+    AddCurrentDescriptor(PcDescriptors::kDeoptAfter,
+                         deopt_id,
+                         token_pos);
+  }
+}
+
+
+void FlowGraphCompiler::GenerateCallRuntime(intptr_t token_pos,
                                             const RuntimeEntry& entry,
                                             LocationSummary* locs) {
   ASSERT(!IsLeaf());
   __ CallRuntime(entry);
-  AddCurrentDescriptor(PcDescriptors::kOther, deopt_id, token_pos);
+  AddCurrentDescriptor(PcDescriptors::kOther, Isolate::kNoDeoptId, token_pos);
   RecordSafepoint(locs);
 }
 
@@ -1018,11 +1063,11 @@ void FlowGraphCompiler::EmitInstanceCall(ExternalLabel* target_label,
   ASSERT(!IsLeaf());
   __ LoadObject(ECX, ic_data);
   __ LoadObject(EDX, arguments_descriptor);
-
-  __ call(target_label);
-  AddCurrentDescriptor(PcDescriptors::kIcCall, deopt_id, token_pos);
-  RecordSafepoint(locs);
-
+  GenerateDartCall(deopt_id,
+                   token_pos,
+                   target_label,
+                   PcDescriptors::kIcCall,
+                   locs);
   __ Drop(argument_count);
 }
 
@@ -1036,43 +1081,12 @@ void FlowGraphCompiler::EmitStaticCall(const Function& function,
   ASSERT(!IsLeaf());
   __ LoadObject(ECX, function);
   __ LoadObject(EDX, arguments_descriptor);
-  __ call(&StubCode::CallStaticFunctionLabel());
-  AddCurrentDescriptor(PcDescriptors::kFuncCall, deopt_id, token_pos);
-  RecordSafepoint(locs);
-  if (is_optimizing()) {
-    AddDeoptIndexAtCall(deopt_id, token_pos);
-  }
+  GenerateDartCall(deopt_id,
+                   token_pos,
+                   &StubCode::CallStaticFunctionLabel(),
+                   PcDescriptors::kFuncCall,
+                   locs);
   __ Drop(argument_count);
-}
-
-
-// Checks class id of instance against all 'class_ids'. Jump to 'deopt' label
-// if no match or instance is Smi.
-void FlowGraphCompiler::EmitClassChecksNoSmi(const ICData& ic_data,
-                                             Register instance_reg,
-                                             Register temp_reg,
-                                             Label* deopt) {
-  Label ok;
-  ASSERT(ic_data.GetReceiverClassIdAt(0) != kSmiCid);
-  __ testl(instance_reg, Immediate(kSmiTagMask));
-  __ j(ZERO, deopt);
-  Label is_ok;
-  const intptr_t num_checks = ic_data.NumberOfChecks();
-  const bool use_near_jump = num_checks < 5;
-  __ LoadClassId(temp_reg, instance_reg);
-  for (intptr_t i = 0; i < num_checks; i++) {
-    __ cmpl(temp_reg, Immediate(ic_data.GetReceiverClassIdAt(i)));
-    if (i == (num_checks - 1)) {
-      __ j(NOT_EQUAL, deopt);
-    } else {
-      if (use_near_jump) {
-        __ j(EQUAL, &is_ok, Assembler::kNearJump);
-      } else {
-        __ j(EQUAL, &is_ok);
-      }
-    }
-  }
-  __ Bind(&is_ok);
 }
 
 
@@ -1099,16 +1113,22 @@ void FlowGraphCompiler::SaveLiveRegisters(LocationSummary* locs) {
   // TODO(vegorov): consider saving only caller save (volatile) registers.
   const intptr_t xmm_regs_count = locs->live_registers()->xmm_regs_count();
   if (xmm_regs_count > 0) {
-    intptr_t stack_offs = (StackSize() + 1) * kWordSize;
+    __ subl(ESP, Immediate(xmm_regs_count * kDoubleSize));
+    // Store XMM registers with the lowest register number at the lowest
+    // address.
+    intptr_t offset = 0;
     for (intptr_t reg_idx = 0; reg_idx < kNumberOfXmmRegisters; ++reg_idx) {
       XmmRegister xmm_reg = static_cast<XmmRegister>(reg_idx);
       if (locs->live_registers()->ContainsXmmRegister(xmm_reg)) {
-        __ movsd(Address(EBP, -stack_offs), xmm_reg);
-        stack_offs += kDoubleSize;
+        __ movsd(Address(ESP, offset), xmm_reg);
+        offset += kDoubleSize;
       }
     }
+    ASSERT(offset == (xmm_regs_count * kDoubleSize));
   }
 
+  // Store general purpose registers with the highest register number at the
+  // lowest address.
   for (intptr_t reg_idx = 0; reg_idx < kNumberOfCpuRegisters; ++reg_idx) {
     Register reg = static_cast<Register>(reg_idx);
     if (locs->live_registers()->ContainsRegister(reg)) {
@@ -1119,6 +1139,8 @@ void FlowGraphCompiler::SaveLiveRegisters(LocationSummary* locs) {
 
 
 void FlowGraphCompiler::RestoreLiveRegisters(LocationSummary* locs) {
+  // General purpose registers have the highest register number at the
+  // lowest address.
   for (intptr_t reg_idx = kNumberOfCpuRegisters - 1; reg_idx >= 0; --reg_idx) {
     Register reg = static_cast<Register>(reg_idx);
     if (locs->live_registers()->ContainsRegister(reg)) {
@@ -1128,14 +1150,17 @@ void FlowGraphCompiler::RestoreLiveRegisters(LocationSummary* locs) {
 
   const intptr_t xmm_regs_count = locs->live_registers()->xmm_regs_count();
   if (xmm_regs_count > 0) {
-    intptr_t stack_offs = (StackSize() + 1) * kWordSize;
+    // XMM registers have the lowest register number at the lowest address.
+    intptr_t offset = 0;
     for (intptr_t reg_idx = 0; reg_idx < kNumberOfXmmRegisters; ++reg_idx) {
       XmmRegister xmm_reg = static_cast<XmmRegister>(reg_idx);
       if (locs->live_registers()->ContainsXmmRegister(xmm_reg)) {
-        __ movsd(xmm_reg, Address(EBP, -stack_offs));
-        stack_offs += kDoubleSize;
+        __ movsd(xmm_reg, Address(ESP, offset));
+        offset += kDoubleSize;
       }
     }
+    ASSERT(offset == (xmm_regs_count * kDoubleSize));
+    __ addl(ESP, Immediate(offset));
   }
 }
 
@@ -1197,7 +1222,12 @@ void ParallelMoveResolver::EmitMove(int index) {
   } else {
     ASSERT(source.IsConstant());
     if (destination.IsRegister()) {
-      __ LoadObject(destination.reg(), source.constant());
+      const Object& constant = source.constant();
+      if (constant.IsSmi() && (Smi::Cast(constant).Value() == 0)) {
+        __ xorl(destination.reg(), destination.reg());
+      } else {
+        __ LoadObject(destination.reg(), constant);
+      }
     } else {
       ASSERT(destination.IsStackSlot());
       StoreObject(ToStackSlotAddress(destination), source.constant());

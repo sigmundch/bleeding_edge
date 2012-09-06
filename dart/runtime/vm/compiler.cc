@@ -17,6 +17,7 @@
 #include "vm/flow_graph_allocator.h"
 #include "vm/flow_graph_builder.h"
 #include "vm/flow_graph_compiler.h"
+#include "vm/flow_graph_inliner.h"
 #include "vm/flow_graph_optimizer.h"
 #include "vm/il_printer.h"
 #include "vm/longjump.h"
@@ -35,9 +36,11 @@ DEFINE_FLAG(bool, disassemble_optimized, false, "Disassemble optimized code.");
 DEFINE_FLAG(bool, trace_bailout, false, "Print bailout from ssa compiler.");
 DEFINE_FLAG(bool, trace_compiler, false, "Trace compiler operations.");
 DEFINE_FLAG(bool, cse, true, "Do common subexpression elimination.");
+DEFINE_FLAG(bool, licm, true, "Do loop invariant code motion.");
 DEFINE_FLAG(int, deoptimization_counter_threshold, 5,
     "How many times we allow deoptimization before we disallow"
     " certain optimizations");
+DEFINE_FLAG(bool, use_inlining, true, "Enable call-site inlining");
 DECLARE_FLAG(bool, print_flow_graph);
 
 
@@ -107,14 +110,14 @@ static void InstallUnoptimizedCode(const Function& function) {
   // Patch entry of optimized code.
   CodePatcher::PatchEntry(Code::Handle(function.CurrentCode()));
   if (FLAG_trace_compiler) {
-    OS::Print("--> patching entry 0x%x\n",
+    OS::Print("--> patching entry %#"Px"\n",
               Code::Handle(function.CurrentCode()).EntryPoint());
   }
   // Use previously compiled code.
   function.SetCode(Code::Handle(function.unoptimized_code()));
   CodePatcher::RestoreEntry(Code::Handle(function.unoptimized_code()));
   if (FLAG_trace_compiler) {
-    OS::Print("--> restoring entry at 0x%x\n",
+    OS::Print("--> restoring entry at %#"Px"\n",
               Code::Handle(function.unoptimized_code()).EntryPoint());
   }
 }
@@ -177,10 +180,6 @@ static bool CompileParsedFunctionHelper(const ParsedFunction& parsed_function,
       }
 
       if (optimized) {
-        // TODO(vegorov): we need to compute uses for the
-        // purposes of unboxing. Move unboxing to a later
-        // stage.
-        // Compute the use lists.
         flow_graph->ComputeUseLists();
 
         FlowGraphOptimizer optimizer(flow_graph);
@@ -188,6 +187,14 @@ static bool CompileParsedFunctionHelper(const ParsedFunction& parsed_function,
 
         // Compute the use lists.
         flow_graph->ComputeUseLists();
+
+        // Inlining (mutates the flow graph)
+        if (FLAG_use_inlining) {
+          FlowGraphInliner inliner(flow_graph);
+          inliner.Inline();
+          // Verify that the use lists are still valid.
+          DEBUG_ASSERT(flow_graph->ValidateUseLists());
+        }
 
         // Propagate types and eliminate more type tests.
         FlowGraphTypePropagator propagator(*flow_graph);
@@ -199,8 +206,16 @@ static bool CompileParsedFunctionHelper(const ParsedFunction& parsed_function,
         // Do optimizations that depend on the propagated type information.
         optimizer.OptimizeComputations();
 
+        // Unbox doubles.
+        flow_graph->ComputeUseLists();
+        optimizer.SelectRepresentations();
+
         if (FLAG_cse) {
+          flow_graph->ComputeUseLists();
           DominatorBasedCSE::Optimize(flow_graph->graph_entry());
+        }
+        if (FLAG_licm) {
+          LICM::Optimize(flow_graph);
         }
 
         // Perform register allocation on the SSA graph.
@@ -249,7 +264,7 @@ static bool CompileParsedFunctionHelper(const ParsedFunction& parsed_function,
         function.SetCode(code);
         CodePatcher::PatchEntry(Code::Handle(function.unoptimized_code()));
         if (FLAG_trace_compiler) {
-          OS::Print("--> patching entry 0x%x\n",
+          OS::Print("--> patching entry %#"Px"\n",
                     Code::Handle(function.unoptimized_code()).EntryPoint());
         }
       } else {
@@ -299,7 +314,7 @@ static void DisassembleCode(const Function& function, bool optimized) {
     const uword addr = code.GetPointerOffsetAt(i) + code.EntryPoint();
     Object& obj = Object::Handle();
     obj = *reinterpret_cast<RawObject**>(addr);
-    OS::Print(" %" PRIdPTR " : 0x%" PRIxPTR " '%s'\n",
+    OS::Print(" %d : %#"Px" '%s'\n",
               code.GetPointerOffsetAt(i), addr, obj.ToCString());
   }
   OS::Print("}\n");
@@ -314,7 +329,7 @@ static void DisassembleCode(const Function& function, bool optimized) {
   if (deopt_info_array.Length() > 0) {
     OS::Print("DeoptInfo: {\n");
     for (intptr_t i = 0; i < deopt_info_array.Length(); i++) {
-      OS::Print("  %d: %s\n",
+      OS::Print("  %"Pd": %s\n",
           i, Object::Handle(deopt_info_array.At(i)).ToCString());
     }
     OS::Print("}\n");
@@ -324,7 +339,7 @@ static void DisassembleCode(const Function& function, bool optimized) {
   if (object_table.Length() > 0) {
     OS::Print("Object Table: {\n");
     for (intptr_t i = 0; i < object_table.Length(); i++) {
-      OS::Print("  %d: %s\n", i,
+      OS::Print("  %"Pd": %s\n", i,
           Object::Handle(object_table.At(i)).ToCString());
     }
     OS::Print("}\n");
@@ -353,20 +368,20 @@ static void DisassembleCode(const Function& function, bool optimized) {
     RawLocalVarDescriptors::VarInfo var_info;
     var_descriptors.GetInfo(i, &var_info);
     if (var_info.kind == RawLocalVarDescriptors::kContextChain) {
-      OS::Print("  saved CTX reg offset %" PRIdPTR "\n", var_info.index);
+      OS::Print("  saved CTX reg offset %"Pd"\n", var_info.index);
     } else {
       if (var_info.kind == RawLocalVarDescriptors::kContextLevel) {
-        OS::Print("  context level %" PRIdPTR " scope %d",
+        OS::Print("  context level %"Pd" scope %d",
                   var_info.index, var_info.scope_id);
       } else if (var_info.kind == RawLocalVarDescriptors::kStackVar) {
-        OS::Print("  stack var '%s' offset %" PRIdPTR,
+        OS::Print("  stack var '%s' offset %"Pd"",
                   var_name.ToCString(), var_info.index);
       } else {
         ASSERT(var_info.kind == RawLocalVarDescriptors::kContextVar);
-        OS::Print("  context var '%s' level %d offset %" PRIdPTR,
+        OS::Print("  context var '%s' level %d offset %"Pd"",
                   var_name.ToCString(), var_info.scope_id, var_info.index);
       }
-      OS::Print(" (valid %" PRIdPTR "-%" PRIdPTR ")\n",
+      OS::Print(" (valid %"Pd"-%"Pd")\n",
                 var_info.begin_pos, var_info.end_pos);
     }
   }
@@ -395,7 +410,7 @@ static RawError* CompileFunctionHelper(const Function& function,
     TIMERSCOPE(time_compilation);
     ParsedFunction parsed_function(function);
     if (FLAG_trace_compiler) {
-      OS::Print("Compiling %sfunction: '%s' @ token %d\n",
+      OS::Print("Compiling %sfunction: '%s' @ token %"Pd"\n",
                 (optimized ? "optimized " : ""),
                 function.ToFullyQualifiedCString(),
                 function.token_pos());
@@ -419,7 +434,7 @@ static RawError* CompileFunctionHelper(const Function& function,
     ASSERT(success);
 
     if (FLAG_trace_compiler) {
-      OS::Print("--> '%s' entry: 0x%x\n",
+      OS::Print("--> '%s' entry: %#"Px"\n",
                 function.ToFullyQualifiedCString(),
                 Code::Handle(function.CurrentCode()).EntryPoint());
     }

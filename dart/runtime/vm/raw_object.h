@@ -10,8 +10,6 @@
 #include "vm/token.h"
 #include "vm/snapshot.h"
 
-#include "include/dart_api.h"
-
 namespace dart {
 
 // Macrobatics to define the Object hierarchy of VM implementation classes.
@@ -432,6 +430,7 @@ class RawClass : public RawObject {
   intptr_t token_pos_;
   uint8_t state_bits_;  // state, is_const, is_interface.
 
+  friend class Instance;
   friend class Object;
   friend class RawInstance;
   friend class RawInstructions;
@@ -660,13 +659,11 @@ class RawTokenStream : public RawObject {
     return reinterpret_cast<RawObject**>(&ptr()->private_key_);
   }
   RawString* private_key_;  // Key used for private identifiers.
-  RawSmi* length_;  // Length of token stream.
   RawArray* token_objects_;
+  RawExternalUint8Array* stream_;
   RawObject** to() {
-    return reinterpret_cast<RawObject**>(&ptr()->token_objects_);
+    return reinterpret_cast<RawObject**>(&ptr()->stream_);
   }
-  // Variable length data follows here.
-  uint8_t data_[0];
 
   friend class SnapshotReader;
 };
@@ -763,8 +760,11 @@ class RawCode : public RawObject {
   }
 
   intptr_t pointer_offsets_length_;
-  // This cannot be boolean because of alignment issues on x64 architectures.
+  // These fields cannot be boolean because of alignment issues on x64
+  // architectures.
   intptr_t is_optimized_;
+  // If true, the embedded object pointers will be visited during GC.
+  intptr_t is_alive_;
 
   // Variable length data follows here.
   int32_t data_[0];
@@ -815,7 +815,11 @@ class RawStackmap : public RawObject {
 
   RawCode* code_;  // Code object corresponding to the frame described.
 
+  // TODO(kmillikin): We need a small number of bits to encode the register
+  // count.  Consider packing them in with the length.
   intptr_t length_;  // Length of payload, in bits.
+  intptr_t register_bit_count_;  // Live register bits, included in length_.
+
   uword pc_;  // PC corresponding to this stack map representation.
 
   // Variable length data follows here (bitmap of the stack layout).
@@ -1127,7 +1131,7 @@ class RawExternalOneByteString : public RawString {
   RAW_HEAP_OBJECT_IMPLEMENTATION(ExternalOneByteString);
 
   ExternalStringData<uint8_t>* external_data_;
-  friend bool ExternalStringGetPeerHelper(Dart_Handle, void**);
+  friend class Api;
 };
 
 
@@ -1135,7 +1139,7 @@ class RawExternalTwoByteString : public RawString {
   RAW_HEAP_OBJECT_IMPLEMENTATION(ExternalTwoByteString);
 
   ExternalStringData<uint16_t>* external_data_;
-  friend bool ExternalStringGetPeerHelper(Dart_Handle, void**);
+  friend class Api;
 };
 
 
@@ -1143,7 +1147,7 @@ class RawExternalFourByteString : public RawString {
   RAW_HEAP_OBJECT_IMPLEMENTATION(ExternalFourByteString);
 
   ExternalStringData<uint32_t>* external_data_;
-  friend bool ExternalStringGetPeerHelper(Dart_Handle, void**);
+  friend class Api;
 };
 
 
@@ -1330,6 +1334,9 @@ class RawExternalUint8Array : public RawByteArray {
   RAW_HEAP_OBJECT_IMPLEMENTATION(ExternalUint8Array);
 
   ExternalByteArrayData<uint8_t>* external_data_;
+
+  friend class TokenStream;
+  friend class RawTokenStream;
 };
 
 

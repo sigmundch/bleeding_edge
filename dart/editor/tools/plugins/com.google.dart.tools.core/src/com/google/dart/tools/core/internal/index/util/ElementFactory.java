@@ -21,7 +21,6 @@ import com.google.dart.compiler.resolver.FieldElement;
 import com.google.dart.compiler.resolver.LibraryElement;
 import com.google.dart.compiler.resolver.MethodElement;
 import com.google.dart.compiler.type.InterfaceType;
-import com.google.dart.compiler.util.apache.StringUtils;
 import com.google.dart.tools.core.DartCore;
 import com.google.dart.tools.core.index.Element;
 import com.google.dart.tools.core.index.Resource;
@@ -192,6 +191,15 @@ public final class ElementFactory {
     return result;
   }
 
+  public static Element getParameterElement(MethodElement method, String parameterName)
+      throws DartModelException {
+    Element methodElement = getElement(method);
+    if (methodElement == null) {
+      return null;
+    }
+    return new Element(methodElement.getResource(), composeElementId(methodElement, parameterName));
+  }
+
   private static Element getElement0(ClassElement element) throws DartModelException {
     Element result;
     LibraryElement libraryElement = getLibraryElement(element);
@@ -238,8 +246,7 @@ public final class ElementFactory {
     }
     String methodName = element.getName();
     if (element instanceof ConstructorElement) {
-      String typeName = element.getEnclosingElement().getName();
-      methodName = StringUtils.isEmpty(methodName) ? typeName : typeName + "." + methodName;
+      methodName = ((ConstructorElement) element).getRawName();
     }
     EnclosingElement parentElement = element.getEnclosingElement();
     if (parentElement instanceof LibraryElement) {

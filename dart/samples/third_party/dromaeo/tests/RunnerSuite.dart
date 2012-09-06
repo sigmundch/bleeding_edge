@@ -21,13 +21,7 @@ class Suite {
           _window.alert('[${_name}]: unknown command ${command}');
       }
     };
-    try {
-      // dart:dom_deprecated
-      _window.addEventListener('message', starter, false);
-    } on NoSuchMethodException catch (e) {
-      // dart:html
-      _window.on.message.add(starter);
-    }
+    _window.on.message.add(starter);
   }
 
   /**
@@ -39,7 +33,7 @@ class Suite {
   }
 
   // How many times each individual test should be ran.
-  static final int _N_RUNS = 5;
+  static const int _N_RUNS = 5;
 
   /**
    * Adds another test to the suite.

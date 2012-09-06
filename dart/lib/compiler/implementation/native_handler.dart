@@ -22,7 +22,7 @@ void processNativeClasses(Enqueuer world,
 
 void addSubtypes(ClassElement cls,
                  NativeEmitter emitter) {
-  for (Type type in cls.allSupertypes) {
+  for (DartType type in cls.allSupertypes) {
     List<Element> subtypes = emitter.subtypes.putIfAbsent(
         type.element,
         () => <ClassElement>[]);
@@ -81,7 +81,6 @@ void maybeEnableNative(Compiler compiler,
   String libraryName = uri.toString();
   if (library.entryCompilationUnit.script.name.contains(
           'dart/tests/compiler/dart2js_native')
-      || libraryName == 'dart:dom_deprecated'
       || libraryName == 'dart:isolate'
       || libraryName == 'dart:html') {
     library.canUseNative = true;
@@ -197,7 +196,9 @@ void handleSsaNative(SsaBuilder builder, Expression nativeBody) {
 
   HInstruction convertDartClosure(Element parameter, FunctionType type) {
     HInstruction local = builder.localsHandler.readLocal(parameter);
-    HInstruction arity = builder.graph.addConstantInt(type.computeArity());
+    Constant arityConstant =
+        builder.constantSystem.createInt(type.computeArity());
+    HInstruction arity = builder.graph.addConstant(arityConstant);
     // TODO(ngeoffray): For static methods, we could pass a method with a
     // defined arity.
     Element helper = builder.interceptors.getClosureConverter();
@@ -240,7 +241,7 @@ void handleSsaNative(SsaBuilder builder, Expression nativeBody) {
       inputs.add(builder.localsHandler.readThis());
     }
     parameters.forEachParameter((Element parameter) {
-      Type type = parameter.computeType(compiler).unalias(compiler);
+      DartType type = parameter.computeType(compiler).unalias(compiler);
       HInstruction input = builder.localsHandler.readLocal(parameter);
       if (type is FunctionType) {
         // The parameter type is a function type either directly or through
@@ -276,7 +277,7 @@ void handleSsaNative(SsaBuilder builder, Expression nativeBody) {
     // mangling problem will go away once we switch these libraries
     // to use Leg's 'JS' function.
     parameters.forEachParameter((Element parameter) {
-      Type type = parameter.computeType(compiler).unalias(compiler);
+      DartType type = parameter.computeType(compiler).unalias(compiler);
       if (type is FunctionType) {
         // The parameter type is a function type either directly or through
         // typedef(s).
@@ -300,7 +301,8 @@ void generateMethodWithPrototypeCheckForElement(Compiler compiler,
                                                 String code,
                                                 String parameters) {
   String methodName;
-  Namer namer = compiler.namer;
+  JavaScriptBackend backend = compiler.backend;
+  Namer namer = backend.namer;
   if (element.kind == ElementKind.FUNCTION) {
     FunctionSignature signature = element.computeSignature(compiler);
     methodName = namer.instanceMethodName(

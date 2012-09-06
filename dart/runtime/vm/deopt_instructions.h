@@ -47,6 +47,10 @@ class DeoptimizationContext : public ValueObject {
     return registers_copy_[reg];
   }
 
+  double XmmRegisterValue(XmmRegister reg) const {
+    return xmm_registers_copy_[reg];
+  }
+
   Isolate* isolate() const { return isolate_; }
 
   intptr_t from_frame_size() const { return from_frame_size_; }
@@ -58,6 +62,7 @@ class DeoptimizationContext : public ValueObject {
   intptr_t* from_frame_;
   intptr_t from_frame_size_;
   intptr_t* registers_copy_;
+  double* xmm_registers_copy_;
   const intptr_t num_args_;
   Isolate* isolate_;
 
@@ -83,10 +88,13 @@ class DeoptInstr : public ZoneAllocated {
 
  protected:
   enum Kind {
-    kSetRetAddress,
+    kSetRetAfterAddress,
+    kSetRetBeforeAddress,
     kCopyConstant,
     kCopyRegister,
+    kCopyXmmRegister,
     kCopyStackSlot,
+    kCopyDoubleStackSlot,
     kSetPcMarker,
     kSetCallerFp,
     kSetCallerPc,
@@ -116,10 +124,16 @@ class DeoptInfoBuilder : public ValueObject {
         object_table_(object_table),
         num_args_(num_args) {}
 
-  // Will be neeeded for inlined functions, currently trivial.
-  void AddReturnAddress(const Function& function,
-                        intptr_t deopt_id,
-                        intptr_t to_index);
+  // Return address before instruction.
+  void AddReturnAddressBefore(const Function& function,
+                              intptr_t deopt_id,
+                              intptr_t to_index);
+
+  // Return address after instruction.
+  void AddReturnAddressAfter(const Function& function,
+                             intptr_t deopt_id,
+                             intptr_t to_index);
+
   // Copy from optimized frame to unoptimized.
   void AddCopy(const Location& from_loc,
                const Value& from_value,
@@ -143,4 +157,3 @@ class DeoptInfoBuilder : public ValueObject {
 }  // namespace dart
 
 #endif  // VM_DEOPT_INSTRUCTIONS_H_
-

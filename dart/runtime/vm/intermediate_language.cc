@@ -22,21 +22,19 @@ namespace dart {
 DECLARE_FLAG(bool, enable_type_checks);
 
 
-intptr_t Computation::Hashcode() const {
-  intptr_t result = computation_kind();
+intptr_t Definition::Hashcode() const {
+  intptr_t result = tag();
   for (intptr_t i = 0; i < InputCount(); ++i) {
-    UseVal* val = InputAt(i)->AsUse();
-    intptr_t j = val != NULL
-        ? val->definition()->ssa_temp_index()
-        : -1;
+    Value* value = InputAt(i);
+    intptr_t j = value->definition()->ssa_temp_index();
     result = result * 31 + j;
   }
   return result;
 }
 
 
-bool Computation::Equals(Computation* other) const {
-  if (computation_kind() != other->computation_kind()) return false;
+bool Definition::Equals(Definition* other) const {
+  if (tag() != other->tag()) return false;
   for (intptr_t i = 0; i < InputCount(); ++i) {
     if (!InputAt(i)->Equals(other->InputAt(i))) return false;
   }
@@ -44,22 +42,22 @@ bool Computation::Equals(Computation* other) const {
 }
 
 
-bool UseVal::Equals(Value* other) const {
-  return other->IsUse()
-      && definition() == other->AsUse()->definition();
+bool Value::Equals(Value* other) const {
+  return definition() == other->definition();
 }
 
 
-bool CheckClassComp::AttributesEqual(Computation* other) const {
-  CheckClassComp* other_check = other->AsCheckClass();
-  if (other_check == NULL) return false;
-  if (ic_data()->NumberOfChecks() != other->ic_data()->NumberOfChecks()) {
+bool CheckClassInstr::AttributesEqual(Definition* other) const {
+  CheckClassInstr* other_check = other->AsCheckClass();
+  ASSERT(other_check != NULL);
+  if (unary_checks().NumberOfChecks() !=
+      other_check->unary_checks().NumberOfChecks()) {
     return false;
   }
-  for (intptr_t i = 0; i < ic_data()->NumberOfChecks(); ++i) {
+  for (intptr_t i = 0; i < unary_checks().NumberOfChecks(); ++i) {
     // TODO(fschneider): Make sure ic_data are sorted to hit more cases.
-    if (ic_data()->GetReceiverClassIdAt(i) !=
-        other->ic_data()->GetReceiverClassIdAt(i)) {
+    if (unary_checks().GetReceiverClassIdAt(i) !=
+        other_check->unary_checks().GetReceiverClassIdAt(i)) {
       return false;
     }
   }
@@ -67,45 +65,38 @@ bool CheckClassComp::AttributesEqual(Computation* other) const {
 }
 
 
-bool CheckArrayBoundComp::AttributesEqual(Computation* other) const {
-  CheckArrayBoundComp* other_check = other->AsCheckArrayBound();
-  if (other_check == NULL) return false;
+bool CheckArrayBoundInstr::AttributesEqual(Definition* other) const {
+  CheckArrayBoundInstr* other_check = other->AsCheckArrayBound();
+  ASSERT(other_check != NULL);
   return array_type() == other_check->array_type();
 }
 
 
 // Returns true if the value represents a constant.
-bool UseVal::BindsToConstant() const {
-  BindInstr* bind = definition()->AsBind();
-  return (bind != NULL) && (bind->computation()->AsConstant() != NULL);
+bool Value::BindsToConstant() const {
+  return definition()->IsConstant();
 }
 
 
 // Returns true if the value represents constant null.
-bool UseVal::BindsToConstantNull() const {
-  BindInstr* bind = definition()->AsBind();
-  if (bind == NULL) {
-    return false;
-  }
-  ConstantComp* constant = bind->computation()->AsConstant();
+bool Value::BindsToConstantNull() const {
+  ConstantInstr* constant = definition()->AsConstant();
   return (constant != NULL) && constant->value().IsNull();
 }
 
 
-const Object& UseVal::BoundConstant() const {
+const Object& Value::BoundConstant() const {
   ASSERT(BindsToConstant());
-  BindInstr* bind = definition()->AsBind();
-  ASSERT(bind != NULL);
-  ConstantComp* constant = bind->computation()->AsConstant();
+  ConstantInstr* constant = definition()->AsConstant();
   ASSERT(constant != NULL);
   return constant->value();
 }
 
 
-bool ConstantComp::AttributesEqual(Computation* other) const {
-  ConstantComp* other_constant = other->AsConstant();
-  return (other_constant != NULL) &&
-      (value().raw() == other_constant->value().raw());
+bool ConstantInstr::AttributesEqual(Definition* other) const {
+  ConstantInstr* other_constant = other->AsConstant();
+  ASSERT(other_constant != NULL);
+  return (value().raw() == other_constant->value().raw());
 }
 
 
@@ -114,8 +105,7 @@ GraphEntryInstr::GraphEntryInstr(TargetEntryInstr* normal_entry)
       normal_entry_(normal_entry),
       catch_entries_(),
       start_env_(NULL),
-      constant_null_(new BindInstr(BindInstr::kUsed,
-                         new ConstantComp(Object::ZoneHandle()))),
+      constant_null_(new ConstantInstr(Object::ZoneHandle())),
       spill_slot_count_(0) {
 }
 
@@ -159,16 +149,6 @@ RECOGNIZED_LIST(KIND_TO_STRING)
 
 
 // ==== Support for visiting flow graphs.
-#define DEFINE_ACCEPT(ShortName, ClassName)                                    \
-void ClassName::Accept(FlowGraphVisitor* visitor, BindInstr* instr) {          \
-  visitor->Visit##ShortName(this, instr);                                      \
-}
-
-FOR_EACH_COMPUTATION(DEFINE_ACCEPT)
-
-#undef DEFINE_ACCEPT
-
-
 #define DEFINE_ACCEPT(ShortName)                                               \
 void ShortName##Instr::Accept(FlowGraphVisitor* visitor) {                     \
   visitor->Visit##ShortName(this);                                             \
@@ -201,7 +181,7 @@ Instruction* Instruction::RemoveFromGraph(bool return_previous) {
 }
 
 
-void BindInstr::InsertBefore(Instruction* next) {
+void Definition::InsertBefore(Instruction* next) {
   ASSERT(previous_ == NULL);
   ASSERT(next_ == NULL);
   next_ = next;
@@ -211,7 +191,7 @@ void BindInstr::InsertBefore(Instruction* next) {
 }
 
 
-void BindInstr::InsertAfter(Instruction* prev) {
+void Definition::InsertAfter(Instruction* prev) {
   ASSERT(previous_ == NULL);
   ASSERT(next_ == NULL);
   previous_ = prev;
@@ -221,8 +201,33 @@ void BindInstr::InsertAfter(Instruction* prev) {
 }
 
 
+BlockEntryInstr* Definition::GetBlock() const {
+  // TODO(fschneider): Implement a faster way to get the block of an
+  // instruction.
+  ASSERT(previous() != NULL);
+  Instruction* result = previous();
+  while (!result->IsBlockEntry()) result = result->previous();
+  return result->AsBlockEntry();
+}
+
+
 void ForwardInstructionIterator::RemoveCurrentFromGraph() {
   current_ = current_->RemoveFromGraph(true);  // Set current_ to previous.
+}
+
+
+void ForwardInstructionIterator::ReplaceCurrentWith(Definition* other) {
+  Definition* defn = current_->AsDefinition();
+  ASSERT(defn != NULL);
+  defn->ReplaceUsesWith(other);
+  ASSERT(other->env() == NULL);
+  other->set_env(defn->env());
+  defn->set_env(NULL);
+  ASSERT(!other->HasSSATemp());
+  if (defn->HasSSATemp()) other->set_ssa_temp_index(defn->ssa_temp_index());
+
+  other->InsertBefore(current_);  // So other will be current.
+  RemoveCurrentFromGraph();
 }
 
 
@@ -374,14 +379,14 @@ intptr_t JoinEntryInstr::IndexOfPredecessor(BlockEntryInstr* pred) const {
 
 
 // ==== Recording assigned variables.
-void Computation::RecordAssignedVars(BitVector* assigned_vars,
-                                     intptr_t fixed_parameter_count) {
+void Definition::RecordAssignedVars(BitVector* assigned_vars,
+                                    intptr_t fixed_parameter_count) {
   // Nothing to do for the base class.
 }
 
 
-void StoreLocalComp::RecordAssignedVars(BitVector* assigned_vars,
-                                        intptr_t fixed_parameter_count) {
+void StoreLocalInstr::RecordAssignedVars(BitVector* assigned_vars,
+                                         intptr_t fixed_parameter_count) {
   if (!local().is_captured()) {
     assigned_vars->Add(local().BitIndexIn(fixed_parameter_count));
   }
@@ -394,13 +399,13 @@ void Instruction::RecordAssignedVars(BitVector* assigned_vars,
 }
 
 
-void UseVal::AddToInputUseList() {
+void Value::AddToInputUseList() {
   set_next_use(definition()->input_use_list());
   definition()->set_input_use_list(this);
 }
 
 
-void UseVal::AddToEnvUseList() {
+void Value::AddToEnvUseList() {
   set_next_use(definition()->env_use_list());
   definition()->set_env_use_list(this);
 }
@@ -410,16 +415,39 @@ void Definition::ReplaceUsesWith(Definition* other) {
   ASSERT(other != NULL);
   ASSERT(this != other);
   while (input_use_list_ != NULL) {
-    UseVal* current = input_use_list_;
+    Value* current = input_use_list_;
     input_use_list_ = input_use_list_->next_use();
     current->set_definition(other);
     current->AddToInputUseList();
   }
   while (env_use_list_ != NULL) {
-    UseVal* current = env_use_list_;
+    Value* current = env_use_list_;
     env_use_list_ = env_use_list_->next_use();
     current->set_definition(other);
     current->AddToEnvUseList();
+  }
+}
+
+
+void Definition::ReplaceWith(Definition* other,
+                             ForwardInstructionIterator* iterator) {
+  if ((iterator != NULL) && (this == iterator->Current())) {
+    iterator->ReplaceCurrentWith(other);
+  } else {
+    ReplaceUsesWith(other);
+    ASSERT(other->env() == NULL);
+    other->set_env(env());
+    set_env(NULL);
+    ASSERT(!other->HasSSATemp());
+    if (HasSSATemp()) other->set_ssa_temp_index(ssa_temp_index());
+
+    other->set_previous(previous());
+    previous()->set_next(other);
+    set_previous(NULL);
+
+    other->set_next(next());
+    next()->set_previous(other);
+    set_next(NULL);
   }
 }
 
@@ -438,25 +466,23 @@ bool Definition::SetPropagatedCid(intptr_t cid) {
   return has_changed;
 }
 
-RawAbstractType* BindInstr::CompileType() const {
-  ASSERT(!HasPropagatedType());
-  // The compile type may be requested when building the flow graph, i.e. before
-  // type propagation has occurred.
-  return computation()->CompileType();
-}
 
-
-intptr_t BindInstr::GetPropagatedCid() {
+intptr_t Definition::GetPropagatedCid() {
   if (has_propagated_cid()) return propagated_cid();
-  intptr_t cid = computation()->ResultCid();
+  intptr_t cid = ResultCid();
   ASSERT(cid != kIllegalCid);
   SetPropagatedCid(cid);
   return cid;
 }
 
-void BindInstr::RecordAssignedVars(BitVector* assigned_vars,
-                                   intptr_t fixed_parameter_count) {
-  computation()->RecordAssignedVars(assigned_vars, fixed_parameter_count);
+
+intptr_t PhiInstr::GetPropagatedCid() {
+  return propagated_cid();
+}
+
+
+intptr_t ParameterInstr::GetPropagatedCid() {
+  return propagated_cid();
 }
 
 
@@ -571,6 +597,18 @@ void BlockEntryInstr::DiscoverBlocks(
 }
 
 
+bool BlockEntryInstr::Dominates(BlockEntryInstr* other) const {
+  // TODO(fschneider): Make this faster by e.g. storing dominators for each
+  // block while computing the dominator tree.
+  ASSERT(other != NULL);
+  BlockEntryInstr* current = other;
+  while (current != NULL && current != this) {
+    current = current->dominator();
+  }
+  return current == this;
+}
+
+
 void ControlInstruction::DiscoverBlocks(
     BlockEntryInstr* current_block,
     GrowableArray<BlockEntryInstr*>* preorder,
@@ -606,7 +644,7 @@ void JoinEntryInstr::InsertPhi(intptr_t var_index, intptr_t var_count) {
     }
   }
   ASSERT((*phis_)[var_index] == NULL);
-  (*phis_)[var_index] = new PhiInstr(PredecessorCount());
+  (*phis_)[var_index] = new PhiInstr(this, PredecessorCount());
   phi_count_++;
 }
 
@@ -680,7 +718,7 @@ void Instruction::Goto(JoinEntryInstr* entry) {
 }
 
 
-RawAbstractType* UseVal::CompileType() const {
+RawAbstractType* Value::CompileType() const {
   if (definition()->HasPropagatedType()) {
     return definition()->PropagatedType();
   }
@@ -693,13 +731,13 @@ RawAbstractType* UseVal::CompileType() const {
 }
 
 
-intptr_t UseVal::ResultCid() const {
+intptr_t Value::ResultCid() const {
   return definition()->GetPropagatedCid();
 }
 
 
 
-RawAbstractType* ConstantComp::CompileType() const {
+RawAbstractType* ConstantInstr::CompileType() const {
   if (value().IsNull()) {
     return Type::NullType();
   }
@@ -712,7 +750,7 @@ RawAbstractType* ConstantComp::CompileType() const {
 }
 
 
-intptr_t ConstantComp::ResultCid() const {
+intptr_t ConstantInstr::ResultCid() const {
   if (value().IsNull()) {
     return kNullCid;
   }
@@ -725,7 +763,7 @@ intptr_t ConstantComp::ResultCid() const {
 }
 
 
-RawAbstractType* AssertAssignableComp::CompileType() const {
+RawAbstractType* AssertAssignableInstr::CompileType() const {
   const AbstractType& value_compile_type =
       AbstractType::Handle(value()->CompileType());
   if (!value_compile_type.IsNull() &&
@@ -736,22 +774,27 @@ RawAbstractType* AssertAssignableComp::CompileType() const {
 }
 
 
-RawAbstractType* AssertBooleanComp::CompileType() const {
+RawAbstractType* AssertBooleanInstr::CompileType() const {
   return Type::BoolType();
 }
 
 
-RawAbstractType* CurrentContextComp::CompileType() const {
+RawAbstractType* ArgumentDefinitionTestInstr::CompileType() const {
+  return Type::BoolType();
+}
+
+
+RawAbstractType* CurrentContextInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* StoreContextComp::CompileType() const {
+RawAbstractType* StoreContextInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* ClosureCallComp::CompileType() const {
+RawAbstractType* ClosureCallInstr::CompileType() const {
   // Because of function subtyping rules, the declared return type of a closure
   // call cannot be relied upon for compile type analysis. For example, a
   // function returning Dynamic can be assigned to a closure variable declared
@@ -760,19 +803,19 @@ RawAbstractType* ClosureCallComp::CompileType() const {
 }
 
 
-RawAbstractType* InstanceCallComp::CompileType() const {
+RawAbstractType* InstanceCallInstr::CompileType() const {
   // TODO(regis): Return a more specific type than Dynamic for recognized
   // combinations of receiver type and method name.
   return Type::DynamicType();
 }
 
 
-RawAbstractType* PolymorphicInstanceCallComp::CompileType() const {
+RawAbstractType* PolymorphicInstanceCallInstr::CompileType() const {
   return Type::DynamicType();
 }
 
 
-RawAbstractType* StaticCallComp::CompileType() const {
+RawAbstractType* StaticCallInstr::CompileType() const {
   if (FLAG_enable_type_checks) {
     return function().result_type();
   }
@@ -780,7 +823,7 @@ RawAbstractType* StaticCallComp::CompileType() const {
 }
 
 
-RawAbstractType* LoadLocalComp::CompileType() const {
+RawAbstractType* LoadLocalInstr::CompileType() const {
   if (FLAG_enable_type_checks) {
     return local().type().raw();
   }
@@ -788,18 +831,18 @@ RawAbstractType* LoadLocalComp::CompileType() const {
 }
 
 
-RawAbstractType* StoreLocalComp::CompileType() const {
+RawAbstractType* StoreLocalInstr::CompileType() const {
   return value()->CompileType();
 }
 
 
-RawAbstractType* StrictCompareComp::CompileType() const {
+RawAbstractType* StrictCompareInstr::CompileType() const {
   return Type::BoolType();
 }
 
 
 // Only known == targets return a Boolean.
-RawAbstractType* EqualityCompareComp::CompileType() const {
+RawAbstractType* EqualityCompareInstr::CompileType() const {
   if ((receiver_class_id() == kSmiCid) ||
       (receiver_class_id() == kDoubleCid) ||
       (receiver_class_id() == kNumberCid)) {
@@ -809,7 +852,7 @@ RawAbstractType* EqualityCompareComp::CompileType() const {
 }
 
 
-intptr_t EqualityCompareComp::ResultCid() const {
+intptr_t EqualityCompareInstr::ResultCid() const {
   if ((receiver_class_id() == kSmiCid) ||
       (receiver_class_id() == kDoubleCid) ||
       (receiver_class_id() == kNumberCid)) {
@@ -820,7 +863,7 @@ intptr_t EqualityCompareComp::ResultCid() const {
 }
 
 
-RawAbstractType* RelationalOpComp::CompileType() const {
+RawAbstractType* RelationalOpInstr::CompileType() const {
   if ((operands_class_id() == kSmiCid) ||
       (operands_class_id() == kDoubleCid) ||
       (operands_class_id() == kNumberCid)) {
@@ -831,7 +874,7 @@ RawAbstractType* RelationalOpComp::CompileType() const {
 }
 
 
-intptr_t RelationalOpComp::ResultCid() const {
+intptr_t RelationalOpInstr::ResultCid() const {
   if ((operands_class_id() == kSmiCid) ||
       (operands_class_id() == kDoubleCid) ||
       (operands_class_id() == kNumberCid)) {
@@ -842,7 +885,7 @@ intptr_t RelationalOpComp::ResultCid() const {
 }
 
 
-RawAbstractType* NativeCallComp::CompileType() const {
+RawAbstractType* NativeCallInstr::CompileType() const {
   // The result type of the native function is identical to the result type of
   // the enclosing native Dart function. However, we prefer to check the type
   // of the value returned from the native call.
@@ -850,17 +893,17 @@ RawAbstractType* NativeCallComp::CompileType() const {
 }
 
 
-RawAbstractType* LoadIndexedComp::CompileType() const {
+RawAbstractType* LoadIndexedInstr::CompileType() const {
   return Type::DynamicType();
 }
 
 
-RawAbstractType* StoreIndexedComp::CompileType() const {
+RawAbstractType* StoreIndexedInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* LoadInstanceFieldComp::CompileType() const {
+RawAbstractType* LoadInstanceFieldInstr::CompileType() const {
   if (FLAG_enable_type_checks) {
     return field().type();
   }
@@ -868,12 +911,12 @@ RawAbstractType* LoadInstanceFieldComp::CompileType() const {
 }
 
 
-RawAbstractType* StoreInstanceFieldComp::CompileType() const {
+RawAbstractType* StoreInstanceFieldInstr::CompileType() const {
   return value()->CompileType();
 }
 
 
-RawAbstractType* LoadStaticFieldComp::CompileType() const {
+RawAbstractType* LoadStaticFieldInstr::CompileType() const {
   if (FLAG_enable_type_checks) {
     return field().type();
   }
@@ -881,46 +924,46 @@ RawAbstractType* LoadStaticFieldComp::CompileType() const {
 }
 
 
-RawAbstractType* StoreStaticFieldComp::CompileType() const {
+RawAbstractType* StoreStaticFieldInstr::CompileType() const {
   return value()->CompileType();
 }
 
 
-RawAbstractType* BooleanNegateComp::CompileType() const {
+RawAbstractType* BooleanNegateInstr::CompileType() const {
   return Type::BoolType();
 }
 
 
-RawAbstractType* InstanceOfComp::CompileType() const {
+RawAbstractType* InstanceOfInstr::CompileType() const {
   return Type::BoolType();
 }
 
 
-RawAbstractType* CreateArrayComp::CompileType() const {
+RawAbstractType* CreateArrayInstr::CompileType() const {
   return type().raw();
 }
 
 
-RawAbstractType* CreateClosureComp::CompileType() const {
+RawAbstractType* CreateClosureInstr::CompileType() const {
   const Function& fun = function();
   const Class& signature_class = Class::Handle(fun.signature_class());
   return signature_class.SignatureType();
 }
 
 
-RawAbstractType* AllocateObjectComp::CompileType() const {
+RawAbstractType* AllocateObjectInstr::CompileType() const {
   // TODO(regis): Be more specific.
   return Type::DynamicType();
 }
 
 
-RawAbstractType* AllocateObjectWithBoundsCheckComp::CompileType() const {
+RawAbstractType* AllocateObjectWithBoundsCheckInstr::CompileType() const {
   // TODO(regis): Be more specific.
   return Type::DynamicType();
 }
 
 
-RawAbstractType* LoadVMFieldComp::CompileType() const {
+RawAbstractType* LoadVMFieldInstr::CompileType() const {
   // Type may be null if the field is a VM field, e.g. context parent.
   // Keep it as null for debug purposes and do not return Dynamic in production
   // mode, since misuse of the type would remain undetected.
@@ -934,62 +977,62 @@ RawAbstractType* LoadVMFieldComp::CompileType() const {
 }
 
 
-RawAbstractType* StoreVMFieldComp::CompileType() const {
+RawAbstractType* StoreVMFieldInstr::CompileType() const {
   return value()->CompileType();
 }
 
 
-RawAbstractType* InstantiateTypeArgumentsComp::CompileType() const {
+RawAbstractType* InstantiateTypeArgumentsInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* ExtractConstructorTypeArgumentsComp::CompileType() const {
+RawAbstractType* ExtractConstructorTypeArgumentsInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* ExtractConstructorInstantiatorComp::CompileType() const {
+RawAbstractType* ExtractConstructorInstantiatorInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* AllocateContextComp::CompileType() const {
+RawAbstractType* AllocateContextInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* ChainContextComp::CompileType() const {
+RawAbstractType* ChainContextInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* CloneContextComp::CompileType() const {
+RawAbstractType* CloneContextInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* CatchEntryComp::CompileType() const {
+RawAbstractType* CatchEntryInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* CheckStackOverflowComp::CompileType() const {
+RawAbstractType* CheckStackOverflowInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* BinarySmiOpComp::CompileType() const {
+RawAbstractType* BinarySmiOpInstr::CompileType() const {
   return (op_kind() == Token::kSHL) ? Type::IntInterface() : Type::SmiType();
 }
 
 
-intptr_t BinarySmiOpComp::ResultCid() const {
+intptr_t BinarySmiOpInstr::ResultCid() const {
   return (op_kind() == Token::kSHL) ? kDynamicCid : kSmiCid;
 }
 
 
-bool BinarySmiOpComp::CanDeoptimize() const {
+bool BinarySmiOpInstr::CanDeoptimize() const {
   switch (op_kind()) {
     case Token::kBIT_AND:
     case Token::kBIT_OR:
@@ -1001,140 +1044,125 @@ bool BinarySmiOpComp::CanDeoptimize() const {
 }
 
 
-RawAbstractType* BinaryMintOpComp::CompileType() const {
+RawAbstractType* BinaryMintOpInstr::CompileType() const {
   return Type::MintType();
 }
 
 
-intptr_t BinaryMintOpComp::ResultCid() const {
+intptr_t BinaryMintOpInstr::ResultCid() const {
   return kMintCid;
 }
 
 
-RawAbstractType* BinaryDoubleOpComp::CompileType() const {
-  return Type::DoubleInterface();
+RawAbstractType* UnboxedDoubleBinaryOpInstr::CompileType() const {
+  return Type::Double();
 }
 
 
-intptr_t BinaryDoubleOpComp::ResultCid() const {
-  return kDoubleCid;
-}
-
-
-RawAbstractType* UnboxedDoubleBinaryOpComp::CompileType() const {
-  return Type::DoubleInterface();
-}
-
-
-RawAbstractType* UnboxDoubleComp::CompileType() const {
+RawAbstractType* UnboxDoubleInstr::CompileType() const {
   return Type::null();
 }
 
 
-intptr_t BoxDoubleComp::ResultCid() const {
+intptr_t BoxDoubleInstr::ResultCid() const {
   return kDoubleCid;
 }
 
 
-RawAbstractType* BoxDoubleComp::CompileType() const {
-  return Type::DoubleInterface();
+RawAbstractType* BoxDoubleInstr::CompileType() const {
+  return Type::Double();
 }
 
 
-RawAbstractType* UnarySmiOpComp::CompileType() const {
+RawAbstractType* UnarySmiOpInstr::CompileType() const {
   return Type::SmiType();
 }
 
 
-RawAbstractType* NumberNegateComp::CompileType() const {
+RawAbstractType* NumberNegateInstr::CompileType() const {
   // Implemented only for doubles.
-  return Type::DoubleInterface();
+  return Type::Double();
 }
 
 
-RawAbstractType* DoubleToDoubleComp::CompileType() const {
-  return Type::DoubleInterface();
+RawAbstractType* DoubleToDoubleInstr::CompileType() const {
+  return Type::Double();
 }
 
 
-RawAbstractType* SmiToDoubleComp::CompileType() const {
-  return Type::DoubleInterface();
+RawAbstractType* SmiToDoubleInstr::CompileType() const {
+  return Type::Double();
 }
 
 
-RawAbstractType* CheckClassComp::CompileType() const {
+RawAbstractType* CheckClassInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* CheckSmiComp::CompileType() const {
+RawAbstractType* CheckSmiInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* CheckArrayBoundComp::CompileType() const {
+RawAbstractType* CheckArrayBoundInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
-RawAbstractType* CheckEitherNonSmiComp::CompileType() const {
+RawAbstractType* CheckEitherNonSmiInstr::CompileType() const {
   return AbstractType::null();
 }
 
 
 // Optimizations that eliminate or simplify individual computations.
-Definition* Computation::TryReplace(BindInstr* instr) const {
-  return instr;
+Definition* Definition::Canonicalize() {
+  return this;
 }
 
 
-Definition* StrictCompareComp::TryReplace(BindInstr* instr) const {
-  UseVal* left_use = left()->AsUse();
-  UseVal* right_use = right()->AsUse();
-  if ((right_use == NULL) || (left_use == NULL)) return instr;
-  if (!right_use->BindsToConstant()) return instr;
-  const Object& right_constant = right_use->BoundConstant();
-  Definition* left = left_use->definition();
+Definition* StrictCompareInstr::Canonicalize() {
+  if (!right()->BindsToConstant()) return this;
+  const Object& right_constant = right()->BoundConstant();
+  Definition* left_defn = left()->definition();
   // TODO(fschneider): Handle other cases: e === false and e !== true/false.
   // Handles e === true.
   if ((kind() == Token::kEQ_STRICT) &&
       (right_constant.raw() == Bool::True()) &&
-      (left_use->ResultCid() == kBoolCid)) {
+      (left()->ResultCid() == kBoolCid)) {
     // Remove the constant from the graph.
-    BindInstr* right = right_use->definition()->AsBind();
-    if (right != NULL) {
-      right->RemoveFromGraph();
-    }
+    Definition* right_defn = right()->definition();
+    right_defn->RemoveFromGraph();
     // Return left subexpression as the replacement for this instruction.
-    return left;
+    return left_defn;
   }
-  return instr;
+  return this;
 }
 
 
-Definition* CheckClassComp::TryReplace(BindInstr* instr) const {
+Definition* CheckClassInstr::Canonicalize() {
   const intptr_t v_cid = value()->ResultCid();
-  const intptr_t num_checks = ic_data()->NumberOfChecks();
+  const intptr_t num_checks = unary_checks().NumberOfChecks();
   if ((num_checks == 1) &&
-      (v_cid == ic_data()->GetReceiverClassIdAt(0))) {
+      (v_cid == unary_checks().GetReceiverClassIdAt(0))) {
     // No checks needed.
     return NULL;
   }
-  return instr;
+  return this;
 }
 
 
-Definition* CheckSmiComp::TryReplace(BindInstr* instr) const {
-  return (value()->ResultCid() == kSmiCid) ?  NULL : instr;
+Definition* CheckSmiInstr::Canonicalize() {
+  return (value()->ResultCid() == kSmiCid) ?  NULL : this;
 }
 
 
-Definition* CheckEitherNonSmiComp::TryReplace(BindInstr* instr) const {
+Definition* CheckEitherNonSmiInstr::Canonicalize() {
   if ((left()->ResultCid() == kDoubleCid) ||
       (right()->ResultCid() == kDoubleCid)) {
     return NULL;  // Remove from the graph.
   }
-  return instr;
+  return this;
 }
 
 
@@ -1170,6 +1198,71 @@ void TargetEntryInstr::PrepareEntry(FlowGraphCompiler* compiler) {
 }
 
 
+LocationSummary* GraphEntryInstr::MakeLocationSummary() const {
+  UNREACHABLE();
+  return NULL;
+}
+
+
+void GraphEntryInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
+  UNREACHABLE();
+}
+
+
+LocationSummary* JoinEntryInstr::MakeLocationSummary() const {
+  UNREACHABLE();
+  return NULL;
+}
+
+
+void JoinEntryInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
+  UNREACHABLE();
+}
+
+
+LocationSummary* TargetEntryInstr::MakeLocationSummary() const {
+  UNREACHABLE();
+  return NULL;
+}
+
+
+void TargetEntryInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
+  UNREACHABLE();
+}
+
+
+LocationSummary* PhiInstr::MakeLocationSummary() const {
+  UNREACHABLE();
+  return NULL;
+}
+
+
+void PhiInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
+  UNREACHABLE();
+}
+
+
+LocationSummary* ParameterInstr::MakeLocationSummary() const {
+  UNREACHABLE();
+  return NULL;
+}
+
+
+void ParameterInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
+  UNREACHABLE();
+}
+
+
+LocationSummary* ParallelMoveInstr::MakeLocationSummary() const {
+  return NULL;
+}
+
+
+void ParallelMoveInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
+  UNREACHABLE();
+}
+
+
 LocationSummary* ThrowInstr::MakeLocationSummary() const {
   return new LocationSummary(0, 0, LocationSummary::kCall);
 }
@@ -1177,8 +1270,7 @@ LocationSummary* ThrowInstr::MakeLocationSummary() const {
 
 
 void ThrowInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
-  compiler->GenerateCallRuntime(deopt_id(),
-                                token_pos(),
+  compiler->GenerateCallRuntime(token_pos(),
                                 kThrowRuntimeEntry,
                                 locs());
   __ int3();
@@ -1191,8 +1283,7 @@ LocationSummary* ReThrowInstr::MakeLocationSummary() const {
 
 
 void ReThrowInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
-  compiler->GenerateCallRuntime(deopt_id(),
-                                token_pos(),
+  compiler->GenerateCallRuntime(token_pos(),
                                 kReThrowRuntimeEntry,
                                 locs());
   __ int3();
@@ -1205,6 +1296,12 @@ LocationSummary* GotoInstr::MakeLocationSummary() const {
 
 
 void GotoInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
+  // Add deoptimization descriptor for deoptimizing instructions
+  // that may be inserted before this instruction.
+  compiler->AddCurrentDescriptor(PcDescriptors::kDeoptBefore,
+                                 GetDeoptId(),
+                                 0);  // No token position.
+
   if (HasParallelMove()) {
     compiler->parallel_move_resolver()->EmitNativeCode(parallel_move());
   }
@@ -1237,6 +1334,16 @@ static Condition NegateCondition(Condition condition) {
 }
 
 
+void ControlInstruction::EmitBranchOnValue(FlowGraphCompiler* compiler,
+                                           bool value) {
+  if (value && compiler->IsNextBlock(false_successor())) {
+    __ jmp(compiler->GetBlockLabel(true_successor()));
+  } else if (!value && compiler->IsNextBlock(true_successor())) {
+    __ jmp(compiler->GetBlockLabel(false_successor()));
+  }
+}
+
+
 void ControlInstruction::EmitBranchOnCondition(FlowGraphCompiler* compiler,
                                                Condition true_condition) {
   if (compiler->IsNextBlock(false_successor())) {
@@ -1252,19 +1359,19 @@ void ControlInstruction::EmitBranchOnCondition(FlowGraphCompiler* compiler,
 }
 
 
-LocationSummary* CurrentContextComp::MakeLocationSummary() const {
+LocationSummary* CurrentContextInstr::MakeLocationSummary() const {
   return LocationSummary::Make(0,
                                Location::RequiresRegister(),
                                LocationSummary::kNoCall);
 }
 
 
-void CurrentContextComp::EmitNativeCode(FlowGraphCompiler* compiler) {
+void CurrentContextInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   __ MoveRegister(locs()->out().reg(), CTX);
 }
 
 
-LocationSummary* StoreContextComp::MakeLocationSummary() const {
+LocationSummary* StoreContextInstr::MakeLocationSummary() const {
   const intptr_t kNumInputs = 1;
   const intptr_t kNumTemps = 0;
   LocationSummary* summary =
@@ -1274,20 +1381,20 @@ LocationSummary* StoreContextComp::MakeLocationSummary() const {
 }
 
 
-void StoreContextComp::EmitNativeCode(FlowGraphCompiler* compiler) {
+void StoreContextInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   // Nothing to do.  Context register were loaded by register allocator.
   ASSERT(locs()->in(0).reg() == CTX);
 }
 
 
-LocationSummary* StrictCompareComp::MakeLocationSummary() const {
+LocationSummary* StrictCompareInstr::MakeLocationSummary() const {
   return LocationSummary::Make(2,
                                Location::SameAsFirstInput(),
                                LocationSummary::kNoCall);
 }
 
 
-void StrictCompareComp::EmitNativeCode(FlowGraphCompiler* compiler) {
+void StrictCompareInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   Register left = locs()->in(0).reg();
   Register right = locs()->in(1).reg();
 
@@ -1306,7 +1413,7 @@ void StrictCompareComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-void StrictCompareComp::EmitBranchCode(FlowGraphCompiler* compiler,
+void StrictCompareInstr::EmitBranchCode(FlowGraphCompiler* compiler,
                                        BranchInstr* branch) {
   Register left = locs()->in(0).reg();
   Register right = locs()->in(1).reg();
@@ -1317,7 +1424,7 @@ void StrictCompareComp::EmitBranchCode(FlowGraphCompiler* compiler,
 }
 
 
-void ClosureCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
+void ClosureCallInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   // The arguments to the stub include the closure.  The arguments
   // descriptor describes the closure's arguments (and so does not include
   // the closure).
@@ -1327,22 +1434,22 @@ void ClosureCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
       DartEntry::ArgumentsDescriptor(argument_count - 1,
                                          argument_names());
   __ LoadObject(temp_reg, arguments_descriptor);
-
-  compiler->GenerateCall(token_pos(),
-                         &StubCode::CallClosureFunctionLabel(),
-                         PcDescriptors::kOther,
-                         locs());
+  compiler->GenerateDartCall(deopt_id(),
+                             token_pos(),
+                             &StubCode::CallClosureFunctionLabel(),
+                             PcDescriptors::kOther,
+                             locs());
   __ Drop(argument_count);
 }
 
 
-LocationSummary* InstanceCallComp::MakeLocationSummary() const {
+LocationSummary* InstanceCallInstr::MakeLocationSummary() const {
   return MakeCallSummary();
 }
 
 
-void InstanceCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
-  compiler->AddCurrentDescriptor(PcDescriptors::kDeopt,
+void InstanceCallInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
+  compiler->AddCurrentDescriptor(PcDescriptors::kDeoptBefore,
                                  deopt_id(),
                                  token_pos());
   compiler->GenerateInstanceCall(deopt_id(),
@@ -1355,12 +1462,12 @@ void InstanceCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-LocationSummary* StaticCallComp::MakeLocationSummary() const {
+LocationSummary* StaticCallInstr::MakeLocationSummary() const {
   return MakeCallSummary();
 }
 
 
-void StaticCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
+void StaticCallInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   Label done;
   if (recognized() == MethodRecognizer::kMathSqrt) {
     compiler->GenerateInlinedMathSqrt(&done);
@@ -1376,10 +1483,9 @@ void StaticCallComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-void AssertAssignableComp::EmitNativeCode(FlowGraphCompiler* compiler) {
+void AssertAssignableInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   if (!is_eliminated()) {
-    compiler->GenerateAssertAssignable(deopt_id(),
-                                       token_pos(),
+    compiler->GenerateAssertAssignable(token_pos(),
                                        dst_type(),
                                        dst_name(),
                                        locs());
@@ -1388,14 +1494,14 @@ void AssertAssignableComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-LocationSummary* BooleanNegateComp::MakeLocationSummary() const {
+LocationSummary* BooleanNegateInstr::MakeLocationSummary() const {
   return LocationSummary::Make(1,
                                Location::RequiresRegister(),
                                LocationSummary::kNoCall);
 }
 
 
-void BooleanNegateComp::EmitNativeCode(FlowGraphCompiler* compiler) {
+void BooleanNegateInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   Register value = locs()->in(0).reg();
   Register result = locs()->out().reg();
 
@@ -1408,14 +1514,14 @@ void BooleanNegateComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-LocationSummary* ChainContextComp::MakeLocationSummary() const {
+LocationSummary* ChainContextInstr::MakeLocationSummary() const {
   return LocationSummary::Make(1,
                                Location::NoLocation(),
                                LocationSummary::kNoCall);
 }
 
 
-void ChainContextComp::EmitNativeCode(FlowGraphCompiler* compiler) {
+void ChainContextInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   Register context_value = locs()->in(0).reg();
 
   // Chain the new context in context_value to its parent in CTX.
@@ -1427,14 +1533,14 @@ void ChainContextComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-LocationSummary* StoreVMFieldComp::MakeLocationSummary() const {
+LocationSummary* StoreVMFieldInstr::MakeLocationSummary() const {
   return LocationSummary::Make(2,
                                Location::SameAsFirstInput(),
                                LocationSummary::kNoCall);
 }
 
 
-void StoreVMFieldComp::EmitNativeCode(FlowGraphCompiler* compiler) {
+void StoreVMFieldInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   Register value_reg = locs()->in(0).reg();
   Register dest_reg = locs()->in(1).reg();
   ASSERT(value_reg == locs()->out().reg());
@@ -1449,12 +1555,12 @@ void StoreVMFieldComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-LocationSummary* AllocateObjectComp::MakeLocationSummary() const {
+LocationSummary* AllocateObjectInstr::MakeLocationSummary() const {
   return MakeCallSummary();
 }
 
 
-void AllocateObjectComp::EmitNativeCode(FlowGraphCompiler* compiler) {
+void AllocateObjectInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   const Class& cls = Class::ZoneHandle(constructor().Owner());
   const Code& stub = Code::Handle(StubCode::GetAllocationStubForClass(cls));
   const ExternalLabel label(cls.ToCString(), stub.EntryPoint());
@@ -1466,12 +1572,12 @@ void AllocateObjectComp::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 
-LocationSummary* CreateClosureComp::MakeLocationSummary() const {
+LocationSummary* CreateClosureInstr::MakeLocationSummary() const {
   return MakeCallSummary();
 }
 
 
-void CreateClosureComp::EmitNativeCode(FlowGraphCompiler* compiler) {
+void CreateClosureInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   const Function& closure_function = function();
   const Code& stub = Code::Handle(
       StubCode::GetAllocationStubForClosure(closure_function));
@@ -1512,7 +1618,7 @@ Environment::Environment(const GrowableArray<Definition*>& definitions,
       locations_(NULL),
       fixed_parameter_count_(fixed_parameter_count) {
   for (intptr_t i = 0; i < definitions.length(); ++i) {
-    values_.Add(new UseVal(definitions[i]));
+    values_.Add(new Value(definitions[i]));
   }
 }
 
@@ -1523,14 +1629,11 @@ void Environment::CopyTo(Instruction* instr) const {
                                       fixed_parameter_count());
   GrowableArray<Value*>* values_copy = copy->values_ptr();
   for (intptr_t i = 0; i < values().length(); ++i) {
-    Value* value = values()[i]->CopyValue();
+    Value* value = values()[i]->Copy();
     values_copy->Add(value);
-    UseVal* use = value->AsUse();
-    if (use != NULL) {
-      use->set_instruction(instr);
-      use->set_use_index(i);
-      use->AddToEnvUseList();
-    }
+    value->set_instruction(instr);
+    value->set_use_index(i);
+    value->AddToEnvUseList();
   }
   instr->set_env(copy);
 }

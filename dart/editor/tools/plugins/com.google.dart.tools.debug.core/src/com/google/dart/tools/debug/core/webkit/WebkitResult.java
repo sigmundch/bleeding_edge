@@ -33,6 +33,14 @@ public class WebkitResult<T> {
     return result;
   }
 
+  static JSONObject createJsonErrorResult(String message) throws JSONException {
+    JSONObject obj = new JSONObject();
+
+    obj.put("error", message);
+
+    return obj;
+  }
+
   private Object error;
   private T result;
 
@@ -42,6 +50,18 @@ public class WebkitResult<T> {
 
   public Object getError() {
     return error;
+  }
+
+  public String getErrorMessage() {
+    if (error instanceof WebkitRemoteObject) {
+      WebkitRemoteObject obj = (WebkitRemoteObject) error;
+
+      if (obj.isString()) {
+        return obj.getValue();
+      }
+    }
+
+    return "";
   }
 
   public T getResult() {

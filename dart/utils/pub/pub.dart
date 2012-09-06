@@ -18,9 +18,9 @@
 #import('command_version.dart');
 #import('entrypoint.dart');
 #import('git_source.dart');
+#import('hosted_source.dart');
 #import('package.dart');
 #import('pubspec.dart');
-#import('repo_source.dart');
 #import('sdk_source.dart');
 #import('source.dart');
 #import('source_registry.dart');
@@ -52,6 +52,7 @@ ArgParser get pubArgParser {
   parser.addFlag('version', negatable: false,
     help: 'Prints the version of Pub');
   parser.addFlag('trace', help: 'Prints a stack trace when an error occurs');
+  parser.addFlag('self-link', help: 'Temporary flag, do not use.');
   return parser;
 }
 
@@ -74,6 +75,12 @@ main() {
     return;
   }
 
+  // TODO(rnystrom): Get rid of this flag (and make the default be true) when
+  // #4820 is fixed and the Editor can handle recursive symlinks.
+  if (globalOptions['self-link']) {
+    Entrypoint.installSelfLink = true;
+  }
+
   // TODO(nweiz): Have a fallback for this this out automatically once 1145 is
   // fixed.
   var sdkDir = Platform.environment['DART_SDK'];
@@ -88,9 +95,8 @@ main() {
   var cache = new SystemCache(cacheDir);
   cache.register(new SdkSource(sdkDir));
   cache.register(new GitSource());
-  cache.register(new RepoSource());
-  // TODO(nweiz): Make 'repo' the default once pub.dartlang.org exists
-  cache.sources.setDefault('sdk');
+  cache.register(new HostedSource());
+  cache.sources.setDefault('hosted');
 
   // Select the command.
   var command = pubCommands[globalOptions.rest[0]];
@@ -178,8 +184,6 @@ class PubCommand {
     handleError(error, trace) {
       // This is basically the top-level exception handler so that we don't
       // spew a stack trace on our users.
-      // TODO(rnystrom): Add --trace flag so stack traces can be enabled for
-      // debugging.
       var message = error.toString();
 
       // TODO(rnystrom): The default exception implementation class puts
@@ -192,7 +196,10 @@ class PubCommand {
       if (globalOptions['trace'] && trace != null) {
         printError(trace);
       }
-      return true;
+
+      // TODO(nweiz): Use the more semantic error codes in
+      // http://www.freebsd.org/cgi/man.cgi?query=sysexits
+      exit(1);
     }
 
     // TODO(rnystrom): Will eventually need better logic to walk up
@@ -212,6 +219,9 @@ class PubCommand {
       }
     });
     future.handleException((e) => handleError(e, future.stackTrace));
+    // Explicitly exit on success to ensure that any dangling dart:io handles
+    // don't cause the process to never terminate.
+    future.then((_) => exit(0));
   }
 
   /**

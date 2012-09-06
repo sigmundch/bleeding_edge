@@ -125,6 +125,11 @@ public class DartCore extends Plugin implements DartSdkListener {
   public static final String PACKAGE_ROOT_DIR_PREFERENCE = "package root";
 
   /**
+   * Preference for the external resources directory
+   */
+  public static final String AUXILIARY_DIR_PREFERENCE = "external resources";
+
+  /**
    * Preference to control if "not a member" warnings should be suppressed for inferred types.
    */
   public static final String TYPE_CHECKS_FOR_INFERRED_TYPES = "typeChecksForInferredTypes";
@@ -350,6 +355,13 @@ public class DartCore extends Plugin implements DartSdkListener {
    */
   public static DartLibrary findLibraryInDirectory(File directory) throws DartModelException {
     return DartModelManager.getInstance().findLibraryInDirectory(directory);
+  }
+
+  /**
+   * Returns the day (yyyy-MM-dd) the product was built.
+   */
+  public static String getBuildDate() {
+    return "@BUILDDATE@";
   }
 
   /**
@@ -935,18 +947,6 @@ public class DartCore extends Plugin implements DartSdkListener {
    */
   public boolean getCompileWithDart2JS() {
     return DartSdkManager.getManager().hasSdk();
-  }
-
-  /**
-   * Return the first package root preference
-   */
-  public String getFirstPackageRootPref() {
-    String pref = getPackageRootPref();
-
-    if (pref != null) {
-      return pref.split(";")[0];
-    }
-    return null;
   }
 
   /**

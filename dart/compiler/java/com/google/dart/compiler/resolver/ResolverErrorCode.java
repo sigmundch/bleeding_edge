@@ -40,7 +40,7 @@ public enum ResolverErrorCode implements ErrorCode {
   CANNOT_RESOLVE_FIELD("cannot resolve field %s"),
   CANNOT_RESOLVE_LABEL("cannot resolve label %s"),
   CANNOT_RESOLVE_METHOD("cannot resolve method '%s'"),
-  CANNOT_RESOLVE_METHOD_IN_CLASS("cannot resolve method '%s' in class '%s'"),
+  CANNOT_RESOLVE_METHOD_IN_CLASS(ErrorSeverity.WARNING, "cannot resolve method '%s' in class '%s'"),
   // TODO(zundel): error message needs JUnit test - how to test #imports in junit?
   CANNOT_RESOLVE_METHOD_IN_LIBRARY("cannot resolve method '%s' in library '%s'"),
   // TODO(zundel): To exercise this requires simulating a corrupted SDK?
@@ -57,7 +57,7 @@ public enum ResolverErrorCode implements ErrorCode {
   CIRCULAR_REFERENCE(
       "Circular reference detected:  compile-time constants cannot reference themselves."),
   CONST_REQUIRES_VALUE("Constant fields must have an initial value"),
-  CONSTRUCTOR_CANNOT_BE_ABSTRACT("A constructor cannot be asbstract"),
+  CONSTRUCTOR_CANNOT_BE_ABSTRACT("A constructor cannot be abstract"),
   CONSTRUCTOR_CANNOT_BE_STATIC("A constructor cannot be static"),
   CONSTRUCTOR_CANNOT_HAVE_RETURN_TYPE("Generative constructors cannot have return type"),
   CONST_AND_NONCONST_CONSTRUCTOR("Cannot reference to non-const constructor."),
@@ -91,6 +91,7 @@ public enum ResolverErrorCode implements ErrorCode {
   DUPLICATE_NAMED_ARGUMENT("Duplicate named parameter argument"),
   DUPLICATE_PARAMETER("Duplicate parameter '%s'"),
   DUPLICATE_TOP_LEVEL_DECLARATION("duplicate top-level declaration %s at %s"),
+  DUPLICATE_TOP_LEVEL_DECLARATION_IMPORT("Duplicate import '%s' in %s prefix '%s' -  %s - %s"),
   DUPLICATE_TYPE_VARIABLE("Duplicate type variable '%s'"),
   // TODO(zundel): error message needs JUnit test, (reachable code?)
   EXPECTED_AN_INSTANCE_FIELD_IN_SUPER_CLASS(

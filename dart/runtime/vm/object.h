@@ -878,8 +878,8 @@ class AbstractType : public Object {
   // Check if this type represents the 'int' interface.
   bool IsIntInterface() const;
 
-  // Check if this type represents the 'double' interface.
-  bool IsDoubleInterface() const;
+  // Check if this type represents the 'double' type.
+  bool IsDoubleType() const;
 
   // Check if this type represents the 'num' type.
   bool IsNumberType() const;
@@ -1002,8 +1002,8 @@ class Type : public AbstractType {
   // The 'Mint' type.
   static RawType* MintType();
 
-  // The 'double' interface type.
-  static RawType* DoubleInterface();
+  // The 'double' type.
+  static RawType* Double();
 
   // The 'num' interface type.
   static RawType* Number();
@@ -1822,10 +1822,11 @@ class LiteralToken : public Object {
 
 class TokenStream : public Object {
  public:
-  inline intptr_t Length() const;
-
   RawArray* TokenObjects() const;
   void SetTokenObjects(const Array& value) const;
+
+  RawExternalUint8Array* GetStream() const;
+  void SetStream(const ExternalUint8Array& stream) const;
 
   RawString* GenerateSource() const;
   intptr_t ComputeSourcePosition(intptr_t tok_pos) const;
@@ -1835,13 +1836,7 @@ class TokenStream : public Object {
   static const intptr_t kMaxElements = kSmiMax / kBytesPerElement;
 
   static intptr_t InstanceSize() {
-    ASSERT(sizeof(RawTokenStream) == OFFSET_OF(RawTokenStream, data_));
-    return 0;
-  }
-  static intptr_t InstanceSize(intptr_t len) {
-    ASSERT(0 <= len && len <= kMaxElements);
-    return RoundedAllocationSize(
-        sizeof(RawTokenStream) + (len * kBytesPerElement));
+    return RoundedAllocationSize(sizeof(RawTokenStream));
   }
 
   static RawTokenStream* New(intptr_t length);
@@ -1874,28 +1869,28 @@ class TokenStream : public Object {
    private:
     // Read token from the token stream (could be a simple token or an index
     // into the token objects array for IDENT or literal tokens).
-    intptr_t ReadToken();
-    uint8_t ReadByte();
+    intptr_t ReadToken() {
+      int64_t value = stream_.ReadUnsigned();
+      ASSERT((value >= 0) && (value <= kIntptrMax));
+      return value;
+    }
 
     const TokenStream& tokens_;
+    const ExternalUint8Array& data_;
+    ReadStream stream_;
     Array& token_objects_;
     Object& obj_;
     intptr_t cur_token_pos_;
-    intptr_t stream_token_pos_;
     Token::Kind cur_token_kind_;
     intptr_t cur_token_obj_index_;
   };
 
  private:
-  void SetLength(intptr_t value) const;
-
   RawString* PrivateKey() const;
   void SetPrivateKey(const String& value) const;
 
-  uint8_t* EntryAddr(intptr_t token_pos) const {
-    ASSERT((token_pos >=0) && (token_pos < Length()));
-    return &raw_ptr()->data_[token_pos];
-  }
+  static RawTokenStream* New();
+  static void DataFinalizer(void *peer);
 
   HEAP_OBJECT_IMPLEMENTATION(TokenStream, Object);
   friend class Class;
@@ -2268,12 +2263,13 @@ class PcDescriptors : public Object {
 
  public:
   enum Kind {
-    kDeopt = 0,   // Deoptimization continuation point.
-    kDeoptIndex,  // Index into deopt info array.
-    kPatchCode,   // Buffer for patching code entry.
-    kIcCall,      // IC call.
-    kFuncCall,    // Call to known target, e.g. static call, closure call.
-    kReturn,      // Return from function.
+    kDeoptBefore = 0,  // Deoptimization continuation point before instruction.
+    kDeoptAfter,       // Deoptimization continuation point after instruction.
+    kDeoptIndex,       // Index into deopt info array.
+    kPatchCode,        // Buffer for patching code entry.
+    kIcCall,           // IC call.
+    kFuncCall,         // Call to known target, e.g. static call, closure call.
+    kReturn,           // Return from function.
     kOther
   };
 
@@ -2367,6 +2363,11 @@ class Stackmap : public Object {
   uword PC() const { return raw_ptr()->pc_; }
   void SetPC(uword value) const { raw_ptr()->pc_ = value; }
 
+  intptr_t RegisterBitCount() const { return raw_ptr()->register_bit_count_; }
+  void SetRegisterBitCount(intptr_t register_bit_count) const {
+    raw_ptr()->register_bit_count_ = register_bit_count;
+  }
+
   static const intptr_t kMaxLengthInBytes = kSmiMax;
 
   static intptr_t InstanceSize() {
@@ -2380,7 +2381,9 @@ class Stackmap : public Object {
         Utils::RoundUp(length, kBitsPerByte) / kBitsPerByte;
     return RoundedAllocationSize(sizeof(RawStackmap) + payload_size);
   }
-  static RawStackmap* New(intptr_t pc_offset, BitmapBuilder* bmap);
+  static RawStackmap* New(intptr_t pc_offset,
+                          BitmapBuilder* bmap,
+                          intptr_t register_bit_count);
 
  private:
   void SetLength(intptr_t length) const { raw_ptr()->length_ = length; }
@@ -2526,6 +2529,12 @@ class Code : public Object {
   void set_is_optimized(bool value) const {
     raw_ptr()->is_optimized_ = value ? 1 : 0;
   }
+  bool is_alive() const {
+    return (raw_ptr()->is_alive_ == 1);
+  }
+  void set_is_alive(bool value) const {
+    raw_ptr()->is_alive_ = value ? 1 : 0;
+  }
 
   uword EntryPoint() const {
     const Instructions& instr = Instructions::Handle(instructions());
@@ -2641,7 +2650,8 @@ class Code : public Object {
   // Find pc of patch code buffer. Return 0 if not found.
   uword GetPatchCodePc() const;
 
-  uword GetDeoptPcAtDeoptId(intptr_t deopt_id) const;
+  uword GetDeoptBeforePcAtDeoptId(intptr_t deopt_id) const;
+  uword GetDeoptAfterPcAtDeoptId(intptr_t deopt_id) const;
 
   // Returns true if there is an object in the code between 'start_offset'
   // (inclusive) and 'end_offset' (exclusive).
@@ -2673,6 +2683,8 @@ class Code : public Object {
   static const intptr_t kEntrySize = sizeof(int32_t);  // NOLINT
 
   void set_instructions(RawInstructions* instructions) {
+    // RawInstructions are never allocated in New space and hence a
+    // store buffer update is not needed here.
     raw_ptr()->instructions_ = instructions;
   }
   void set_pointer_offsets_length(intptr_t value) {
@@ -2688,6 +2700,8 @@ class Code : public Object {
   void SetPointerOffsetAt(int index, int32_t offset_in_instructions) {
     *PointerOffsetAddrAt(index) = offset_in_instructions;
   }
+
+  uword GetPcForDeoptId(intptr_t deopt_id, PcDescriptors::Kind kind) const;
 
   // New is a private method as RawInstruction and RawCode objects should
   // only be created using the Code::FinalizeCode method. This method creates
@@ -3102,7 +3116,9 @@ class Instance : public Object {
                     const AbstractTypeArguments& type_instantiator,
                     Error* malformed_error) const;
 
-  bool IsValidNativeIndex(int index) const;
+  bool IsValidNativeIndex(int index) const {
+    return ((index >= 0) && (index < clazz()->ptr()->num_native_fields_));
+  }
 
   intptr_t GetNativeField(int index) const {
     return *NativeFieldAddr(index);
@@ -3361,6 +3377,8 @@ class Bigint : public Integer {
 };
 
 
+// Class Double represents class Double in corelib_impl, which implements
+// abstract class double in corelib.
 class Double : public Number {
  public:
   double value() const {
@@ -3523,7 +3541,8 @@ class String : public Instance {
   static RawString* ToLowerCase(const String& str,
                                 Heap::Space space = Heap::kNew);
 
-  static RawString* NewFormatted(const char* format, ...);
+  static RawString* NewFormatted(const char* format, ...)
+      PRINTF_ATTRIBUTE(1, 2);
 
  protected:
   bool HasHash() const {
@@ -4810,6 +4829,7 @@ class ExternalUint8Array : public ByteArray {
   HEAP_OBJECT_IMPLEMENTATION(ExternalUint8Array, ByteArray);
   friend class ByteArray;
   friend class Class;
+  friend class TokenStream;
 };
 
 
@@ -5507,11 +5527,6 @@ intptr_t Field::Offset() const {
 void Field::SetOffset(intptr_t value) const {
   ASSERT(!is_static());  // SetOffset is valid only for instance fields.
   raw_ptr()->value_ = Smi::New(value);
-}
-
-
-intptr_t TokenStream::Length() const {
-  return Smi::Value(raw_ptr()->length_);
 }
 
 

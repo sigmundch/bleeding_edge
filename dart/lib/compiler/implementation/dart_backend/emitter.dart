@@ -3,86 +3,20 @@
 // BSD-style license that can be found in the LICENSE file.
 
 String emitCode(
-      Compiler compiler,
       Unparser unparser,
       Map<LibraryElement, String> imports,
-      Collection<Element> topLevelElements,
-      Map<ClassElement, Collection<Element>> classMembers) {
-  final sb = new StringBuffer();
-  final processedVariableLists = new Set<VariableListElement>();
+      Collection<Node> topLevelNodes,
+      Map<ClassNode, Collection<Node>> classMembers) {
+  imports.forEach((libraryElement, prefix) {
+    unparser.unparseImportTag('${libraryElement.uri}', prefix);
+  });
 
-  void outputElement(Element element) {
-    if (element is SynthesizedConstructorElement) return;
-    if (element.isField()) {
-      assert(element is VariableElement);
-      // Different VariableElement's may refer to the same VariableListElement.
-      // Output this list only once.
-      // TODO: only emit used variables.
-      VariableElement variableElement = element;
-      final variableList = variableElement.variables;
-      if (!processedVariableLists.contains(variableList)) {
-        processedVariableLists.add(variableList);
-        sb.add(unparser.unparse(variableList.parseNode(compiler)));
-      }
-    } else {
-      sb.add(unparser.unparse(element.parseNode(compiler)));
-    }
-  }
-
-  void outputClass(ClassElement classElement, Collection<Element> members) {
-    ClassNode classNode = classElement.parseNode(compiler);
-    // classElement.beginToken is 'class', 'interface', or 'abstract'.
-    sb.add(classNode.beginToken.slowToString());
-    if (classNode.beginToken.slowToString() == 'abstract') {
-      sb.add(' ');
-      sb.add(classNode.beginToken.next.slowToString());  // 'class'
-    }
-    sb.add(' ');
-    sb.add(unparser.unparse(classNode.name));
-    if (classNode.typeParameters !== null) {
-      sb.add(unparser.unparse(classNode.typeParameters));
-    }
-    if (classNode.extendsKeyword !== null) {
-      sb.add(' ');
-      classNode.extendsKeyword.value.printOn(sb);
-      sb.add(' ');
-      sb.add(unparser.unparse(classNode.superclass));
-    }
-    if (!classNode.interfaces.isEmpty()) {
-      sb.add(' ');
-      sb.add(unparser.unparse(classNode.interfaces));
-    }
-    if (classNode.defaultClause !== null) {
-      sb.add(' default ');
-      sb.add(unparser.unparse(classNode.defaultClause));
-    }
-    sb.add('{');
-    members.forEach((element) {
+  for (final node in topLevelNodes) {
+    if (node is ClassNode) {
       // TODO(smok): Filter out default constructors here.
-      outputElement(element);
-    });
-    sb.add('}');
-  }
-
-  final libraries = compiler.libraries;
-  for (final uri in libraries.getKeys()) {
-    // Same library element may be a value for different uris as of now
-    // e.g., core libraryElement is a value for both keys 'dart:core'
-    // and full file name.  Only care about uris with dart scheme.
-    if (!uri.startsWith('dart:')) continue;
-    final lib = libraries[uri];
-    if (imports.containsKey(lib)) {
-      sb.add('#import("$uri", prefix: "${imports[lib]}");');
-    }
-  }
-
-  for (final element in topLevelElements) {
-    if (element is ClassElement) {
-      outputClass(element, classMembers[element]);
+      unparser.unparseClassWithBody(node, classMembers[node]);
     } else {
-      outputElement(element);
+      unparser.unparse(node);
     }
   }
-
-  return sb.toString();
 }

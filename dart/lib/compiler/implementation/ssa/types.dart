@@ -9,7 +9,7 @@ abstract class HType {
    * Returns an [HType] that represents [type] and all types that have
    * [type] as supertype.
    */
-  factory HType.fromBoundedType(Type type,
+  factory HType.fromBoundedType(DartType type,
                                 Compiler compiler,
                                 [bool canBeNull = false]) {
     Element element = type.element;
@@ -78,6 +78,7 @@ abstract class HType {
   bool isExtendableArray() => false;
   bool isPrimitive() => false;
   bool isExact() => false;
+  bool isPrimitiveOrNull() => false;
 
   bool canBePrimitive() => false;
   bool canBeNull() => false;
@@ -87,7 +88,7 @@ abstract class HType {
   /** Alias for isReadableArray. */
   bool isArray() => isReadableArray();
 
-  abstract Type computeType(Compiler compiler);
+  abstract DartType computeType(Compiler compiler);
 
   /**
    * The intersection of two types is the intersection of its values. For
@@ -125,7 +126,7 @@ abstract class HAnalysisType extends HType {
   const HAnalysisType(this.name);
   String toString() => name;
 
-  Type computeType(Compiler compiler) => null;
+  DartType computeType(Compiler compiler) => null;
 }
 
 class HUnknownType extends HAnalysisType {
@@ -150,6 +151,7 @@ abstract class HPrimitiveType extends HType {
   const HPrimitiveType();
   bool isPrimitive() => true;
   bool canBePrimitive() => true;
+  bool isPrimitiveOrNull() => true;
 }
 
 class HNullType extends HPrimitiveType {
@@ -158,7 +160,7 @@ class HNullType extends HPrimitiveType {
   bool isNull() => true;
   String toString() => 'null';
 
-  Type computeType(Compiler compiler) => null;
+  DartType computeType(Compiler compiler) => null;
 
   HType union(HType other) {
     if (other.isConflicting()) return HType.NULL;
@@ -184,6 +186,7 @@ abstract class HPrimitiveOrNullType extends HType {
   const HPrimitiveOrNullType();
   bool canBePrimitive() => true;
   bool canBeNull() => true;
+  bool isPrimitiveOrNull() => true;
 }
 
 class HBooleanOrNullType extends HPrimitiveOrNullType {
@@ -191,7 +194,7 @@ class HBooleanOrNullType extends HPrimitiveOrNullType {
   String toString() => "boolean or null";
   bool isBooleanOrNull() => true;
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     return compiler.boolClass.computeType(compiler);
   }
 
@@ -218,7 +221,7 @@ class HBooleanType extends HPrimitiveType {
   bool isBoolean() => true;
   String toString() => "boolean";
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     return compiler.boolClass.computeType(compiler);
   }
 
@@ -244,7 +247,7 @@ class HNumberOrNullType extends HPrimitiveOrNullType {
   bool isNumberOrNull() => true;
   String toString() => "number or null";
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     return compiler.numClass.computeType(compiler);
   }
 
@@ -275,7 +278,7 @@ class HNumberType extends HPrimitiveType {
   bool isNumber() => true;
   String toString() => "number";
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     return compiler.numClass.computeType(compiler);
   }
 
@@ -303,7 +306,7 @@ class HIntegerOrNullType extends HNumberOrNullType {
   bool isIntegerOrNull() => true;
   String toString() => "integer or null";
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     return compiler.intClass.computeType(compiler);
   }
 
@@ -336,7 +339,7 @@ class HIntegerType extends HNumberType {
   bool isInteger() => true;
   String toString() => "integer";
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     return compiler.intClass.computeType(compiler);
   }
 
@@ -368,7 +371,7 @@ class HDoubleOrNullType extends HNumberOrNullType {
   bool isDoubleOrNull() => true;
   String toString() => "double or null";
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     return compiler.doubleClass.computeType(compiler);
   }
 
@@ -401,7 +404,7 @@ class HDoubleType extends HNumberType {
   bool isDouble() => true;
   String toString() => "double";
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     return compiler.doubleClass.computeType(compiler);
   }
 
@@ -433,7 +436,7 @@ class HIndexablePrimitiveType extends HPrimitiveType {
   bool isIndexablePrimitive() => true;
   String toString() => "indexable";
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     // TODO(ngeoffray): Represent union types.
     return null;
   }
@@ -467,7 +470,7 @@ class HStringOrNullType extends HPrimitiveOrNullType {
   bool isStringOrNull() => true;
   String toString() => "String or null";
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     return compiler.stringClass.computeType(compiler);
   }
 
@@ -512,7 +515,7 @@ class HStringType extends HIndexablePrimitiveType {
   bool isString() => true;
   String toString() => "String";
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     return compiler.stringClass.computeType(compiler);
   }
 
@@ -543,7 +546,7 @@ class HReadableArrayType extends HIndexablePrimitiveType {
   bool isReadableArray() => true;
   String toString() => "readable array";
 
-  Type computeType(Compiler compiler) {
+  DartType computeType(Compiler compiler) {
     return compiler.listClass.computeType(compiler);
   }
 
@@ -618,7 +621,7 @@ class HExtendableArrayType extends HMutableArrayType {
 }
 
 class HBoundedType extends HType {
-  final Type type;
+  final DartType type;
   final bool _canBeNull;
   final bool _isExact;
 
@@ -630,14 +633,14 @@ class HBoundedType extends HType {
 
   bool isExact() => _isExact;
 
-  const HBoundedType(Type this.type,
+  const HBoundedType(DartType this.type,
                      [bool canBeNull = false, isExact = false])
       : _canBeNull = canBeNull, _isExact = isExact;
-  const HBoundedType.exact(Type type) : this(type, isExact: true);
-  const HBoundedType.withNull(Type type) : this(type, canBeNull: true);
-  const HBoundedType.nonNull(Type type) : this(type);
+  const HBoundedType.exact(DartType type) : this(type, isExact: true);
+  const HBoundedType.withNull(DartType type) : this(type, canBeNull: true);
+  const HBoundedType.nonNull(DartType type) : this(type);
 
-  Type computeType(Compiler compiler) => type;
+  DartType computeType(Compiler compiler) => type;
 
   Element lookupMember(SourceString name) {
     if (!isExact()) return null;
@@ -695,13 +698,13 @@ class HBoundedType extends HType {
 }
 
 class HBoundedPotentialPrimitiveType extends HBoundedType {
-  const HBoundedPotentialPrimitiveType(Type type, bool canBeNull)
+  const HBoundedPotentialPrimitiveType(DartType type, bool canBeNull)
       : super(type, canBeNull, false);
   bool canBePrimitive() => true;
 }
 
 class HBoundedPotentialPrimitiveArray extends HBoundedPotentialPrimitiveType {
-  const HBoundedPotentialPrimitiveArray(Type type, bool canBeNull)
+  const HBoundedPotentialPrimitiveArray(DartType type, bool canBeNull)
       : super(type, canBeNull);
 
   HType union(HType other) {
@@ -728,8 +731,10 @@ class HBoundedPotentialPrimitiveArray extends HBoundedPotentialPrimitiveType {
 }
 
 class HBoundedPotentialPrimitiveString extends HBoundedPotentialPrimitiveType {
-  const HBoundedPotentialPrimitiveString(Type type, bool canBeNull)
+  const HBoundedPotentialPrimitiveString(DartType type, bool canBeNull)
       : super(type, canBeNull);
+
+  bool isPrimitiveOrNull() => true;
 
   HType union(HType other) {
     if (other.isString()) return this;

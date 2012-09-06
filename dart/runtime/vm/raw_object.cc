@@ -27,15 +27,15 @@ void RawObject::Validate(Isolate* isolate) const {
   uword tags = ptr()->tags_;
   intptr_t reserved = ReservedBits::decode(tags);
   if (reserved != 0) {
-    FATAL1("Invalid tags field encountered %#lx\n", tags);
+    FATAL1("Invalid tags field encountered %#"Px"\n", tags);
   }
   intptr_t class_id = ClassIdTag::decode(tags);
   if (!isolate->class_table()->IsValidIndex(class_id)) {
-    FATAL1("Invalid class id encountered %d\n", class_id);
+    FATAL1("Invalid class id encountered %"Pd"\n", class_id);
   }
   intptr_t size = SizeTag::decode(tags);
   if (size != 0 && size != SizeFromClass()) {
-    FATAL1("Inconsistent class size encountered %d\n", size);
+    FATAL1("Inconsistent class size encountered %"Pd"\n", size);
   }
 }
 
@@ -53,13 +53,6 @@ intptr_t RawObject::SizeFromClass() const {
 
   if (instance_size == 0) {
     switch (class_id) {
-      case kTokenStreamCid: {
-        const RawTokenStream* raw_tokens =
-            reinterpret_cast<const RawTokenStream*>(this);
-        intptr_t tokens_length = Smi::Value(raw_tokens->ptr()->length_);
-        instance_size = TokenStream::InstanceSize(tokens_length);
-        break;
-      }
       case kCodeCid: {
         const RawCode* raw_code = reinterpret_cast<const RawCode*>(this);
         intptr_t pointer_offsets_length =
@@ -288,7 +281,7 @@ intptr_t RawObject::VisitPointers(ObjectPointerVisitor* visitor) {
         break;
       }
       default:
-        OS::Print("Class Id: %d\n", class_id);
+        OS::Print("Class Id: %"Pd"\n", class_id);
         UNREACHABLE();
         break;
     }
@@ -404,9 +397,8 @@ intptr_t RawLiteralToken::VisitLiteralTokenPointers(
 
 intptr_t RawTokenStream::VisitTokenStreamPointers(
     RawTokenStream* raw_obj, ObjectPointerVisitor* visitor) {
-  intptr_t length = Smi::Value(raw_obj->ptr()->length_);
   visitor->VisitPointers(raw_obj->from(), raw_obj->to());
-  return TokenStream::InstanceSize(length);
+  return TokenStream::InstanceSize();
 }
 
 
@@ -435,14 +427,17 @@ intptr_t RawCode::VisitCodePointers(RawCode* raw_obj,
                                     ObjectPointerVisitor* visitor) {
   visitor->VisitPointers(raw_obj->from(), raw_obj->to());
 
-  // Also visit all the embedded pointers in the corresponding instructions.
   RawCode* obj = raw_obj->ptr();
   intptr_t length = obj->pointer_offsets_length_;
-  uword entry_point = reinterpret_cast<uword>(obj->instructions_->ptr()) +
-      Instructions::HeaderSize();
-  for (intptr_t i = 0; i < length; i++) {
-    int32_t offset = obj->data_[i];
-    visitor->VisitPointer(reinterpret_cast<RawObject**>(entry_point + offset));
+  if (obj->is_alive_ == 1) {
+    // Also visit all the embedded pointers in the corresponding instructions.
+    uword entry_point = reinterpret_cast<uword>(obj->instructions_->ptr()) +
+        Instructions::HeaderSize();
+    for (intptr_t i = 0; i < length; i++) {
+      int32_t offset = obj->data_[i];
+      visitor->VisitPointer(
+          reinterpret_cast<RawObject**>(entry_point + offset));
+    }
   }
   return Code::InstanceSize(length);
 }

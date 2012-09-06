@@ -5,7 +5,8 @@
 #library("builtin");
 #import("dart:uri");
 
-void print(arg) {
+// Corelib 'print' implementation.
+void _print(arg) {
   _Logger._printString(arg.toString());
 }
 
@@ -13,6 +14,7 @@ class _Logger {
   static void _printString(String s) native "Logger_PrintString";
 }
 
+_getPrintClosure() => _print;
 
 // The URI that the entrypoint script was loaded from. Remembered so that
 // package imports can be resolved relative to it.
@@ -28,7 +30,7 @@ void _logResolution(String msg) {
   }
 }
 
-String _setPackageRoot(String packageRoot) {
+_setPackageRoot(String packageRoot) {
   // TODO(mattsh) - refactor windows drive and path handling code
   // so it can be used here if needed.
   _packageRoot = packageRoot;

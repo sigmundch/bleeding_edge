@@ -5,22 +5,24 @@
 // Returns null if no need to rename a node.
 typedef String Renamer(Node node);
 
+String unparse(Node node) {
+  Unparser unparser = new Unparser();
+  unparser.unparse(node);
+  return unparser.result;
+}
+
 class Unparser implements Visitor {
   Renamer rename;
-  StringBuffer sb;
+  final StringBuffer sb;
 
-  Unparser() {
+  String get result => sb.toString();
+
+  Unparser() : sb = new StringBuffer() {
     // TODO(smok): Move this to initializer once dart2js stops complaining
     // about closures in initializers.
     rename = (Node node) => null;
   }
-  Unparser.withRenamer(this.rename);
-
-  String unparse(Node node) {
-    sb = new StringBuffer();
-    visit(node);
-    return sb.toString();
-  }
+  Unparser.withRenamer(this.rename) : sb = new StringBuffer();
 
   void add(SourceString string) {
     string.printOn(sb);
@@ -33,6 +35,8 @@ class Unparser implements Visitor {
       sb.add(' ');
     }
   }
+
+  unparse(Node node) { visit(node); }
 
   visit(Node node) {
     if (node === null) return;
@@ -57,34 +61,37 @@ class Unparser implements Visitor {
     visit(node.expression);
   }
 
-  visitClassNode(ClassNode node) {
+  unparseClassWithBody(ClassNode node, Iterable<Node> members) {
     addToken(node.beginToken);
+    if (node.beginToken.stringValue == 'abstract') {
+      addToken(node.beginToken.next);
+    }
     visit(node.name);
     if (node.typeParameters !== null) {
       visit(node.typeParameters);
     }
-    sb.add(' ');
     if (node.extendsKeyword !== null) {
+      sb.add(' ');
       addToken(node.extendsKeyword);
       visit(node.superclass);
-      sb.add(' ');
     }
-    visit(node.interfaces);
+    if (!node.interfaces.isEmpty()) {
+      sb.add(' ');
+      visit(node.interfaces);
+    }
     if (node.defaultClause !== null) {
+      sb.add(' default ');
       visit(node.defaultClause);
-      sb.add(' ');
     }
-    sb.add('{\n');
-    NodeList body = node.body;
-    if (body !== null) {
-      Link nodes = body.nodes;
-      if (!nodes.isEmpty()) {
-        sb.add('  ');
-        nodes.printOn(sb, '\n  ');
-        sb.add('\n');
-      }
+    sb.add('{');
+    for (final member in members) {
+      visit(member);
     }
-    sb.add('}\n');
+    sb.add('}');
+  }
+
+  visitClassNode(ClassNode node) {
+    unparseClassWithBody(node, node.body.nodes);
   }
 
   visitConditional(Conditional node) {
@@ -168,7 +175,8 @@ class Unparser implements Visitor {
     visit(node.condition);
     visit(node.thenPart);
     if (node.hasElsePart) {
-      addToken(node.elseToken);
+      add(node.elseToken.value);
+      if (node.elsePart is !Block) sb.add(' ');
       visit(node.elsePart);
     }
   }
@@ -209,7 +217,7 @@ class Unparser implements Visitor {
   }
 
   visitLiteralList(LiteralList node) {
-    addToken(node.constKeyword);
+    if (node.constKeyword !== null) add(node.constKeyword.value);
     visit(node.typeArguments);
     visit(node.elements);
   }
@@ -221,7 +229,7 @@ class Unparser implements Visitor {
    */
   unparseNodeListFrom(NodeList node, Link<Node> from) {
     if (from.isEmpty()) return;
-    String delimiter = (node.delimiter === null) ? " " : "${node.delimiter}";
+    String delimiter = (node.delimiter === null) ? "" : "${node.delimiter}";
     visit(from.head);
     for (Link link = from.tail; !link.isEmpty(); link = link.tail) {
       sb.add(delimiter);
@@ -230,7 +238,7 @@ class Unparser implements Visitor {
   }
 
   visitNodeList(NodeList node) {
-    if (node.beginToken !== null) addToken(node.beginToken);
+    addToken(node.beginToken);
     if (node.nodes !== null) {
       unparseNodeListFrom(node, node.nodes);
     }
@@ -243,10 +251,10 @@ class Unparser implements Visitor {
 
   visitReturn(Return node) {
     add(node.beginToken.value);
-    if (node.hasExpression) {
+    if (node.hasExpression && node.beginToken.stringValue != '=>') {
       sb.add(' ');
-      visit(node.expression);
     }
+    visit(node.expression);
     if (node.endToken !== null) add(node.endToken.value);
   }
 
@@ -339,10 +347,10 @@ class Unparser implements Visitor {
   }
 
   visitDoWhile(DoWhile node) {
-    addToken(node.doKeyword);
+    add(node.doKeyword.value);
+    if (node.body is !Block) sb.add(' ');
     visit(node.body);
-    sb.add(' ');
-    addToken(node.whileKeyword);
+    add(node.whileKeyword.value);
     visit(node.condition);
     sb.add(node.endToken.value);
   }
@@ -350,7 +358,6 @@ class Unparser implements Visitor {
   visitWhile(While node) {
     addToken(node.whileKeyword);
     visit(node.condition);
-    sb.add(' ');
     visit(node.body);
   }
 
@@ -395,12 +402,12 @@ class Unparser implements Visitor {
 
   visitForIn(ForIn node) {
     add(node.forToken.value);
-    sb.add(' (');
+    sb.add('(');
     visit(node.declaredIdentifier);
     sb.add(' ');
     addToken(node.inToken);
     visit(node.expression);
-    sb.add(') ');
+    sb.add(')');
     visit(node.body);
   }
 
@@ -415,9 +422,7 @@ class Unparser implements Visitor {
   }
 
   visitLiteralMap(LiteralMap node) {
-    if (node.constKeyword !== null) {
-      add(node.constKeyword.value);
-    }
+    if (node.constKeyword !== null) add(node.constKeyword.value);
     if (node.typeArguments !== null) visit(node.typeArguments);
     visit(node.entries);
   }
@@ -425,21 +430,18 @@ class Unparser implements Visitor {
   visitLiteralMapEntry(LiteralMapEntry node) {
     visit(node.key);
     add(node.colonToken.value);
-    sb.add(' ');
     visit(node.value);
   }
 
   visitNamedArgument(NamedArgument node) {
     visit(node.name);
     add(node.colonToken.value);
-    sb.add(' ');
     visit(node.expression);
   }
 
   visitSwitchStatement(SwitchStatement node) {
     addToken(node.switchKeyword);
     visit(node.parenthesizedExpression);
-    sb.add(' ');
     visit(node.cases);
   }
 
@@ -451,6 +453,11 @@ class Unparser implements Visitor {
     visit(node.statements);
   }
 
+  unparseImportTag(String uri, [String prefix]) {
+    final suffix = prefix === null ? '' : ',prefix:"$prefix"';
+    sb.add('#import("$uri"$suffix);');
+  }
+
   visitScriptTag(ScriptTag node) {
     add(node.beginToken.value);
     visit(node.tag);
@@ -458,7 +465,7 @@ class Unparser implements Visitor {
     visit(node.argument);
     if (node.prefixIdentifier !== null) {
       visit(node.prefixIdentifier);
-      sb.add(': ');
+      sb.add(':');
       visit(node.prefix);
     }
     sb.add(')');
@@ -466,11 +473,10 @@ class Unparser implements Visitor {
   }
 
   visitTryStatement(TryStatement node) {
-    addToken(node.tryKeyword);
+    add(node.tryKeyword.value);
     visit(node.tryBlock);
     visit(node.catchBlocks);
     if (node.finallyKeyword !== null) {
-      sb.add(' ');
       addToken(node.finallyKeyword);
       visit(node.finallyBlock);
     }
@@ -485,11 +491,12 @@ class Unparser implements Visitor {
 
   visitCatchBlock(CatchBlock node) {
     addToken(node.onKeyword);
-    visit(node.type);
-    sb.add(' ');
-    addToken(node.catchKeyword);
+    if (node.type !== null) {
+      visit(node.type);
+      sb.add(' ');
+    }
+    add(node.catchKeyword.value);
     visit(node.formals);
-    sb.add(' ');
     visit(node.block);
   }
 

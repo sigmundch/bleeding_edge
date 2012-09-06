@@ -65,6 +65,7 @@ void parseCommandLine(List<OptionHandler> handlers, List<String> argv) {
 }
 
 void compile(List<String> argv) {
+  bool isWindows = (Platform.operatingSystem == 'windows');
   Uri cwd = getCurrentDirectory();
   bool throwOnError = false;
   bool showWarnings = true;
@@ -76,7 +77,7 @@ void compile(List<String> argv) {
   List<String> options = new List<String>();
   bool explicitOut = false;
   bool wantHelp = false;
-  bool enableColors = true;
+  bool enableColors = false;
 
   passThrough(String argument) => options.add(argument);
 
@@ -125,7 +126,10 @@ void compile(List<String> argv) {
     new OptionHandler('--out=.+|-o.+', setOutput),
     new OptionHandler('--allow-mock-compilation', passThrough),
     new OptionHandler('--minify', passThrough),
+    new OptionHandler('--cut-declaration-types', passThrough),
+    // TODO(ahe): Remove the --no-colors option.
     new OptionHandler('--no-colors', (_) => enableColors = false),
+    new OptionHandler('--colors', (_) => enableColors = true),
     new OptionHandler('--enable[_-]checked[_-]mode|--checked',
                       (_) => passThrough('--enable-checked-mode')),
     new OptionHandler(@'--help|/\?|/h', (_) => wantHelp = true),
@@ -162,17 +166,22 @@ void compile(List<String> argv) {
     try {
       source = readAll(uriPathToNative(uri.path));
     } on FileIOException catch (ex) {
-      throw 'Error: Cannot read "${relativize(cwd, uri)}" (${ex.osError}).';
+      throw 'Error: Cannot read "${relativize(cwd, uri, isWindows)}" '
+            '(${ex.osError}).';
     }
     dartBytesRead += source.length;
     sourceFiles[uri.toString()] =
-      new SourceFile(relativize(cwd, uri), source);
+      new SourceFile(relativize(cwd, uri, isWindows), source);
     return new Future.immediate(source);
   }
 
   void info(var message, [api.Diagnostic kind = api.Diagnostic.VERBOSE_INFO]) {
     if (!verbose && kind === api.Diagnostic.VERBOSE_INFO) return;
-    print('${colors.green("info:")} $message');
+    if (enableColors) {
+      print('${colors.green("info:")} $message');
+    } else {
+      print('info: $message');
+    }
   }
 
   bool isAborting = false;
@@ -219,8 +228,7 @@ void compile(List<String> argv) {
       print(color(message));
     } else if (fatal || showWarnings) {
       SourceFile file = sourceFiles[uri.toString()];
-      print(file.getLocationMessage(color(message), begin, end, true,
-                                    color));
+      print(file.getLocationMessage(color(message), begin, end, true, color));
     }
     if (fatal && throwOnError) {
       isAborting = true;
@@ -233,7 +241,6 @@ void compile(List<String> argv) {
     packageRoot = uri.resolve('./packages/');
   }
 
-  info('compiling $uri');
   info('package root is $packageRoot');
 
   // TODO(ahe): We expect the future to be complete and call value
@@ -243,13 +250,16 @@ void compile(List<String> argv) {
   if (code === null) {
     fail('Error: Compilation failed.');
   }
+  String sourceMapFileName =
+      sourceMapOut.path.substring(sourceMapOut.path.lastIndexOf('/') + 1);
+  code = '$code\n//@ sourceMappingURL=${sourceMapFileName}';
   writeString(out, code);
   int jsBytesWritten = code.length;
   info('compiled $dartBytesRead bytes Dart -> $jsBytesWritten bytes JS '
-       'in ${relativize(cwd, out)}');
+       'in ${relativize(cwd, out, isWindows)}');
   if (!explicitOut) {
     String input = uriPathToNative(arguments[0]);
-    String output = relativize(cwd, out);
+    String output = relativize(cwd, out, isWindows);
     print('Dart file $input compiled to JavaScript: $output');
   }
 }
@@ -291,9 +301,10 @@ void compilerMain(Options options) {
 }
 
 void help() {
-  // This message should be no longer than 22 lines. The default
+  // This message should be no longer than 20 lines. The default
   // terminal size normally 80x24. Two lines are used for the prompts
-  // before and after running the compiler.
+  // before and after running the compiler. Another two lines may be
+  // used to print an error message.
   print('''
 Usage: dart2js [options] dartfile
 
@@ -333,8 +344,8 @@ Supported options:
   --suppress-warnings
     Do not display any warnings.
 
-  --no-colors
-    Do not add colors to diagnostic messages.
+  --colors
+    Add colors to diagnostic messages.
 
 The following options are only used for compiler development and may
 be removed in a future version:

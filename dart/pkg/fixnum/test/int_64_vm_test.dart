@@ -34,7 +34,7 @@ void main() {
   test.doTestBinary(new BinaryOp("remainder", (a, b) => a.remainder(b)));
 }
 
-final int DISCARD = 0;
+const int DISCARD = 0;
 
 int64 _randomInt64() {
   int i = 0;
@@ -97,8 +97,8 @@ class ShiftOp extends Op {
 }
 
 class int64VMTest {
-  static final int BASE_VALUES = 32;
-  static final int RANDOM_TESTS = 32;
+  static const int BASE_VALUES = 32;
+  static const int RANDOM_TESTS = 32;
   List<int64> TEST_VALUES;
   
   int64VMTest() {
@@ -188,7 +188,7 @@ class int64VMTest {
       Expect.fail("${op.name}: val = $val");
     }
   }
-  
+
   void doTestUnary(UnaryOp op) {
     print("Testing operator ${op.name}");
     for (int i = 0; i < TEST_VALUES.length; i++) {
@@ -199,14 +199,14 @@ class int64VMTest {
       _doTestUnary(op, randomLong);
     }
   }
-  
+
   void _doTestBinary(BinaryOp op, int64 val0, int64 val1) {
     // print("Test val0 = $val0, val1 = $val1");
     var refException = null;
     int ref = -1;
     try {
       ref = op.ref(val0.toInt(), val1.toInt());
-    } catch (Exception e) {
+    } on Exception catch (e) {
       refException = e;
     }
     var testException = null;
@@ -224,7 +224,7 @@ class int64VMTest {
       if (val1 != val1_save) {
         print("Test altered second argument");
       }
-    } catch (Exception e) {
+    } on Exception catch (e) {
       testException = e;
     }
     if (testException is IntegerDivisionByZeroException &&

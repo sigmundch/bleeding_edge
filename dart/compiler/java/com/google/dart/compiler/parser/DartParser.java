@@ -33,6 +33,7 @@ import com.google.dart.compiler.ast.DartDirective;
 import com.google.dart.compiler.ast.DartDoWhileStatement;
 import com.google.dart.compiler.ast.DartDoubleLiteral;
 import com.google.dart.compiler.ast.DartEmptyStatement;
+import com.google.dart.compiler.ast.DartExportDirective;
 import com.google.dart.compiler.ast.DartExprStmt;
 import com.google.dart.compiler.ast.DartExpression;
 import com.google.dart.compiler.ast.DartField;
@@ -137,6 +138,7 @@ public class DartParser extends CompletionHooksParserBase {
 
   // Pseudo-keywords that should also be valid identifiers.
   private static final String ABSTRACT_KEYWORD = "abstract";
+  private static final String AS_KEYWORD = "as";
   private static final String ASSERT_KEYWORD = "assert";
   private static final String CALL_KEYWORD = "call";
   private static final String DYNAMIC_KEYWORD = "Dynamic";
@@ -165,6 +167,7 @@ public class DartParser extends CompletionHooksParserBase {
 
   public static final String[] PSEUDO_KEYWORDS = {
     ABSTRACT_KEYWORD,
+    AS_KEYWORD,
     ASSERT_KEYWORD,
     DYNAMIC_KEYWORD,
     EQUALS_KEYWORD,
@@ -336,7 +339,7 @@ public class DartParser extends CompletionHooksParserBase {
         }
         // Parsing was successful, add node.
         if (node != null) {
-          node.setMetadata(metadata);
+          setMetadata(node, metadata);
           unit.getTopLevelNodes().add(node);
           // Only "class" can be top-level abstract element.
           if (isTopLevelAbstract && !isParsingClass) {
@@ -357,6 +360,31 @@ public class DartParser extends CompletionHooksParserBase {
       return done(unit);
     } catch (StringInterpolationParseError exception) {
       throw new InternalCompilerException("Failed to parse " + source.getUri(), exception);
+    }
+  }
+
+  /**
+   * Set the metadata associated with the given node to the given annotations.
+   * 
+   * @param node the node with which the metadata is to be associated
+   * @param metadata the metadata to be associated with the node
+   */
+  private void setMetadata(DartNodeWithMetadata node, List<DartAnnotation> metadata) {
+    node.setMetadata(metadata);
+    if (node instanceof DartDeclaration<?>) {
+      for (DartAnnotation annotation : metadata) {
+        DartExpression nameNode = annotation.getName();
+        if (nameNode instanceof DartIdentifier) {
+          String name = ((DartIdentifier) nameNode).getName();
+          if (name.equals("deprecated")) {
+            DartDeclaration<?> declaration = (DartDeclaration<?>) node;
+            declaration.setObsoleteMetadata(declaration.getObsoleteMetadata().makeDeprecated());
+          } else if (name.equals("override")) {
+            DartDeclaration<?> declaration = (DartDeclaration<?>) node;
+            declaration.setObsoleteMetadata(declaration.getObsoleteMetadata().makeOverride());
+          }
+        }
+      }
     }
   }
 
@@ -408,17 +436,24 @@ public class DartParser extends CompletionHooksParserBase {
       DartLibraryDirective libraryDirective = parseLibraryDirective();
       libUnit.setName(libraryDirective.getLibraryName());
     }
-    while (peekPseudoKeyword(0, IMPORT_KEYWORD)) {
-      DartImportDirective importDirective = parseImportDirective();
-      LibraryNode importPath;
-      if (importDirective.getPrefix() != null) {
-          importPath =
-              new LibraryNode(importDirective);
-      } else {
-        importPath = new LibraryNode(importDirective.getLibraryUri().getValue());
+    while (peekPseudoKeyword(0, IMPORT_KEYWORD) || peekPseudoKeyword(0, EXPORT_KEYWORD)) {
+      if (peekPseudoKeyword(0, IMPORT_KEYWORD)) {
+        DartImportDirective importDirective = parseImportDirective();
+        LibraryNode importPath;
+        if (importDirective.getPrefix() != null) {
+          importPath = new LibraryNode(importDirective);
+        } else {
+          importPath = new LibraryNode(importDirective.getLibraryUri().getValue());
+        }
+        importPath.setSourceInfo(importDirective.getSourceInfo());
+        libUnit.addImportPath(importPath);
       }
-      importPath.setSourceInfo(importDirective.getSourceInfo());
-      libUnit.addImportPath(importPath);
+      if (peekPseudoKeyword(0, EXPORT_KEYWORD)) {
+        DartExportDirective exportDirective = parseExportDirective();
+        LibraryNode importPath = new LibraryNode(exportDirective);
+        importPath.setSourceInfo(exportDirective.getSourceInfo());
+        libUnit.addExportPath(importPath);
+      }
     }
     while (peekPseudoKeyword(0, PART_KEYWORD)) {
       if (peekPseudoKeyword(1, OF_KEYWORD)) {
@@ -485,22 +520,28 @@ public class DartParser extends CompletionHooksParserBase {
           break;
         }
       }
-      libraryDirective.setMetadata(metadata);
+      setMetadata(libraryDirective, metadata);
       unit.getDirectives().add(libraryDirective);
     }
-    while (peekPseudoKeyword(0, IMPORT_KEYWORD)) {
-      DartImportDirective importDirective = parseImportDirective();
-      importDirective.setMetadata(metadata);
-      unit.getDirectives().add(importDirective);
+    while (peekPseudoKeyword(0, IMPORT_KEYWORD) || peekPseudoKeyword(0, EXPORT_KEYWORD)) {
+      if (peekPseudoKeyword(0, IMPORT_KEYWORD)) {
+        DartImportDirective importDirective = parseImportDirective();
+        setMetadata(importDirective, metadata);
+        unit.getDirectives().add(importDirective);
+      } else {
+        DartExportDirective exportDirective = parseExportDirective();
+        setMetadata(exportDirective, metadata);
+        unit.getDirectives().add(exportDirective);
+      }
     }
     while (peekPseudoKeyword(0, PART_KEYWORD)) {
       if (peekPseudoKeyword(1, OF_KEYWORD)) {
         DartPartOfDirective partOfDirective = parsePartOfDirective();
-        partOfDirective.setMetadata(metadata);
+        setMetadata(partOfDirective, metadata);
         unit.getDirectives().add(partOfDirective);
       } else {
         DartSourceDirective partDirective = parsePartDirective();
-        partDirective.setMetadata(metadata);
+        setMetadata(partDirective, metadata);
         unit.getDirectives().add(partDirective);
       }
     }
@@ -517,20 +558,20 @@ public class DartParser extends CompletionHooksParserBase {
           break;
         }
       }
-      libraryDirective.setMetadata(metadata);
+      setMetadata(libraryDirective, metadata);
       unit.getDirectives().add(libraryDirective);
       done(libraryDirective);
     }
     while (peek(0) == Token.IMPORT) {
       beginImportDirective();
       DartImportDirective importDirective = parseObsoleteImportDirective();
-      importDirective.setMetadata(metadata);
+      setMetadata(importDirective, metadata);
       unit.getDirectives().add(done(importDirective));
     }
     while (peek(0) == Token.SOURCE) {
       beginSourceDirective();
       DartSourceDirective sourceDirective = parseSourceDirective();
-      sourceDirective.setMetadata(metadata);
+      setMetadata(sourceDirective, metadata);
       unit.getDirectives().add(done(sourceDirective));
     }
     while (peek(0) == Token.RESOURCE) {
@@ -539,7 +580,7 @@ public class DartParser extends CompletionHooksParserBase {
     while (peek(0) == Token.NATIVE) {
       beginNativeDirective();
       DartNativeDirective nativeDirective = parseNativeDirective();
-      nativeDirective.setMetadata(metadata);
+      setMetadata(nativeDirective, metadata);
       unit.getDirectives().add(done(nativeDirective));
     }
   }
@@ -574,6 +615,33 @@ public class DartParser extends CompletionHooksParserBase {
     return new DartLibraryDirective(libname);
   }
 
+  protected DartExportDirective parseExportDirective() {
+    beginExportDirective();
+    next(); // "export"
+    beginLiteral();
+    expect(Token.STRING);
+    DartStringLiteral libUri = done(DartStringLiteral.get(ctx.getTokenString()));
+
+    List<ImportCombinator> combinators = new ArrayList<ImportCombinator>();
+    while (peekPseudoKeyword(0, HIDE_KEYWORD) || peekPseudoKeyword(0, SHOW_KEYWORD)) {
+      if (optionalPseudoKeyword(HIDE_KEYWORD)) {
+        List<DartIdentifier> hiddenNames = parseIdentifierList();
+        combinators.add(new ImportHideCombinator(hiddenNames));
+      } else if (optionalPseudoKeyword(SHOW_KEYWORD)) {
+        List<DartIdentifier> shownNames = parseIdentifierList();
+        combinators.add(new ImportShowCombinator(shownNames));
+      }
+    }
+
+    if (!optional(Token.SEMICOLON)) {
+      // If there is no semicolon, then we probably don't want to consume the next token. It might
+      // make sense to advance to the next valid token for a directive or top-level declaration, but
+      // our recovery mechanism isn't quite sophisticated enough for that.
+      reportUnexpectedToken(position(), Token.SEMICOLON, peek(0));
+    }
+    return done(new DartExportDirective(libUri, combinators));
+  }
+
   protected DartImportDirective parseImportDirective() {
     beginImportDirective();
     next(); // "import"
@@ -603,21 +671,13 @@ public class DartParser extends CompletionHooksParserBase {
       }
     }
 
-    boolean export = false;
-    if (optional(Token.BIT_AND)) {
-      if (optionalPseudoKeyword(EXPORT_KEYWORD)) {
-        export = true;
-      } else {
-        reportError(position(), ParserErrorCode.EXPECTED_EXPORT);
-      }
-    }
     if (!optional(Token.SEMICOLON)) {
       // If there is no semicolon, then we probably don't want to consume the next token. It might
       // make sense to advance to the next valid token for a directive or top-level declaration, but
       // our recovery mechanism isn't quite sophisticated enough for that.
       reportUnexpectedToken(position(), Token.SEMICOLON, peek(0));
     }
-    return done(new DartImportDirective(libUri, prefix, combinators, export));
+    return done(new DartImportDirective(libUri, prefix, combinators));
   }
 
   /**
@@ -930,7 +990,7 @@ public class DartParser extends CompletionHooksParserBase {
         List<DartAnnotation> metadata = parseMetadata();
         DartNodeWithMetadata member = parseFieldOrMethod(true);
         if (member != null) {
-          member.setMetadata(metadata);
+          setMetadata(member, metadata);
           members.add(member);
         }
         // Recover at a semicolon
@@ -1916,11 +1976,11 @@ public class DartParser extends CompletionHooksParserBase {
         reportError(name, ParserErrorCode.EXTERNAL_ONLY_METHOD);
       }
       DartField field = done(new DartField(name, modifiers, null, value));
-      field.setMetadata(fieldMetadata);
+      setMetadata(field, fieldMetadata);
       fields.add(field);
     } while (optional(Token.COMMA));
     DartFieldDefinition definition = new DartFieldDefinition(type, fields);
-    definition.setMetadata(metadata);
+    setMetadata(definition, metadata);
     return done(definition);
   }
 
@@ -2127,7 +2187,7 @@ public class DartParser extends CompletionHooksParserBase {
     }
 
     DartParameter parameter = new DartParameter(paramName, type, functionParams, defaultExpr, modifiers);
-    parameter.setMetadata(metadata);
+    setMetadata(parameter, metadata);
     return done(parameter);
   }
 
@@ -2770,6 +2830,9 @@ public class DartParser extends CompletionHooksParserBase {
    */
   private DartExpression parseLiteral() {
     beginLiteral();
+    if (PSEUDO_KEYWORDS_SET.contains(peek(0).getSyntax())) {
+      return done(parseIdentifier());
+    }
     switch (peek(0)) {
       case NULL_LITERAL: {
         consume(Token.NULL_LITERAL);
@@ -3826,7 +3889,7 @@ public class DartParser extends CompletionHooksParserBase {
         value = parseExpression();
       }
       DartVariable variable = done(new DartVariable(name, value));
-      variable.setMetadata(metadata);
+      setMetadata(variable, metadata);
       idents.add(variable);
     } while (optional(Token.COMMA));
 
@@ -3921,7 +3984,7 @@ public class DartParser extends CompletionHooksParserBase {
     if (!metadata.isEmpty() && statement instanceof DartVariableStatement) {
       DartVariableStatement variableStatement = (DartVariableStatement) statement;
       if (!variableStatement.getVariables().isEmpty()) {
-        variableStatement.getVariables().get(0).setMetadata(metadata);
+        setMetadata(variableStatement.getVariables().get(0), metadata);
       }
     }
     for (int i = labels.size() - 1; i >= 0; i--) {
@@ -4383,8 +4446,9 @@ public class DartParser extends CompletionHooksParserBase {
     expect(Token.LPAREN);
     DartExpression condition = parseExpression();
     expectCloseParen();
+    int closeParenOffset = ctx.getTokenLocation().getBegin();
     DartStatement body = parseLoopStatement();
-    return done(new DartWhileStatement(condition, body));
+    return done(new DartWhileStatement(condition, closeParenOffset, body));
   }
 
   /**
@@ -4490,9 +4554,10 @@ public class DartParser extends CompletionHooksParserBase {
 
       DartExpression iterable = parseExpression();
       expectCloseParen();
+      int closeParenOffset = ctx.getTokenLocation().getBegin();
 
       DartStatement body = parseLoopStatement();
-      return done(new DartForInStatement(setup, iterable, body));
+      return done(new DartForInStatement(setup, iterable, closeParenOffset, body));
 
     } else if (optional(Token.SEMICOLON)) {
 
@@ -4509,9 +4574,10 @@ public class DartParser extends CompletionHooksParserBase {
         next = parseExpressionList();
       }
       expectCloseParen();
+      int closeParenOffset = ctx.getTokenLocation().getBegin();
 
       DartStatement body = parseLoopStatement();
-      return done(new DartForStatement(setup, condition, next, body));
+      return done(new DartForStatement(setup, condition, next, closeParenOffset, body));
     } else {
       reportUnexpectedToken(position(), null, peek(0));
       return done(parseErrorStatement());
@@ -4532,7 +4598,7 @@ public class DartParser extends CompletionHooksParserBase {
     expect(Token.LPAREN);
     DartExpression condition = parseExpression();
     expectCloseParen();
-    int closeParentOffset = ctx.getTokenLocation().getBegin();
+    int closeParenOffset = ctx.getTokenLocation().getBegin();
     DartStatement yes = parseStatement();
     DartStatement no = null;
     int elseTokenOffset = 0;
@@ -4540,7 +4606,7 @@ public class DartParser extends CompletionHooksParserBase {
       elseTokenOffset = ctx.getTokenLocation().getBegin();
       no = parseStatement();
     }
-    return done(new DartIfStatement(condition, closeParentOffset, yes, elseTokenOffset, no));
+    return done(new DartIfStatement(condition, closeParenOffset, yes, elseTokenOffset, no));
   }
 
   /**
@@ -4720,7 +4786,7 @@ public class DartParser extends CompletionHooksParserBase {
       reportError(name, ParserErrorCode.EXPECTED_VAR_FINAL_OR_TYPE);
     }
     DartParameter parameter = done(new DartParameter(name, type, null, null, modifiers));
-    parameter.setMetadata(metadata);
+    setMetadata(parameter, metadata);
     return parameter;
   }
 
@@ -4771,8 +4837,7 @@ public class DartParser extends CompletionHooksParserBase {
       if (peekPseudoKeyword(0, ON_KEYWORD)) {
         beginCatchClause();
         next();
-        beginTypeAnnotation();
-        DartTypeNode exceptionType = done(new DartTypeNode(parseQualified(false)));
+        DartTypeNode exceptionType = parseTypeAnnotation();
         DartParameter exception = null;
         DartParameter stackTrace = null;
         if (optional(Token.CATCH)) {
@@ -4781,7 +4846,7 @@ public class DartParser extends CompletionHooksParserBase {
           List<DartAnnotation> metadata = parseMetadata();
           DartIdentifier exceptionName = parseIdentifier();
           exception = done(new DartParameter(exceptionName, exceptionType, null, null, Modifiers.NONE));
-          exception.setMetadata(metadata);
+          setMetadata(exception, metadata);
           if (optional(Token.COMMA)) {
             beginCatchParameter();
             DartIdentifier stackName = parseIdentifier();
@@ -4795,7 +4860,7 @@ public class DartParser extends CompletionHooksParserBase {
           beginIdentifier();
           DartIdentifier exceptionName = done(new DartIdentifier("e" + Long.toHexString(System.currentTimeMillis())));
           exception = done(new DartParameter(exceptionName, exceptionType, null, null, Modifiers.NONE));
-          exception.setMetadata(metadata);
+          setMetadata(exception, metadata);
         }
         DartBlock block = parseBlock();
         catches.add(done(new DartCatchBlock(block, exception, stackTrace)));
@@ -4809,10 +4874,10 @@ public class DartParser extends CompletionHooksParserBase {
           List<DartAnnotation> metadata = parseMetadata();
           DartIdentifier exceptionName = parseIdentifier();
           exception = done(new DartParameter(exceptionName, null , null, null, Modifiers.NONE));
-          exception.setMetadata(metadata);
+          setMetadata(exception, metadata);
         } else {
           // Old-style parameter
-          //reportError(position(), ParserErrorCode.DEPRECATED_CATCH);
+          reportError(position(), ParserErrorCode.DEPRECATED_CATCH);
           exception = parseCatchParameter();
         }
         DartParameter stackTrace = null;
@@ -4822,10 +4887,10 @@ public class DartParser extends CompletionHooksParserBase {
             List<DartAnnotation> metadata = parseMetadata();
             DartIdentifier stackName = parseIdentifier();
             stackTrace = done(new DartParameter(stackName, null, null, null, Modifiers.NONE));
-            stackTrace.setMetadata(metadata);
+            setMetadata(stackTrace, metadata);
           } else {
             // Old-style parameter
-            //reportError(position(), ParserErrorCode.DEPRECATED_CATCH);
+            reportError(position(), ParserErrorCode.DEPRECATED_CATCH);
             stackTrace = parseCatchParameter();
           }
         }

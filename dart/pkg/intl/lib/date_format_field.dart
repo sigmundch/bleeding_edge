@@ -21,7 +21,7 @@ class _DateFormatField {
    * Return the width of [pattern]. Different widths represent different
    * formatting options. See the comment for DateFormat for details.
    */
-  int get width() => pattern.length;
+  int get width => pattern.length;
 
   String fullPattern() => pattern;
 
@@ -145,7 +145,7 @@ class _DateFormatPatternField extends _DateFormatField {
        case 'Z': break; // time zone RFC
        default: return;
      }
-   } catch (var e) { throwFormatException(input); }
+   } catch (e) { throwFormatException(input); }
  }
 
   /** Formatting logic if we are of type FIELD */
@@ -175,7 +175,7 @@ class _DateFormatPatternField extends _DateFormatField {
   }
 
   /** Return the symbols for our current locale. */
-  DateSymbols get symbols() => dateTimeSymbols[parent.locale];
+  DateSymbols get symbols => dateTimeSymbols[parent.locale];
 
   formatEra(Date date) {
     var era = date.year > 0 ? 1 : 0;

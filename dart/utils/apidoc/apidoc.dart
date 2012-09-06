@@ -237,7 +237,13 @@ class Apidoc extends doc.Dartdoc {
 
   final Htmldoc htmldoc;
 
-  static final disqusShortname = 'dartapidocs';
+  static const disqusShortname = 'dartapidocs';
+
+  // A set of type names (TypeMirror.simpleName values) to ignore while
+  // looking up information from MDN data.  TODO(eub, jacobr): fix up the MDN
+  // import scripts so they run correctly and generate data that doesn't have
+  // any entries that need to be ignored.
+  static Set<String> _mdnTypeNamesToSkip = null;
 
   /**
    * The URL to the page on MDN that content was pulled from for the current
@@ -251,6 +257,11 @@ class Apidoc extends doc.Dartdoc {
     this.outputDir = outputDir;
     this.mode = mode;
     this.generateAppCache = generateAppCache;
+
+    // Skip bad entries in the checked-in mdn/database.json:
+    //  * UnknownElement has a top-level Gecko DOM page in German.
+    if (_mdnTypeNamesToSkip == null)
+      _mdnTypeNamesToSkip = new Set.from(['UnknownElement']);
 
     mainTitle = 'Dart API Reference';
     mainUrl = 'http://dartlang.org';
@@ -448,6 +459,12 @@ class Apidoc extends doc.Dartdoc {
    * scraped from MDN.
    */
   includeMdnTypeComment(TypeMirror type) {
+    if (_mdnTypeNamesToSkip.contains(type.simpleName)) {
+      print('Skipping MDN type ${type.simpleName}');
+      return null;
+    }
+
+    var typeString = '';
     if (type.library.simpleName == HTML_LIBRARY_NAME) {
       // If it's an HTML type, try to map it to a base DOM type so we can find
       // the MDN docs.
@@ -459,13 +476,13 @@ class Apidoc extends doc.Dartdoc {
       // Use the corresponding DOM type when searching MDN.
       // TODO(rnystrom): Shame there isn't a simpler way to get the one item
       // out of a singleton Set.
-      type = domTypes.iterator().next();
-    } else if (type.library.simpleName != DOM_LIBRARY_NAME) {
+      typeString = domTypes.iterator().next();
+    } else {
       // Not a DOM type.
       return null;
     }
 
-    final mdnType = mdn[type.simpleName];
+    final mdnType = mdn[typeString];
     if (mdnType == null) return null;
     if (mdnType['skipped'] != null) return null;
 
@@ -480,8 +497,9 @@ class Apidoc extends doc.Dartdoc {
    */
   includeMdnMemberComment(MemberMirror member) {
     var library = findLibrary(member);
+    var memberString = '';
     if (library.simpleName == HTML_LIBRARY_NAME) {
-      // If it's an HTML type, try to map it to a base DOM type so we can find
+      // If it's an HTML type, try to map it to a DOM type name so we can find
       // the MDN docs.
       final domMembers = _diff.htmlToDom[member.qualifiedName];
 
@@ -491,8 +509,8 @@ class Apidoc extends doc.Dartdoc {
       // Use the corresponding DOM member when searching MDN.
       // TODO(rnystrom): Shame there isn't a simpler way to get the one item
       // out of a singleton Set.
-      member = domMembers.iterator().next();
-    } else if (library.simpleName != DOM_LIBRARY_NAME) {
+      memberString = domMembers.iterator().next();
+    } else {
       // Not a DOM type.
       return null;
     }
@@ -500,14 +518,18 @@ class Apidoc extends doc.Dartdoc {
     // Ignore top-level functions.
     if (member.isTopLevel) return null;
 
-    final mdnType = mdn[member.surroundingDeclaration.simpleName];
-    if (mdnType == null) return null;
-    var nameToFind = member.simpleName;
     var mdnMember = null;
-    for (final candidateMember in mdnType['members']) {
-      if (candidateMember['name'] == nameToFind) {
-        mdnMember = candidateMember;
-        break;
+    var mdnType =  null;
+    var pieces = memberString.split('.');
+    if (pieces.length == 2) {
+      mdnType = mdn[pieces[0]];
+      if (mdnType == null) return null;
+      var nameToFind = pieces[1];
+      for (final candidateMember in mdnType['members']) {
+        if (candidateMember['name'] == nameToFind) {
+          mdnMember = candidateMember;
+          break;
+        }
       }
     }
 

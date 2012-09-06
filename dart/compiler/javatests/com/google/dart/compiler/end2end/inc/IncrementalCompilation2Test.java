@@ -3,11 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 package com.google.dart.compiler.end2end.inc;
 
-import static com.google.dart.compiler.DartCompiler.EXTENSION_DEPS;
-import static com.google.dart.compiler.DartCompiler.EXTENSION_TIMESTAMP;
-import static com.google.dart.compiler.common.ErrorExpectation.assertErrors;
-import static com.google.dart.compiler.common.ErrorExpectation.errEx;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -20,14 +15,19 @@ import com.google.dart.compiler.DartSource;
 import com.google.dart.compiler.DefaultCompilerConfiguration;
 import com.google.dart.compiler.LibrarySource;
 import com.google.dart.compiler.MockArtifactProvider;
-import com.google.dart.compiler.Source;
 import com.google.dart.compiler.PackageLibraryManager;
+import com.google.dart.compiler.Source;
 import com.google.dart.compiler.UrlSource;
 import com.google.dart.compiler.ast.DartUnit;
 import com.google.dart.compiler.ast.LibraryUnit;
 import com.google.dart.compiler.common.ErrorExpectation;
 import com.google.dart.compiler.resolver.ResolverErrorCode;
 import com.google.dart.compiler.resolver.TypeErrorCode;
+
+import static com.google.dart.compiler.DartCompiler.EXTENSION_DEPS;
+import static com.google.dart.compiler.DartCompiler.EXTENSION_TIMESTAMP;
+import static com.google.dart.compiler.common.ErrorExpectation.assertErrors;
+import static com.google.dart.compiler.common.ErrorExpectation.errEx;
 
 import junit.framework.AssertionFailedError;
 
@@ -606,8 +606,6 @@ public class IncrementalCompilation2Test extends CompilerTestCase {
             "library application;",
             "import 'A.dart' as p;",
             "import 'B.dart' as p;",
-//            "import 'A.dart';",
-//            "import 'B.dart';",
             ""));
     appSource.setContent(
         "A.dart",
@@ -627,8 +625,7 @@ public class IncrementalCompilation2Test extends CompilerTestCase {
     compile();
     assertErrors(
         errors,
-        errEx("A.dart", ResolverErrorCode.DUPLICATE_TOP_LEVEL_DECLARATION, 3, 5, 7),
-        errEx("B.dart", ResolverErrorCode.DUPLICATE_TOP_LEVEL_DECLARATION, 3, 5, 7));
+        errEx(APP, ResolverErrorCode.DUPLICATE_TOP_LEVEL_DECLARATION_IMPORT, 1, 1, 0));
   }
 
   public void test_reportMissingSource() throws Exception {
@@ -971,7 +968,8 @@ public class IncrementalCompilation2Test extends CompilerTestCase {
         makeCode(
             "// filler filler filler filler filler filler filler filler filler filler filler",
             "library test.B;",
-            "import 'A.dart' as libA hide TypeAC & export;",
+            "import 'A.dart' as libA hide TypeAC;",
+            "export 'A.dart' show TypeAA, TypeAB;",
             "class TypeBA {}",
             "class TypeBB {}",
             "class TypeBC {}",
@@ -1052,7 +1050,8 @@ public class IncrementalCompilation2Test extends CompilerTestCase {
    * <p>
    * http://code.google.com/p/dart/issues/detail?id=4238
    */
-  public void test_typesPropagation_html_query() throws Exception {
+  //TODO(pquitslund): re-enable (dartbug.com/4925).
+  public void Xtest_typesPropagation_html_query() throws Exception {
     appSource.setContent(
         APP,
         makeCode(
@@ -1140,12 +1139,13 @@ public class IncrementalCompilation2Test extends CompilerTestCase {
             "import 'A.dart' as as;",
             "import 'A.dart' as assert;",
             "import 'A.dart' as Dynamic;",
-            "import 'A.dart' as equals;",
+            "import 'A.dart' as equals;", // TODO(brianwilkerson) remove
+            "import 'A.dart' as external;",
             "import 'A.dart' as factory;",
             "import 'A.dart' as get;",
             "import 'A.dart' as implements;",
-            "import 'A.dart' as interface;",
-            "import 'A.dart' as negate;",
+            "import 'A.dart' as interface;", // TODO(brianwilkerson) remove
+            "import 'A.dart' as negate;", // TODO(brianwilkerson) remove
             "import 'A.dart' as operator;",
             "import 'A.dart' as set;",
             "import 'A.dart' as static;",
@@ -1157,7 +1157,7 @@ public class IncrementalCompilation2Test extends CompilerTestCase {
     // do compile, no errors expected
     compile();
     {
-      assertEquals(13, errors.size());
+      assertEquals(15, errors.size());
       for (DartCompilationError error : errors) {
         assertEquals(ResolverErrorCode.BUILT_IN_IDENTIFIER_AS_IMPORT_PREFIX, error.getErrorCode());
       }

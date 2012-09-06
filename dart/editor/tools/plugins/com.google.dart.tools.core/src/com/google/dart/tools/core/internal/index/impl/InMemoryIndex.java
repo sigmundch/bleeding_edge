@@ -53,6 +53,8 @@ import com.google.dart.tools.core.model.DartLibrary;
 import com.google.dart.tools.core.model.DartModel;
 import com.google.dart.tools.core.model.DartModelException;
 import com.google.dart.tools.core.model.DartProject;
+import com.google.dart.tools.core.model.DartSdk;
+import com.google.dart.tools.core.model.DartSdkManager;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
@@ -115,7 +117,7 @@ public class InMemoryIndex implements Index {
   /**
    * The name of the file containing the initial state of the index.
    */
-  private static final String INITIAL_INDEX_FILE = "initial_index.idx";
+  //private static final String INITIAL_INDEX_FILE = "initial_index.idx";
 
   /**
    * Return the unique instance of this class.
@@ -299,7 +301,7 @@ public class InMemoryIndex implements Index {
       indexStore.clear();
       if (!initializeIndexFrom(getIndexFile())) {
         if (DartCoreDebug.TRACE_INDEX_STATISTICS) {
-          logIndexStats("Clearing index after failing to read from file");
+          logIndexStats("Clearing index after failing to read from index file");
         }
         indexStore.clear();
         if (!initializeBundledLibraries()) {
@@ -348,22 +350,17 @@ public class InMemoryIndex implements Index {
    * @param callback the callback that will be invoked when the operation is reached in the queue
    */
   public void notify(final NotifyCallback callback) {
-    queue.enqueue(new IndexOperation() {
-      @Override
-      public boolean isQuery() {
-        return false;
-      }
+    notify(callback, false);
+  }
 
-      @Override
-      public void performOperation() {
-        callback.done();
-      }
-
-      @Override
-      public boolean removeWhenResourceRemoved(Resource resource) {
-        return false;
-      }
-    });
+  /**
+   * Asynchronously invoke the given {@link NotifyCallback} when the index is has finished indexing
+   * everything on its queue and is processing queries.
+   * 
+   * @param callback the callback that will be invoked when the operation is reached in the queue
+   */
+  public void notifyWhenReadyForQueries(final NotifyCallback callback) {
+    notify(callback, true);
   }
 
   /**
@@ -448,6 +445,15 @@ public class InMemoryIndex implements Index {
   }
 
   /**
+   * Write the current index to the SDK directory.
+   * 
+   * @see DartSdk#getLibraryIndexFile()
+   */
+  public void writeIndexToSdk() {
+    writeIndexTo(DartSdkManager.getManager().getSdk().getLibraryIndexFile());
+  }
+
+  /**
    * Return the file in which the state of the index is to be stored between sessions.
    * 
    * @return the file in which the state of the index is to be stored
@@ -476,7 +482,12 @@ public class InMemoryIndex implements Index {
    */
   private File getInitialIndexFile() {
     //DartCore.getPlugin().getBundle().getResource(INITIAL_INDEX_FILE).openStream();
-    return new File(DartCore.getPlugin().getStateLocation().toFile(), INITIAL_INDEX_FILE);
+    // return new File(DartCore.getPlugin().getStateLocation().toFile(), INITIAL_INDEX_FILE);
+    DartSdkManager sdkManager = DartSdkManager.getManager();
+    if (sdkManager.hasSdk()) {
+      return sdkManager.getSdk().getLibraryIndexFile();
+    }
+    return null;
   }
 
   /**
@@ -575,8 +586,14 @@ public class InMemoryIndex implements Index {
     synchronized (indexStore) {
       hasBeenInitialized = true;
       if (!initializeIndexFrom(getInitialIndexFile())) {
+        if (DartCoreDebug.TRACE_INDEX_STATISTICS) {
+          logIndexStats("Clearing index after failing to read from initial index file");
+        }
         indexStore.clear();
         if (!indexBundledLibraries()) {
+          if (DartCoreDebug.TRACE_INDEX_STATISTICS) {
+            logIndexStats("Clearing index after failing to index bundled libraries");
+          }
           indexStore.clear();
           return false;
         }
@@ -595,58 +612,94 @@ public class InMemoryIndex implements Index {
    * @return <code>true</code> if the index was correctly initialized
    */
   private boolean initializeIndexFrom(File indexFile) {
-    if (indexFile.exists()) {
-      try {
-        readIndexFrom(indexFile);
-        if (DartCoreDebug.TRACE_INDEX_STATISTICS) {
-          logIndexStats("After initializing the index from file");
-        }
-        return true;
-      } catch (IOException exception) {
-        DartCore.logError(
-            "Could not read index file: \"" + indexFile.getAbsolutePath() + "\"",
-            exception);
-      }
+    if (indexFile == null) {
       if (DartCoreDebug.TRACE_INDEX_STATISTICS) {
-        logIndexStats("Deleting corrupted index file");
+        DartCore.logInformation("Index file was null");
       }
-      try {
-        indexFile.delete();
-      } catch (Exception exception) {
-        DartCore.logError("Could not delete corrupt index file: \"" + indexFile.getAbsolutePath()
-            + "\"", exception);
+      return false;
+    } else if (!indexFile.exists()) {
+      if (DartCoreDebug.TRACE_INDEX_STATISTICS) {
+        DartCore.logInformation("Index file " + indexFile.getAbsolutePath() + " does not exist");
       }
+      return false;
+    }
+    if (DartCoreDebug.TRACE_INDEX_STATISTICS) {
+      DartCore.logInformation("About to initialize the index from file "
+          + indexFile.getAbsolutePath() + " (size = " + indexFile.getTotalSpace() + " bytes)");
+    }
+    try {
+      boolean wasRead = readIndexFrom(indexFile);
+      if (DartCoreDebug.TRACE_INDEX_STATISTICS) {
+        logIndexStats("After initializing the index from file " + indexFile.getAbsolutePath());
+      }
+      synchronized (indexStore) {
+        return wasRead && indexStore.getResourceCount() > 0;
+      }
+    } catch (Exception exception) {
+      DartCore.logError("Could not read index file " + indexFile.getAbsolutePath(), exception);
+    }
+    if (DartCoreDebug.TRACE_INDEX_STATISTICS) {
+      logIndexStats("Deleting corrupted index file " + indexFile.getAbsolutePath());
+    }
+    try {
+      indexFile.delete();
+    } catch (Exception exception) {
+      DartCore.logError(
+          "Could not delete corrupt index file " + indexFile.getAbsolutePath(),
+          exception);
     }
     return false;
+  }
+
+  private void notify(final NotifyCallback callback, final boolean isQuery) {
+    queue.enqueue(new IndexOperation() {
+      @Override
+      public boolean isQuery() {
+        return isQuery;
+      }
+
+      @Override
+      public void performOperation() {
+        callback.done();
+      }
+
+      @Override
+      public boolean removeWhenResourceRemoved(Resource resource) {
+        return false;
+      }
+    });
   }
 
   /**
    * Read the contents of this index from the given input stream.
    * 
    * @param input the input stream from which this index will be read
+   * @return {@code true} if the file was correctly read
    * @throws IOException if the index could not be read from the given input stream
    */
-  private void readIndex(ObjectInputStream input) throws IOException {
+  private boolean readIndex(ObjectInputStream input) throws IOException {
     IndexReader reader = indexStore.createIndexReader();
-    reader.readIndex(input);
+    return reader.readIndex(input);
   }
 
   /**
    * Read the contents of this index from the given file.
    * 
    * @param indexFile the file from which this index will be read
+   * @return {@code true} if the file was correctly read
    * @throws IOException if the index could not be read from the given file
    */
-  private void readIndexFrom(File indexFile) throws IOException {
+  private boolean readIndexFrom(File indexFile) throws IOException {
     ObjectInputStream input = null;
     try {
       input = new ObjectInputStream(new FileInputStream(indexFile));
       long startTime = System.currentTimeMillis();
-      readIndex(input);
+      boolean wasRead = readIndex(input);
       if (DartCoreDebug.PERF_INDEX) {
         long endTime = System.currentTimeMillis();
         DartCore.logInformation("Reading the index took " + (endTime - startTime) + " ms");
       }
+      return wasRead;
     } finally {
       if (input != null) {
         try {

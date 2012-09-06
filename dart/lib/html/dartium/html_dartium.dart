@@ -836,10 +836,13 @@ String get _browserPrefix() {
   if (_cachedBrowserPrefix === null) {
     if (_Device.isFirefox) {
       _cachedBrowserPrefix = '-moz-';
+    } else if (_Device.isIE) {
+      _cachedBrowserPrefix = '-ms-';
+    } else if (_Device.isOpera) {
+      _cachedBrowserPrefix = '-o-';
     } else {
       _cachedBrowserPrefix = '-webkit-';
     }
-    // TODO(jacobr): support IE 9.0 and Opera as well.
   }
   return _cachedBrowserPrefix;
 }
@@ -4603,9 +4606,17 @@ class _DOMFileSystemSyncImpl extends NativeFieldWrapperClass1 implements DOMFile
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+class _FormDataFactoryProvider {
+  factory FormData([FormElement form]) => _createFormData(form);
+  static FormData _createFormData([FormElement form]) native "DOMFormData_constructor_Callback";
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 // WARNING: Do not edit - generated code.
 
-class _DOMFormDataImpl extends NativeFieldWrapperClass1 implements DOMFormData {
+class _DOMFormDataImpl extends NativeFieldWrapperClass1 implements FormData {
 
   void append(String name, String value, String filename) native "DOMFormData_append_Callback";
 
@@ -9900,13 +9911,55 @@ class _HTMLMarqueeElementImpl extends _HTMLElementImpl implements MarqueeElement
 class _MediaElementEventsImpl extends _ElementEventsImpl implements MediaElementEvents {
   _MediaElementEventsImpl(_ptr) : super(_ptr);
 
+  EventListenerList get canPlay() => this['canplay'];
+
+  EventListenerList get canPlayThrough() => this['canplaythrough'];
+
+  EventListenerList get durationChange() => this['durationchange'];
+
+  EventListenerList get emptied() => this['emptied'];
+
+  EventListenerList get ended() => this['ended'];
+
   EventListenerList get keyAdded() => this['webkitkeyadded'];
 
   EventListenerList get keyError() => this['webkitkeyerror'];
 
   EventListenerList get keyMessage() => this['webkitkeymessage'];
 
+  EventListenerList get loadStart() => this['loadstart'];
+
+  EventListenerList get loadedData() => this['loadeddata'];
+
+  EventListenerList get loadedMetadata() => this['loadedmetadata'];
+
   EventListenerList get needKey() => this['webkitneedkey'];
+
+  EventListenerList get pause() => this['pause'];
+
+  EventListenerList get play() => this['play'];
+
+  EventListenerList get playing() => this['playing'];
+
+  EventListenerList get progress() => this['progress'];
+
+  EventListenerList get rateChange() => this['ratechange'];
+
+  EventListenerList get seeked() => this['seeked'];
+
+  EventListenerList get seeking() => this['seeking'];
+
+  EventListenerList get show() => this['show'];
+
+  EventListenerList get stalled() => this['stalled'];
+
+  EventListenerList get suspend() => this['suspend'];
+
+  EventListenerList get timeUpdate() => this['timeupdate'];
+
+  EventListenerList get volumeChange() => this['volumechange'];
+
+  EventListenerList get waiting() => this['waiting'];
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -20621,7 +20674,7 @@ class _WebSocketImpl extends _EventTargetImpl implements WebSocket {
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "WebSocket_removeEventListener_Callback";
 
-  bool send(String data) native "WebSocket_send_Callback";
+  void send(data) native "WebSocket_send_Callback";
 
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
@@ -21144,6 +21197,11 @@ class _Elements {
 
   factory FieldSetElement() {
     _HTMLFieldSetElementImpl _e = _document.$dom_createElement("fieldset");
+    return _e;
+  }
+
+  factory FormElement() {
+    _HTMLFormElementImpl _e = _document.$dom_createElement("form");
     return _e;
   }
 
@@ -25611,18 +25669,6 @@ interface DOMFileSystemSync {
 
 // WARNING: Do not edit - generated code.
 
-/// @domName DOMFormData
-interface DOMFormData {
-
-  /** @domName DOMFormData.append */
-  void append(String name, String value, String filename);
-}
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
-// WARNING: Do not edit - generated code.
-
 /// @domName DOMImplementation
 interface DOMImplementation {
 
@@ -27965,8 +28011,24 @@ interface FontElement extends Element {
 
 // WARNING: Do not edit - generated code.
 
+/// @domName DOMFormData
+interface FormData default _FormDataFactoryProvider {
+
+  FormData([FormElement form]);
+
+  /** @domName DOMFormData.append */
+  void append(String name, String value, String filename);
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// WARNING: Do not edit - generated code.
+
 /// @domName HTMLFormElement
-interface FormElement extends Element {
+interface FormElement extends Element default _Elements {
+
+  FormElement();
 
   /** @domName HTMLFormElement.acceptCharset */
   String acceptCharset;
@@ -30060,13 +30122,55 @@ interface MediaElement extends Element {
 
 interface MediaElementEvents extends ElementEvents {
 
+  EventListenerList get canPlay();
+
+  EventListenerList get canPlayThrough();
+
+  EventListenerList get durationChange();
+
+  EventListenerList get emptied();
+
+  EventListenerList get ended();
+
   EventListenerList get keyAdded();
 
   EventListenerList get keyError();
 
   EventListenerList get keyMessage();
 
+  EventListenerList get loadStart();
+
+  EventListenerList get loadedData();
+
+  EventListenerList get loadedMetadata();
+
   EventListenerList get needKey();
+
+  EventListenerList get pause();
+
+  EventListenerList get play();
+
+  EventListenerList get playing();
+
+  EventListenerList get progress();
+
+  EventListenerList get rateChange();
+
+  EventListenerList get seeked();
+
+  EventListenerList get seeking();
+
+  EventListenerList get show();
+
+  EventListenerList get stalled();
+
+  EventListenerList get suspend();
+
+  EventListenerList get timeUpdate();
+
+  EventListenerList get volumeChange();
+
+  EventListenerList get waiting();
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -39053,7 +39157,7 @@ interface WebSocket extends EventTarget default _WebSocketFactoryProvider {
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]);
 
   /** @domName WebSocket.send */
-  bool send(String data);
+  void send(data);
 }
 
 interface WebSocketEvents extends Events {
@@ -40495,22 +40599,21 @@ class _Timer implements Timer {
   void cancel() { canceller(); }
 }
 
-_getTimerFactoryClosure() =>
-  (int milliSeconds, void callback(Timer timer), bool repeating) {
-    var maker;
-    var canceller;
-    if (repeating) {
-      maker = window.setInterval;
-      canceller = window.clearInterval;
-    } else {
-      maker = window.setTimeout;
-      canceller = window.clearTimeout;
-    }
-    Timer timer;
-    final int id = maker(() { callback(timer); }, milliSeconds);
-    timer = new _Timer(() { canceller(id); });
-    return timer;
-  };
+get _timerFactoryClosure => (int milliSeconds, void callback(Timer timer), bool repeating) {
+  var maker;
+  var canceller;
+  if (repeating) {
+    maker = window.setInterval;
+    canceller = window.clearInterval;
+  } else {
+    maker = window.setTimeout;
+    canceller = window.clearTimeout;
+  }
+  Timer timer;
+  final int id = maker(() { callback(timer); }, milliSeconds);
+  timer = new _Timer(() { canceller(id); });
+  return timer;
+};
 // Copyright (c) 2011, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
@@ -40818,6 +40921,16 @@ class _Device {
   static String get userAgent() => window.navigator.userAgent;
 
   /**
+   * Determines if the current device is running Opera.
+   */
+  static bool get isOpera() => userAgent.contains("Opera", 0);
+
+  /**
+   * Determines if the current device is running Internet Explorer.
+   */
+  static bool get isIE() => !isOpera && userAgent.contains("MSIE", 0);
+
+  /**
    * Determines if the current device is running Firefox.
    */
   static bool get isFirefox() => userAgent.contains("Firefox", 0);
@@ -40828,43 +40941,6 @@ class _Device {
 
 _serialize(var message) {
   return new _JsSerializer().traverse(message);
-}
-
-class JsProxy {
-  SendPortSync _port;
-  final _id;
-
-  JsProxy._internal(this._port, this._id);
-
-  noSuchMethod(method, args) {
-    var result = _port.callSync([_id, method, args]);
-    switch (result[0]) {
-      case 'return': return result[1];
-      case 'exception': throw result[1];
-      case 'none': throw new NoSuchMethodException(this, method, args);
-      default: throw 'Invalid return value';
-    }
-  }
-}
-
-int _localNextElementId = 0;
-
-const _DART_ID = 'data-dart_id';
-
-_elementId(Element e) {
-  if (e.attributes.containsKey(_DART_ID)) return e.attributes[_DART_ID];
-  var id = '$_isolateId-${_localNextElementId++}';
-  e.attributes[_DART_ID] = id;
-  return id;
-}
-
-Element _getElement(var id) {
-  var list = queryAll('[$_DART_ID="$id"]');
-  if (list.length > 1) throw 'Non unique ID: $id';
-  if (list.length == 0) {
-    throw 'Only elements attached to document can be serialized: $id';
-  }
-  return list[0];
 }
 
 class _JsSerializer extends _Serializer {
@@ -40889,147 +40965,12 @@ class _JsSerializer extends _Serializer {
     return [ 'sendport', 'dart',
              x._receivePort._isolateId, x._receivePort._portId ];
   }
-
-  visitObject(Object x) {
-    if (x is Function) return visitFunction(x);
-    if (x is JsProxy) return visitJsProxy(x);
-    if (x is Element) return visitElement(x);
-
-    // TODO: Handle DOM elements and proxy other objects.
-    var proxyId = _dartProxyRegistry._add(x);
-    return [ 'objref', proxyId,
-             visitSendPortSync(_dartProxyRegistry._sendPort) ];
- }
-
-  visitFunction(Function func) {
-    // Look for a cached serialization first.  The cached version
-    // should point to the original port.
-    var serialized = _deserializedFunctionTable.find(func);
-    if (serialized != null) return serialized;
-    // Create a new serialization forwarding to this port.
-    return [ 'funcref',
-             _functionRegistry._add(func),
-             visitSendPortSync(_functionRegistry._sendPort), null ];
-  }
-
-  visitJsProxy(JsProxy proxy) {
-    return [ 'objref', proxy._id, visitSendPortSync(proxy._port) ];
-  }
-
-  visitElement(Element element) {
-    var id = _elementId(element);
-    // Verify that the element is connected to the document.
-    // Otherwise, we will not be able to find it on the other side.
-    _getElement(id);
-    return [ 'element', id ];
-  }
 }
-
-// Leaking implementation.  Later will be backend specific and hopefully
-// not leaking (at least in most of the cases.)
-// TODO: provide better, backend specific implementation.
-class _Registry<T> {
-  final String _name;
-  int _nextId;
-  final Map<String, T> _registry;
-  final ReceivePortSync _port;
-
-  _Registry(this._name) :
-      _nextId = 0,
-      _registry = <T>{},
-      _port = new ReceivePortSync();
-
-  String _add(T x) {
-    // TODO(vsm): Cache x and reuse id.
-    final id = '$_name-${_nextId++}';
-    _registry[id] = x;
-    return id;
-  }
-
-  T _get(String id) {
-    return _registry[id];
-  }
-
-  get _sendPort => _port.toSendPort();
-}
-
-class _FunctionRegistry extends _Registry<Function> {
-  _FunctionRegistry() : super('func-ref') {
-    _port.receive((msg) {
-      final id = msg[0];
-      final args = msg[1];
-      final f = _registry[id];
-      switch (args.length) {
-        case 0: return f();
-        case 1: return f(args[0]);
-        case 2: return f(args[0], args[1]);
-        case 3: return f(args[0], args[1], args[2]);
-        case 4: return f(args[0], args[1], args[2], args[3]);
-        default: throw 'Unsupported number of arguments.';
-      }
-    });
-  }
-}
-
-_FunctionRegistry __functionRegistry;
-get _functionRegistry {
-  if (__functionRegistry === null) __functionRegistry = new _FunctionRegistry();
-  return __functionRegistry;
-}
-/// End of function serialization implementation.
-
-/// Object proxy implementation.
-
-class _DartProxyRegistry extends _Registry<Object> {
-  _DartProxyRegistry() : super('dart-ref') {
-    _port.receive((msg) {
-      // TODO(vsm): Support a mechanism to register a handler here.
-      throw 'Invocation unsupported on Dart proxies';
-    });
-  }
-}
-
-_DartProxyRegistry __dartProxyRegistry;
-get _dartProxyRegistry {
-  if (__dartProxyRegistry === null) {
-    __dartProxyRegistry = new _DartProxyRegistry();
-  }
-  return __dartProxyRegistry;
-}
-
-/// End of object proxy implementation.
 
 _deserialize(var message) {
   return new _JsDeserializer().deserialize(message);
 }
 
-// TODO(vsm): Replace this with a hash map once functions are
-// hashable.
-class _DeserializedFunctionTable {
-  List data;
-  _DeserializedFunctionTable() {
-    data = [];
-  }
-
-  find(Function f) {
-    for (var item in data) {
-      if (f == item[0]) return item[1];
-    }
-    return null;
-  }
-
-  add(Function f, x) {
-    data.add([f, x]);
-  }
-}
-
-_DeserializedFunctionTable __deserializedFunctionTable = null;
-get _deserializedFunctionTable {
-  if (__deserializedFunctionTable == null) {
-    __deserializedFunctionTable = new _DeserializedFunctionTable();
-  }
-  return __deserializedFunctionTable;
-}
 
 class _JsDeserializer extends _Deserializer {
 
@@ -41048,53 +40989,6 @@ class _JsDeserializer extends _Deserializer {
       default:
         throw 'Illegal SendPortSync type: $tag';
     }
-  }
-
-  deserializeObject(List x) {
-    String tag = x[0];
-    switch (tag) {
-      case 'funcref': return deserializeFunction(x);
-      case 'objref': return deserializeProxy(x);
-      case 'element': return deserializeElement(x);
-      default: throw 'Illegal object type: $x';
-    }
-  }
-
-  deserializeFunction(List x) {
-    var id = x[1];
-    // If the sendPort is local, just return the underlying function.
-    // Otherwise, create a new function that forwards to the remote
-    // port.
-    SendPortSync port = deserializeSendPort(x[2]);
-    if (port is _LocalSendPortSync) {
-      return _functionRegistry._get(id);
-    }
-    // TODO: Support varargs when there is support in the language.
-    var f = ([arg0 = _UNSPECIFIED, arg1 = _UNSPECIFIED,
-              arg2 = _UNSPECIFIED, arg3 = _UNSPECIFIED]) {
-      var args = [arg0, arg1, arg2, arg3];
-      var last = args.indexOf(_UNSPECIFIED);
-      if (last >= 0) args = args.getRange(0, last);
-      var message = [id, args];
-      return port.callSync(message);
-    };
-    _deserializedFunctionTable.add(f, x);
-    return f;
-  }
-
-  deserializeProxy(x) {
-    var id = x[1];
-    var port = deserializeSendPort(x[2]);
-    if (port is _JsSendPortSync) return new JsProxy._internal(port, id);
-    if (port is _LocalSendPortSync) return _dartProxyRegistry._get(id);
-    // TODO(vsm): Support this case.
-    if (port is _RemoteSendPortSync) throw 'Remote Dart proxies unsupported';
-    throw 'Illegal proxy: $port';
-  }
-
-  deserializeElement(x) {
-    var id = x[1];
-    return _getElement(id);
   }
 }
 
@@ -41755,11 +41649,10 @@ class _Utils {
   }
 
   static window() native "Utils_window";
+  static print(String message) native "Utils_print";
   static SendPort spawnDomFunctionImpl(Function topLevelFunction) native "Utils_spawnDomFunction";
   static int _getNewIsolateId() native "Utils_getNewIsolateId";
 }
-
-Utils_print(String message) native "Utils_print";
 
 class _NPObject extends NativeFieldWrapperClass1 {
   _NPObject();
@@ -41828,3 +41721,11 @@ class _DOMStringMapImpl extends NativeFieldWrapperClass1 implements Map<String, 
   int get length() => Maps.length(this);
   bool isEmpty() => Maps.isEmpty(this);
 }
+
+get _printClosure => (s) {
+  try {
+    window.console.log(s);
+  } on Dynamic catch(_) {
+    _Utils.print(s);
+  }
+};

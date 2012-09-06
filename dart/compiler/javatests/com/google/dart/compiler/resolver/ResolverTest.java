@@ -923,7 +923,7 @@ public class ResolverTest extends ResolverTestCase {
         "class MyClass {",
         "  foo() {",
         "    try {",
-        "    } catch (Unknown e) {",
+        "    } on Unknown catch (e) {",
         "    }",
         "  }",
         "}"),
@@ -1154,7 +1154,7 @@ public class ResolverTest extends ResolverTestCase {
         "main() {",
         "  try {",
         "    0.25 - f;",
-        "  } catch(var e) {}",
+        "  } catch(e) {}",
         "}"),
         ResolverErrorCode.CANNOT_USE_TYPE);
   }
@@ -1363,6 +1363,15 @@ public class ResolverTest extends ResolverTestCase {
         "  const id = 1.toString();",
         "}"),
         errEx(ResolverErrorCode.EXPECTED_CONSTANT_EXPRESSION, 3, 14, 12));
+  }
+
+  public void test_const_undefinedClass() {
+    resolveAndTest(Joiner.on("\n").join(
+        "class Object {}",
+        "main() {",
+        " const A();",
+        "}"),
+        errEx(TypeErrorCode.NO_SUCH_TYPE_CONST, 3, 8, 1));
   }
 
   public void testNoGetterOrSetter() {

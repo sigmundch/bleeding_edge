@@ -22,12 +22,13 @@
 
 namespace dart {
 
+DEFINE_FLAG(bool, constructor_name_check, false,
+            "Named constructors may not clash with other members");
 DEFINE_FLAG(bool, enable_asserts, false, "Enable assert statements.");
 DEFINE_FLAG(bool, enable_type_checks, false, "Enable type checks.");
 DEFINE_FLAG(bool, trace_parser, false, "Trace parser operations.");
 DEFINE_FLAG(bool, warning_as_error, false, "Treat warnings as errors.");
 DEFINE_FLAG(bool, silent_warnings, false, "Silence warnings.");
-DEFINE_FLAG(bool, warn_legacy_catch, false, "Warning on legacy catch syntax");
 DEFINE_FLAG(bool, warn_legacy_map_literal, false,
             "Warning on legacy map literal syntax (single type argument)");
 
@@ -51,7 +52,7 @@ class TraceParser : public ValueObject {
         intptr_t line, column;
         script.GetTokenLocation(token_pos, &line, &column);
         PrintIndent();
-        OS::Print("%s (line %d, col %d, token %d)\n",
+        OS::Print("%s (line %"Pd", col %"Pd", token %"Pd")\n",
                   msg, line, column, token_pos);
       }
       indent_++;
@@ -119,24 +120,52 @@ void ParsedFunction::SetNodeSequence(SequenceNode* node_sequence) {
 }
 
 
+LocalVariable* ParsedFunction::GetSavedArgumentsDescriptorVar() const {
+  const int num_parameters = function().NumberOfParameters();
+  LocalScope* scope = node_sequence()->scope();
+  if (scope->num_variables() > num_parameters) {
+    LocalVariable* saved_args_desc_var = scope->VariableAt(num_parameters);
+    ASSERT(saved_args_desc_var != NULL);
+    // The scope of the formal parameters may also contain at this position
+    // an alias for the saved arguments descriptor variable of the enclosing
+    // function (check its scope owner) or an internal variable such as the
+    // expression temp variable or the saved entry context variable (check its
+    // name).
+    if ((saved_args_desc_var->owner() == scope) &&
+        saved_args_desc_var->name().StartsWith(
+            String::Handle(Symbols::SavedArgDescVarPrefix()))) {
+      return saved_args_desc_var;
+    }
+  }
+  return NULL;
+}
+
+
 void ParsedFunction::AllocateVariables() {
   LocalScope* scope = node_sequence()->scope();
   const int fixed_parameter_count = function().num_fixed_parameters();
   const int optional_parameter_count = function().num_optional_parameters();
-  const int parameter_count = fixed_parameter_count + optional_parameter_count;
+  int parameter_count = fixed_parameter_count + optional_parameter_count;
   const bool is_native_instance_closure =
       function().is_native() && function().IsImplicitInstanceClosureFunction();
   // Compute start indices to parameters and locals, and the number of
   // parameters to copy.
-  if (optional_parameter_count == 0 && !is_native_instance_closure) {
+  if ((optional_parameter_count == 0) && !is_native_instance_closure) {
     // Parameter i will be at fp[1 + parameter_count - i] and local variable
     // j will be at fp[kFirstLocalSlotIndex - j].
+    ASSERT(GetSavedArgumentsDescriptorVar() == NULL);
     first_parameter_index_ = 1 + parameter_count;
     first_stack_local_index_ = kFirstLocalSlotIndex;
     copied_parameter_count_ = 0;
   } else {
     // Parameter i will be at fp[kFirstLocalSlotIndex - i] and local variable
     // j will be at fp[kFirstLocalSlotIndex - parameter_count - j].
+    // The saved argument descriptor variable must be allocated similarly to
+    // a parameter, so that it gets both a frame slot and a context slot when
+    // captured.
+    if (GetSavedArgumentsDescriptorVar() != NULL) {
+      parameter_count += 1;
+    }
     first_parameter_index_ = kFirstLocalSlotIndex;
     first_stack_local_index_ = first_parameter_index_ - parameter_count;
     copied_parameter_count_ = parameter_count;
@@ -161,8 +190,8 @@ void ParsedFunction::AllocateVariables() {
   // variables, the context needs to be saved on entry and restored on exit.
   // Add and allocate a local variable to this purpose.
   if ((context_owner != NULL) && !function().IsClosureFunction()) {
-    const String& context_var_name = String::ZoneHandle(
-        Symbols::New(LocalVariable::kSavedContextVarName));
+    const String& context_var_name =
+        String::ZoneHandle(Symbols::SavedEntryContextVar());
     LocalVariable* context_var =
         new LocalVariable(function().token_pos(),
                           context_var_name,
@@ -261,7 +290,7 @@ Parser::Parser(const Script& script,
       current_class_(Class::Handle(current_function_.Owner())),
       library_(Library::Handle(current_class_.library())),
       try_blocks_list_(NULL),
-      expression_temp_(NULL)  {
+      expression_temp_(NULL) {
   ASSERT(tokens_iterator_.IsValid());
   ASSERT(!function.IsNull());
   if (FLAG_enable_type_checks) {
@@ -319,7 +348,7 @@ Token::Kind Parser::CurrentToken() {
   if (token_kind_ == Token::kILLEGAL) {
     token_kind_ = tokens_iterator_.CurrentTokenKind();
     if (token_kind_ == Token::kERROR) {
-      ErrorMsg(TokenPos(), CurrentLiteral()->ToCString());
+      ErrorMsg(TokenPos(), "%s", CurrentLiteral()->ToCString());
     }
   }
   CompilerStats::num_token_checks++;
@@ -453,6 +482,7 @@ struct MemberDesc {
     name_pos = 0;
     name = NULL;
     redirect_name = NULL;
+    constructor_name = NULL;
     params.Clear();
     kind = RawFunction::kRegularFunction;
   }
@@ -482,7 +512,11 @@ struct MemberDesc {
   const AbstractType* type;
   intptr_t name_pos;
   String* name;
-  String* redirect_name;  // For constructors: NULL or redirected constructor.
+  // For constructors: NULL or redirected constructor.
+  String* redirect_name;
+  // For constructors: NULL for unnamed constructor,
+  // identifier after classname for named constructors.
+  String* constructor_name;
   ParamList params;
   RawFunction::Kind kind;
 };
@@ -1143,12 +1177,10 @@ void Parser::ParseFormalParameterList(bool allow_explicit_default_values,
 
   if (LookaheadToken(1) != Token::kRPAREN) {
     // Parse positional parameters.
-    ParseFormalParameters(allow_explicit_default_values,
-                          params);
+    ParseFormalParameters(allow_explicit_default_values, params);
     if (params->has_named_optional_parameters) {
       // Parse named optional parameters.
-      ParseFormalParameters(allow_explicit_default_values,
-                            params);
+      ParseFormalParameters(allow_explicit_default_values, params);
       if (CurrentToken() != Token::kRBRACK) {
         ErrorMsg("',' or ']' expected");
       }
@@ -1844,7 +1876,7 @@ SequenceNode* Parser::ParseConstructor(const Function& func,
     // Special case: implicit constructor.
     // The parser adds an implicit default constructor when a class
     // does not have any explicit constructor or factory (see
-    // Parser::CheckConstructors). The token position of this implicit
+    // Parser::AddImplicitConstructor). The token position of this implicit
     // constructor points to the 'class' keyword, which is followed
     // by the name of the class (which is also the constructor name).
     // There is no source text to parse. We just build the
@@ -2306,8 +2338,8 @@ void Parser::ParseMethodOrConstructor(ClassDesc* members, MemberDesc* method) {
   if (method->has_const && !(method->IsConstructor() || method->IsFactory())) {
     ErrorMsg(method->name_pos, "'const' not allowed for methods");
   }
-  if (method->IsConstructor() && method->has_static) {
-    ErrorMsg(method->name_pos, "constructor cannot be 'static'");
+  if (method->IsFactoryOrConstructor() && method->has_abstract) {
+    ErrorMsg(method->name_pos, "constructor cannot be abstract");
   }
   if (method->IsConstructor() && method->has_const) {
     Class& cls = Class::ZoneHandle(library_.LookupClass(members->class_name()));
@@ -2719,7 +2751,7 @@ void Parser::CheckOperatorArity(const MemberDesc& member,
       (member.params.has_named_optional_parameters) ||
       (member.params.num_fixed_parameters != expected_num_parameters)) {
     // Subtract receiver when reporting number of expected arguments.
-    ErrorMsg(member.name_pos, "operator %s expects %d argument(s)",
+    ErrorMsg(member.name_pos, "operator %s expects %"Pd" argument(s)",
         member.name->ToCString(), (expected_num_parameters - 1));
   }
 }
@@ -2764,6 +2796,9 @@ void Parser::ParseClassMemberDefinition(ClassDesc* members) {
     member.type = &Type::ZoneHandle(Type::DynamicType());
   } else if (CurrentToken() == Token::kFACTORY) {
     ConsumeToken();
+    if (member.has_static) {
+      ErrorMsg("factory method cannot be explicitly marked static");
+    }
     member.has_factory = true;
     member.has_static = true;
     // The result type depends on the name of the factory method.
@@ -2824,6 +2859,9 @@ void Parser::ParseClassMemberDefinition(ClassDesc* members) {
                                                 TypeArguments::Handle(),
                                                 factory_name.ident_pos));
     } else {
+      if (member.has_static) {
+        ErrorMsg("constructor cannot be static");
+      }
       member.name_pos = TokenPos();
       member.name = CurrentLiteral();
       ConsumeToken();
@@ -2834,8 +2872,8 @@ void Parser::ParseClassMemberDefinition(ClassDesc* members) {
     if (CurrentToken() == Token::kPERIOD) {
       // Named constructor.
       ConsumeToken();
-      const String* name = ExpectIdentifier("identifier expected");
-      ctor_suffix = String::Concat(ctor_suffix, *name);
+      member.constructor_name = ExpectIdentifier("identifier expected");
+      ctor_suffix = String::Concat(ctor_suffix, *member.constructor_name);
     }
     *member.name = String::Concat(*member.name, ctor_suffix);
     // Ensure that names are symbols.
@@ -3064,7 +3102,7 @@ void Parser::ParseClassDefinition(const GrowableObjectArray& pending_classes) {
   if (!members.has_constructor() && !is_patch) {
     AddImplicitConstructor(&members);
   }
-  CheckConstructorCycles(&members);
+  CheckConstructors(&members);
 
   Array& array = Array::Handle();
   array = Array::MakeArray(members.fields());
@@ -3122,12 +3160,24 @@ void Parser::AddImplicitConstructor(ClassDesc* class_desc) {
 }
 
 
-// Check for cycles in constructor redirection.
-void Parser::CheckConstructorCycles(ClassDesc* class_desc) {
+// Check for cycles in constructor redirection. Also check whether a
+// named constructor collides with the name of another class member.
+void Parser::CheckConstructors(ClassDesc* class_desc) {
   // Check for cycles in constructor redirection.
   const GrowableArray<MemberDesc>& members = class_desc->members();
   for (int i = 0; i < members.length(); i++) {
     MemberDesc* member = &members[i];
+
+    if (FLAG_constructor_name_check && member->constructor_name != NULL) {
+      if (class_desc->FunctionNameExists(
+          *member->constructor_name, member->kind)) {
+        ErrorMsg(member->name_pos,
+                 "Named constructor '%s' conflicts with method or field '%s'",
+                 member->name->ToCString(),
+                 member->constructor_name->ToCString());
+      }
+    }
+
     GrowableArray<MemberDesc*> ctors;
     while ((member != NULL) && (member->redirect_name != NULL)) {
       ASSERT(member->IsConstructor());
@@ -3968,7 +4018,8 @@ void Parser::ParseLibraryImport() {
     if (CurrentToken() != Token::kSTRING) {
       ErrorMsg("library url expected");
     }
-    const String& url = *ParseImportStringLiteral();
+    const String& url = *CurrentLiteral();
+    ConsumeToken();
     String& prefix = String::Handle();
     if (CurrentToken() == Token::kCOMMA) {
       ConsumeToken();
@@ -4032,7 +4083,8 @@ void Parser::ParseLibraryInclude() {
     if (CurrentToken() != Token::kSTRING) {
       ErrorMsg("source url expected");
     }
-    const String& url = *ParseImportStringLiteral();
+    const String& url = *CurrentLiteral();
+    ConsumeToken();
     ExpectToken(Token::kRPAREN);
     ExpectToken(Token::kSEMICOLON);
     Dart_Handle handle = CallLibraryTagHandler(kCanonicalizeUrl,
@@ -4721,7 +4773,7 @@ bool Parser::IsSimpleLiteral(const AbstractType& type, Instance* value) {
     *value = CurrentIntegerLiteral();
     return true;
   } else if ((CurrentToken() == Token::kDOUBLE) &&
-      (no_check || type.IsDoubleInterface() || type.IsNumberType())) {
+      (no_check || type.IsDoubleType() || type.IsNumberType())) {
     *value = CurrentDoubleLiteral();
     return true;
   } else if ((CurrentToken() == Token::kSTRING) &&
@@ -4952,7 +5004,7 @@ bool Parser::IsForInStatement() {
 }
 
 
-static bool ContainsAbruptCompletingStatement(SequenceNode *seq);
+static bool ContainsAbruptCompletingStatement(SequenceNode* seq);
 
 static bool IsAbruptCompleting(AstNode* statement) {
   return statement->IsReturnNode() ||
@@ -4963,7 +5015,7 @@ static bool IsAbruptCompleting(AstNode* statement) {
 }
 
 
-static bool ContainsAbruptCompletingStatement(SequenceNode *seq) {
+static bool ContainsAbruptCompletingStatement(SequenceNode* seq) {
   for (int i = 0; i < seq->length(); i++) {
     if (IsAbruptCompleting(seq->NodeAt(i))) {
       return true;
@@ -5731,22 +5783,18 @@ AstNode* Parser::ParseTryStatement(String* label_name) {
         if (CurrentToken() == Token::kCOMMA) {
           ConsumeToken();
           stack_trace_param.is_final = true;
-          // TODO(hausner): Make imlicit type be StackTrace, not Dynamic.
+          // TODO(hausner): Make implicit type be StackTrace, not Dynamic.
           stack_trace_param.type =
               &AbstractType::ZoneHandle(Type::DynamicType());
           stack_trace_param.token_pos = TokenPos();
           stack_trace_param.var = ExpectIdentifier("identifier expected");
         }
       } else {
-        // TODO(hausner): Remove legacy syntax support.
-        if (FLAG_warn_legacy_catch) {
-          Warning("legacy catch syntax");
-        }
-        ParseCatchParameter(&exception_param);
-        if (CurrentToken() == Token::kCOMMA) {
-          ConsumeToken();
-          ParseCatchParameter(&stack_trace_param);
-        }
+        // TODO(hausner): Improve error message and maybe also the
+        // structure of the code. Maybe you can get away with simply
+        // expecting an identifier followed by a comma or a right
+        // parenthesis?
+        ErrorMsg("identifier expected here, not type, final, or var");
       }
     } else {
       // on T catch(e) { ...
@@ -6146,7 +6194,7 @@ void Parser::FormatMessage(const Script& script,
       script.GetTokenLocation(token_pos, &line, &column);
       msg_len += OS::SNPrint(message_buffer + msg_len,
                              message_buffer_size - msg_len,
-                             "'%s': %s: line %d pos %d: ",
+                             "'%s': %s: line %"Pd" pos %"Pd": ",
                              script_url.ToCString(),
                              message_header,
                              line,
@@ -6165,7 +6213,7 @@ void Parser::FormatMessage(const Script& script,
                                  message_buffer_size - msg_len,
                                  "\n%s\n%*s\n",
                                  script_line.ToCString(),
-                                 column,
+                                 static_cast<int>(column),
                                  "^");
         }
       }
@@ -6284,7 +6332,7 @@ void Parser::Warning(const char* format, ...) {
 
 
 void Parser::Unimplemented(const char* msg) {
-  ErrorMsg(TokenPos(), msg);
+  ErrorMsg(TokenPos(), "%s", msg);
 }
 
 
@@ -6313,11 +6361,11 @@ void Parser::UnexpectedToken() {
 
 String* Parser::ExpectClassIdentifier(const char* msg) {
   if (CurrentToken() != Token::kIDENT) {
-    ErrorMsg(msg);
+    ErrorMsg("%s", msg);
   }
   String* ident = CurrentLiteral();
   if (ident->Equals("Dynamic")) {
-    ErrorMsg(msg);
+    ErrorMsg("%s", msg);
   }
   ConsumeToken();
   return ident;
@@ -6327,7 +6375,7 @@ String* Parser::ExpectClassIdentifier(const char* msg) {
 // Check whether current token is an identifier or a built-in identifier.
 String* Parser::ExpectIdentifier(const char* msg) {
   if (!IsIdentifier()) {
-    ErrorMsg(msg);
+    ErrorMsg("%s", msg);
   }
   String* ident = CurrentLiteral();
   ConsumeToken();
@@ -6505,7 +6553,7 @@ void Parser::EnsureExpressionTemp() {
 LocalVariable* Parser::CreateTempConstVariable(intptr_t token_pos,
                                                const char* s) {
   char name[64];
-  OS::SNPrint(name, 64, ":%s%d", s, token_pos);
+  OS::SNPrint(name, 64, ":%s%"Pd, s, token_pos);
   LocalVariable* temp =
       new LocalVariable(token_pos,
                         String::ZoneHandle(Symbols::New(name)),
@@ -7389,6 +7437,94 @@ LocalVariable* Parser::LookupLocalScope(const String& ident) {
 }
 
 
+// Returns true if ident resolves to a formal parameter of the current function
+// or of one of its enclosing functions.
+// Make sure not to capture the formal parameter, since it is not accessed.
+bool Parser::IsFormalParameter(const String& ident,
+                               Function* owner_function,
+                               LocalScope** owner_scope,
+                               intptr_t* local_index) {
+  if (current_block_ == NULL) {
+    return false;
+  }
+  if (ident.Equals(String::Handle(Symbols::This()))) {
+    // 'this' is not a formal parameter.
+    return false;
+  }
+  // Since an argument definition test does not use the value of the formal
+  // parameter, there is no reason to capture it.
+  const bool kTestOnly = true;  // No capturing.
+  LocalVariable* local =
+      current_block_->scope->LookupVariable(ident, kTestOnly);
+  if (local == NULL) {
+    if (!current_function().IsLocalFunction()) {
+      // We are not generating code for a local function, so all locals,
+      // captured or not, are in scope. However, 'ident' was not found, so it
+      // does not exist.
+      return false;
+    }
+    // The formal parameter may belong to an enclosing function and may not have
+    // been captured, so it was not included in the context scope and it cannot
+    // be found by LookupVariable.
+    // 'ident' necessarily refers to the formal parameter of one of the
+    // enclosing functions, or a compile error would have prevented the
+    // outermost enclosing function to be executed and we would not be compiling
+    // this local function.
+    // Therefore, look for ident directly in the formal parameter lists of the
+    // enclosing functions.
+    // There is no need to return the owner_scope, since the caller will not
+    // create the saved_arguments_descriptor variable, which already exists.
+    Function& function = Function::Handle(innermost_function().raw());
+    String& param_name = String::Handle();
+    do {
+      const int num_parameters = function.NumberOfParameters();
+      for (intptr_t i = 0; i < num_parameters; i++) {
+        param_name = function.ParameterNameAt(i);
+        if (ident.Equals(param_name)) {
+          *owner_function = function.raw();
+          *owner_scope = NULL;
+          *local_index = i;
+          return true;
+        }
+      }
+      function = function.parent_function();
+    } while (!function.IsNull());
+    UNREACHABLE();
+  }
+  // Verify that local is a formal parameter of the current function or of one
+  // of its enclosing functions.
+  // Note that scopes are not yet associated to functions.
+  Function& function = Function::Handle(innermost_function().raw());
+  LocalScope* scope = current_block_->scope;
+  while (scope != NULL) {
+    ASSERT(!function.IsNull());
+    // Find the top scope for this function level.
+    while ((scope->parent() != NULL) &&
+           (scope->parent()->function_level() == scope->function_level())) {
+      scope = scope->parent();
+    }
+    if (scope == local->owner()) {
+      // Scope contains 'local' and the formal parameters of 'function'.
+      const int num_parameters = function.NumberOfParameters();
+      for (intptr_t i = 0; i < num_parameters; i++) {
+        if (scope->VariableAt(i) == local) {
+          *owner_function = function.raw();
+          *owner_scope = scope;
+          *local_index = i;
+          return true;
+        }
+      }
+      // The variable 'local' is not a formal parameter.
+      return false;
+    }
+    scope = scope->parent();
+    function = function.parent_function();
+  }
+  // The variable 'local' does not belong to a function top scope.
+  return false;
+}
+
+
 void Parser::CheckInstanceFieldAccess(intptr_t field_pos,
                                       const String& field_name) {
   // Fields are not accessible from a static function, except from a
@@ -7959,33 +8095,6 @@ AstNode* Parser::ResolveIdent(intptr_t ident_pos,
     }
   }
   return resolved;
-}
-
-
-// Resolve variables used in an import string literal.
-// If the variable name cannot be resolved issue an error message.
-// Currently we only resolve against the global map which is passed in
-// when the script is loaded.
-RawString* Parser::ResolveImportVar(intptr_t ident_pos, const String& ident) {
-  TRACE_PARSER("ResolveImportVar");
-  const Array& import_map =
-      Array::Handle(Isolate::Current()->object_store()->import_map());
-  if (!import_map.IsNull()) {
-    intptr_t length = import_map.Length();
-    intptr_t index = 0;
-    String& name = String::Handle();
-    while (index < (length - 1)) {
-      name ^= import_map.At(index);
-      if (name.Equals(ident)) {
-        name ^= import_map.At(index + 1);
-        return name.raw();
-      }
-      index += 2;
-    }
-  }
-  ErrorMsg(ident_pos, "import variable '%s' has not been defined",
-           ident.ToCString());
-  return String::null();
 }
 
 
@@ -8597,10 +8706,17 @@ AstNode* Parser::ParseNewOperator() {
   }
 
   // It is ok to call a factory method of an abstract class, but it is
-  // an error to instantiate an abstract class.
+  // a dynamic error to instantiate an abstract class.
   if (constructor_class.is_abstract() && !constructor.IsFactory()) {
-    ErrorMsg(type_pos, "Cannot instantiate abstract class %s",
-             constructor_class_name.ToCString());
+    ArgumentListNode* arguments = new ArgumentListNode(type_pos);
+    arguments->Add(new LiteralNode(
+        TokenPos(), Integer::ZoneHandle(Integer::New(type_pos))));
+    arguments->Add(new LiteralNode(
+        TokenPos(), String::ZoneHandle(constructor_class_name.raw())));
+    const String& cls_name =
+        String::Handle(Symbols::AbstractClassInstantiationError());
+    const String& func_name = String::Handle(Symbols::ThrowNew());
+    return MakeStaticCall(cls_name, func_name, arguments);
   }
 
   String& error_message = String::Handle();
@@ -8813,59 +8929,54 @@ AstNode* Parser::ParseStringLiteral() {
 }
 
 
-// An import string literal consists of the concatenation of the next n tokens
-// that satisfy the EBNF grammar:
-// literal = kSTRING {{ interpol }+ kSTRING }
-// interpol = kINTERPOL_VAR
-// In other words, the scanner breaks down interpolated strings so that
-// a string literal always begins and ends with a kSTRING token, and
-// there are never two kSTRING tokens next to each other.
-String* Parser::ParseImportStringLiteral() {
-  TRACE_PARSER("ParseImportStringLiteral");
-  if ((CurrentToken() == Token::kSTRING) &&
-      (LookaheadToken(1) != Token::kINTERPOL_VAR) &&
-      (LookaheadToken(1) != Token::kINTERPOL_START)) {
-    // Common case: no interpolation.
-    String* result = CurrentLiteral();
-    ConsumeToken();
-    return result;
+AstNode* Parser::ParseArgumentDefinitionTest() {
+  const intptr_t test_pos = TokenPos();
+  ConsumeToken();
+  const intptr_t ident_pos = TokenPos();
+  String* ident = ExpectIdentifier("parameter name expected");
+  Function& owner_function = Function::Handle();
+  LocalScope* owner_scope;
+  intptr_t param_index;
+  if (!IsFormalParameter(*ident, &owner_function, &owner_scope, &param_index)) {
+    ErrorMsg(ident_pos, "formal parameter name expected");
   }
-  // String interpolation needed.
-  String& result = String::ZoneHandle(Symbols::Empty());
-  String& resolved_name = String::Handle();
-  while (CurrentToken() == Token::kSTRING) {
-    result = String::Concat(result, *CurrentLiteral());
-    ConsumeToken();
-    if ((CurrentToken() != Token::kINTERPOL_VAR) &&
-        (CurrentToken() != Token::kINTERPOL_START)) {
-      break;
-    }
-    while ((CurrentToken() == Token::kINTERPOL_VAR) ||
-           (CurrentToken() == Token::kINTERPOL_START)) {
-      if (CurrentToken() == Token::kINTERPOL_START) {
-        ConsumeToken();
-        if (IsIdentifier()) {
-          resolved_name = ResolveImportVar(TokenPos(), *CurrentLiteral());
-          result = String::Concat(result, resolved_name);
-          ConsumeToken();
-          if (CurrentToken() != Token::kINTERPOL_END) {
-            ErrorMsg("'}' expected");
-          }
-          ConsumeToken();
-        } else {
-          ErrorMsg("identifier expected");
-        }
-      } else {
-        ASSERT(CurrentToken() == Token::kINTERPOL_VAR);
-        resolved_name = ResolveImportVar(TokenPos(), *CurrentLiteral());
-        result = String::Concat(result, resolved_name);
-        ConsumeToken();
-      }
-    }
-    // A string literal always ends with a kSTRING token.
-    ASSERT(CurrentToken() == Token::kSTRING);
+  if (param_index < owner_function.num_fixed_parameters()) {
+    // The formal parameter is not optional, therefore the corresponding
+    // argument is always passed and defined.
+    return new LiteralNode(test_pos, Bool::ZoneHandle(Bool::True()));
   }
-  return &result;
+  char name[64];
+  OS::SNPrint(name, 64, "%s_%"Pd"",
+              Symbols::Name(Symbols::kSavedArgDescVarPrefix),
+              owner_function.token_pos());
+  const String& saved_args_desc_name = String::ZoneHandle(Symbols::New(name));
+  LocalVariable* saved_args_desc_var = LookupLocalScope(saved_args_desc_name);
+  if (saved_args_desc_var == NULL) {
+    ASSERT(owner_scope != NULL);
+    saved_args_desc_var =
+        new LocalVariable(owner_function.token_pos(),
+                          saved_args_desc_name,
+                          Type::ZoneHandle(Type::ListInterface()));
+    saved_args_desc_var->set_is_final();
+    // The saved arguments descriptor variable must be added just after the
+    // formal parameters. This simplifies the 2-step saving of a captured
+    // arguments descriptor.
+    // At this time, the owner scope should only contain formal parameters.
+    ASSERT(owner_scope->num_variables() == owner_function.NumberOfParameters());
+    bool success = owner_scope->AddVariable(saved_args_desc_var);
+    ASSERT(success);
+    // Capture the saved argument descriptor variable if necessary.
+    LocalVariable* local = LookupLocalScope(saved_args_desc_name);
+    ASSERT(local == saved_args_desc_var);
+  }
+  // If we currently generate code for the local function of an enclosing owner
+  // function, the saved arguments descriptor variable must have been captured
+  // by the above lookup.
+  ASSERT((owner_function.raw() == innermost_function().raw()) ||
+         saved_args_desc_var->is_captured());
+  const String& param_name = String::ZoneHandle(Symbols::New(*ident));
+  return new ArgumentDefinitionTestNode(
+      test_pos, param_index, param_name, saved_args_desc_var);
 }
 
 
@@ -8988,6 +9099,8 @@ AstNode* Parser::ParsePrimary() {
     } else {
       ErrorMsg("illegal super call");
     }
+  } else if (CurrentToken() == Token::kCONDITIONAL) {
+    primary = ParseArgumentDefinitionTest();
   } else {
     UnexpectedToken();
   }
@@ -9242,8 +9355,18 @@ void Parser::SkipBinaryExpr() {
   while (((min_prec <= Token::Precedence(CurrentToken())) &&
       (Token::Precedence(CurrentToken()) <= max_prec)) ||
       IsLiteral("as")) {
+    Token::Kind last_token = IsLiteral("as") ? Token::kAS : CurrentToken();
     ConsumeToken();
-    SkipUnaryExpr();
+    if (last_token == Token::kIS) {
+      if (CurrentToken() == Token::kNOT) {
+        ConsumeToken();
+      }
+      SkipType(false);
+    } else if (last_token == Token::kAS) {
+      SkipType(false);
+    } else {
+      SkipUnaryExpr();
+    }
   }
 }
 

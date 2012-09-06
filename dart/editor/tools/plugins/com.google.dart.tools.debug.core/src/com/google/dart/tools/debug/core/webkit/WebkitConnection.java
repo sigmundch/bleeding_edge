@@ -152,6 +152,10 @@ public class WebkitConnection {
       websocket.connect();
     } catch (WebSocketException exception) {
       throw new IOException(exception);
+    } catch (Throwable exception) {
+      // The websocket library can occasionally throw an ArrayIndexOutOfBoundsException.
+      // Tracked here: http://code.google.com/p/weberknecht/issues/detail?id=17
+      throw new IOException(exception);
     }
   }
 
@@ -207,6 +211,19 @@ public class WebkitConnection {
     for (WebkitConnectionListener listener : connectionListeners) {
       listener.connectionClosed(this);
     }
+
+    // Clean up the callbackMap on termination.
+    List<Callback> callbacks = new ArrayList<Callback>(callbackMap.values());
+
+    for (Callback callback : callbacks) {
+      try {
+        callback.handleResult(WebkitResult.createJsonErrorResult("connection termination"));
+      } catch (JSONException e) {
+
+      }
+    }
+
+    callbackMap.clear();
   }
 
   protected void processWebSocketMessage(WebSocketMessage message) {

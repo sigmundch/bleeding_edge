@@ -408,8 +408,8 @@ Dart_CObject* SerializeAndDeserializeBigint(const Bigint& bigint) {
                         Snapshot::kMessage, Isolate::Current());
   Bigint& serialized_bigint = Bigint::Handle();
   serialized_bigint ^= reader.ReadObject();
-  const char *str1 = BigintOperations::ToHexCString(bigint, allocator);
-  const char *str2 =
+  const char* str1 = BigintOperations::ToHexCString(bigint, allocator);
+  const char* str2 =
       BigintOperations::ToHexCString(serialized_bigint, allocator);
   EXPECT_STREQ(str1, str2);
   free(const_cast<char*>(str1));
@@ -723,7 +723,11 @@ TEST_CASE(SerializeScript) {
   const TokenStream& expected_tokens = TokenStream::Handle(script.tokens());
   const TokenStream& serialized_tokens =
       TokenStream::Handle(serialized_script.tokens());
-  EXPECT_EQ(expected_tokens.Length(), serialized_tokens.Length());
+  const ExternalUint8Array& expected_data =
+      ExternalUint8Array::Handle(expected_tokens.GetStream());
+  const ExternalUint8Array& serialized_data =
+      ExternalUint8Array::Handle(serialized_tokens.GetStream());
+  EXPECT_EQ(expected_data.Length(), serialized_data.Length());
   TokenStream::Iterator expected_iterator(expected_tokens, 0);
   TokenStream::Iterator serialized_iterator(serialized_tokens, 0);
   Token::Kind expected_kind = expected_iterator.CurrentTokenKind();
@@ -800,7 +804,7 @@ UNIT_TEST_CASE(FullSnapshot) {
     // Create a test library and Load up a test script in it.
     TestCase::LoadTestScript(kScriptChars, NULL);
     timer1.Stop();
-    OS::PrintErr("Without Snapshot: %dus\n", timer1.TotalElapsedTime());
+    OS::PrintErr("Without Snapshot: %"Pd64"us\n", timer1.TotalElapsedTime());
 
     // Write snapshot with object content.
     Isolate* isolate = Isolate::Current();
@@ -818,7 +822,7 @@ UNIT_TEST_CASE(FullSnapshot) {
   {
     Dart_EnterScope();  // Start a Dart API scope for invoking API functions.
     timer2.Stop();
-    OS::PrintErr("From Snapshot: %dus\n", timer2.TotalElapsedTime());
+    OS::PrintErr("From Snapshot: %"Pd64"us\n", timer2.TotalElapsedTime());
 
     // Invoke a function which returns an object.
     Dart_Handle cls =
@@ -857,7 +861,7 @@ UNIT_TEST_CASE(FullSnapshot1) {
     Dart_Handle lib = TestCase::LoadTestScript(kScriptChars, NULL);
     ClassFinalizer::FinalizePendingClasses();
     timer1.Stop();
-    OS::PrintErr("Without Snapshot: %dus\n", timer1.TotalElapsedTime());
+    OS::PrintErr("Without Snapshot: %"Pd64"us\n", timer1.TotalElapsedTime());
 
     // Write snapshot with object content.
     FullSnapshotWriter writer(&buffer, &malloc_allocator);
@@ -877,7 +881,7 @@ UNIT_TEST_CASE(FullSnapshot1) {
   {
     Dart_EnterScope();  // Start a Dart API scope for invoking API functions.
     timer2.Stop();
-    OS::PrintErr("From Snapshot: %dus\n", timer2.TotalElapsedTime());
+    OS::PrintErr("From Snapshot: %"Pd64"us\n", timer2.TotalElapsedTime());
 
     // Invoke a function which returns an object.
     Dart_Handle cls = Dart_GetClass(TestCase::lib(),

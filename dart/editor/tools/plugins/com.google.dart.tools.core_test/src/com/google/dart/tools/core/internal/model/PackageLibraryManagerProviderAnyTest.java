@@ -19,20 +19,17 @@ import java.io.File;
 
 public class PackageLibraryManagerProviderAnyTest extends PackageLibraryManagerProviderTest {
 
-  public void test_PackageLibraryManagerProvider_builtin() throws Exception {
-    testLibrary("builtin", "builtin_runtime.dart");
-  }
-
   public void test_PackageLibraryManagerProvider_core() throws Exception {
-    testLibrary("core", "core_runtime.dart");
+    testLibrary("core", "core.dart");
   }
 
   public void test_PackageLibraryManagerProvider_coreImpl() throws Exception {
-    testLibrary("coreimpl", "coreimpl_runtime.dart");
+    testLibrary("coreimpl", "coreimpl.dart");
   }
 
   public void test_PackageLibraryManagerProvider_html() throws Exception {
-    testLibrary("html", "html_dartium.dart");
+    // TODO(keertip): fix test to look for host = dartium
+    //   testLibrary("html", "html_dartium.dart");
   }
 
   public void test_PackageLibraryManagerProvider_io() throws Exception {

@@ -12,11 +12,6 @@
 
 namespace dart {
 
-const char* SourceLabel::kDefaultLabelName = ":L";
-
-const char* LocalVariable::kSavedContextVarName = ":saved_entry_context_var";
-
-
 int SourceLabel::FunctionLevel() const {
   ASSERT(owner() != NULL);
   return owner()->function_level();
@@ -233,7 +228,7 @@ void LocalScope::CollectLocalVariables(GrowableArray<VarDesc>* vars,
       (!parent()->HasContextLevel()) ||
       (parent()->context_level() != context_level()))) {
     // This is the outermost scope with a context level or this scope's
-    // context level differes from its parent's level.
+    // context level differs from its parent's level.
     VarDesc desc;
     desc.name = &String::Handle();  // No name.
     desc.info.kind =  RawLocalVarDescriptors::kContextLevel;
@@ -263,7 +258,8 @@ void LocalScope::CollectLocalVariables(GrowableArray<VarDesc>* vars,
         desc.info.end_pos = var->owner()->end_token_pos();
         desc.info.index = var->index();
         vars->Add(desc);
-      } else if (var->name().Equals(LocalVariable::kSavedContextVarName)) {
+      } else if (var->name().Equals(
+            Symbols::Name(Symbols::kSavedEntryContextVar))) {
         // This is the local variable in which the function saves the
         // caller's chain of closure contexts (caller's CTX register).
         VarDesc desc;
@@ -275,6 +271,7 @@ void LocalScope::CollectLocalVariables(GrowableArray<VarDesc>* vars,
         desc.info.index = var->index();
         vars->Add(desc);
       }
+      // The saved arguments descriptor variable is not currently collected.
     }
   }
   LocalScope* child = this->child();
@@ -480,7 +477,9 @@ RawContextScope* LocalScope::PreserveOuterScope(int current_context_level)
 
 
 LocalScope* LocalScope::RestoreOuterScope(const ContextScope& context_scope) {
-  LocalScope* outer_scope = new LocalScope(NULL, 0, 0);
+  // The function level of the outer scope is one less than the function level
+  // of the current function, which is 0.
+  LocalScope* outer_scope = new LocalScope(NULL, -1, 0);
   // Add all variables as aliases to the outer scope.
   for (int i = 0; i < context_scope.num_variables(); i++) {
     LocalVariable* variable =

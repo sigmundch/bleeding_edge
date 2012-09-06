@@ -9,6 +9,7 @@
 #include "vm/dart_entry.h"
 #include "vm/debugger.h"
 #include "vm/deopt_instructions.h"
+#include "vm/flow_graph_allocator.h"
 #include "vm/il_printer.h"
 #include "vm/intrinsifier.h"
 #include "vm/locations.h"
@@ -29,7 +30,22 @@ DECLARE_FLAG(bool, report_usage_count);
 DECLARE_FLAG(bool, trace_functions);
 DECLARE_FLAG(int, optimization_counter_threshold);
 
-RawDeoptInfo* DeoptimizationStub::CreateDeoptInfo(FlowGraphCompiler* compiler) {
+
+void CompilerDeoptInfo::BuildReturnAddress(DeoptInfoBuilder* builder,
+                                           const Function& function,
+                                           intptr_t slot_ix) {
+  builder->AddReturnAddressAfter(function, deopt_id(), slot_ix);
+}
+
+
+void CompilerDeoptInfoWithStub::BuildReturnAddress(DeoptInfoBuilder* builder,
+                                                   const Function& function,
+                                                   intptr_t slot_ix) {
+  builder->AddReturnAddressBefore(function, deopt_id(), slot_ix);
+}
+
+
+RawDeoptInfo* CompilerDeoptInfo::CreateDeoptInfo(FlowGraphCompiler* compiler) {
   if (deoptimization_env_ == NULL) return DeoptInfo::null();
   const Function& function = compiler->parsed_function().function();
   // For functions with optional arguments, all incoming are copied to local
@@ -41,7 +57,7 @@ RawDeoptInfo* DeoptimizationStub::CreateDeoptInfo(FlowGraphCompiler* compiler) {
   DeoptInfoBuilder builder(compiler->object_table(), num_args);
 
   intptr_t slot_ix = 0;
-  builder.AddReturnAddress(function, deopt_id_, slot_ix++);
+  BuildReturnAddress(&builder, function, slot_ix++);
 
   // All locals between TOS and PC-marker.
   const GrowableArray<Value*>& values = deoptimization_env_->values();
@@ -50,7 +66,7 @@ RawDeoptInfo* DeoptimizationStub::CreateDeoptInfo(FlowGraphCompiler* compiler) {
   intptr_t height = compiler->StackSize();
   for (intptr_t i = 0; i < values.length(); i++) {
     if (deoptimization_env_->LocationAt(i).IsInvalid()) {
-      ASSERT(values[i]->AsUse()->definition()->IsPushArgument());
+      ASSERT(values[i]->definition()->IsPushArgument());
       *deoptimization_env_->LocationSlotAt(i) = Location::StackSlot(height++);
     }
   }
@@ -86,7 +102,7 @@ FlowGraphCompiler::FlowGraphCompiler(Assembler* assembler,
       stackmap_table_builder_(
           is_optimizing ? new StackmapTableBuilder() : NULL),
       block_info_(block_order_.length()),
-      deopt_stubs_(),
+      deopt_infos_(),
       object_table_(GrowableObjectArray::Handle(GrowableObjectArray::New())),
       is_optimizing_(is_optimizing),
       is_dart_leaf_(is_leaf),
@@ -140,7 +156,7 @@ bool FlowGraphCompiler::CanOptimize() {
 
 void FlowGraphCompiler::VisitBlocks() {
   for (intptr_t i = 0; i < block_order().length(); ++i) {
-    assembler()->Comment("B%d", i);
+    assembler()->Comment("B%"Pd"", i);
     // Compile the block entry.
     BlockEntryInstr* entry = block_order()[i];
     set_current_block(entry);
@@ -156,6 +172,7 @@ void FlowGraphCompiler::VisitBlocks() {
         EmitInstructionPrologue(instr);
         pending_deoptimization_env_ = instr->env();
         instr->EmitNativeCode(this);
+        EmitInstructionEpilogue(instr);
       }
     }
   }
@@ -208,8 +225,8 @@ void FlowGraphCompiler::GenerateDeferredCode() {
   for (intptr_t i = 0; i < slow_path_code_.length(); i++) {
     slow_path_code_[i]->EmitNativeCode(this);
   }
-  for (intptr_t i = 0; i < deopt_stubs_.length(); i++) {
-    deopt_stubs_[i]->GenerateCode(this, i);
+  for (intptr_t i = 0; i < deopt_infos_.length(); i++) {
+    deopt_infos_[i]->GenerateCode(this, i);
   }
 }
 
@@ -234,15 +251,15 @@ void FlowGraphCompiler::AddCurrentDescriptor(PcDescriptors::Kind kind,
 
 void FlowGraphCompiler::AddDeoptIndexAtCall(intptr_t deopt_id,
                                             intptr_t token_pos) {
-  // TODO(srdjan): Temporary use deopt stubs to maintain deopt-indexes.
-  // kDeoptAtCall will not emit code, but will only generate deoptimization
-  // information.
-  const intptr_t deopt_index = deopt_stubs_.length();
-  AddDeoptStub(deopt_id, kDeoptAtCall);
-  pc_descriptors_list()->AddDescriptor(PcDescriptors::kDeoptIndex,
-                                       assembler()->CodeSize(),
+  ASSERT(is_optimizing());
+  const intptr_t deopt_index = deopt_infos_.length();
+  CompilerDeoptInfo* info = new CompilerDeoptInfo(deopt_id, kDeoptAtCall);
+  ASSERT(pending_deoptimization_env_ != NULL);
+  info->set_deoptimization_env(pending_deoptimization_env_);
+  deopt_infos_.Add(info);
+  pc_descriptors_list()->AddDeoptIndex(assembler()->CodeSize(),
                                        deopt_id,
-                                       token_pos,
+                                       kDeoptAtCall,
                                        deopt_index);
 }
 
@@ -251,19 +268,61 @@ void FlowGraphCompiler::RecordSafepoint(LocationSummary* locs) {
   if (is_optimizing()) {
     BitmapBuilder* bitmap = locs->stack_bitmap();
     ASSERT(bitmap != NULL);
+    ASSERT(bitmap->Length() <= StackSize());
+    // Pad the bitmap out to describe all the spill slots.
     bitmap->SetLength(StackSize());
-    stackmap_table_builder_->AddEntry(assembler()->CodeSize(), bitmap);
+
+    // Mark the bits in the stack map in the same order we push registers in
+    // slow path code (see FlowGraphCompiler::SaveLiveRegisters).
+    //
+    // Slow path code can have registers at the safepoint.
+    if (!locs->always_calls()) {
+      RegisterSet* regs = locs->live_registers();
+      if (regs->xmm_regs_count() > 0) {
+        // Denote XMM registers with 0 bits in the stackmap.  Based on the
+        // assumption that there are normally few live XMM registers, this
+        // encoding is simpler and roughly as compact as storing a separate
+        // count of XMM registers.
+        //
+        // XMM registers have the highest register number at the highest
+        // address (i.e., first in the stackmap).
+        for (intptr_t i = kNumberOfXmmRegisters - 1; i >= 0; --i) {
+          XmmRegister reg = static_cast<XmmRegister>(i);
+          if (regs->ContainsXmmRegister(reg)) {
+            for (intptr_t j = 0;
+                 j < FlowGraphAllocator::kDoubleSpillSlotFactor;
+                 ++j) {
+              bitmap->Set(bitmap->Length(), false);
+            }
+          }
+        }
+      }
+      // General purpose registers have the lowest register number at the
+      // highest address (i.e., first in the stackmap).
+      for (intptr_t i = 0; i < kNumberOfCpuRegisters; ++i) {
+        Register reg = static_cast<Register>(i);
+        if (locs->live_registers()->ContainsRegister(reg)) {
+          bitmap->Set(bitmap->Length(), true);
+        }
+      }
+    }
+
+    intptr_t register_bit_count = bitmap->Length() - StackSize();
+    stackmap_table_builder_->AddEntry(assembler()->CodeSize(),
+                                      bitmap,
+                                      register_bit_count);
   }
 }
 
 
 Label* FlowGraphCompiler::AddDeoptStub(intptr_t deopt_id,
                                        DeoptReasonId reason) {
-  DeoptimizationStub* stub = new DeoptimizationStub(deopt_id, reason);
+  CompilerDeoptInfoWithStub* stub =
+      new CompilerDeoptInfoWithStub(deopt_id, reason);
   ASSERT(is_optimizing_);
   ASSERT(pending_deoptimization_env_ != NULL);
   stub->set_deoptimization_env(pending_deoptimization_env_);
-  deopt_stubs_.Add(stub);
+  deopt_infos_.Add(stub);
   return stub->entry_label();
 }
 
@@ -287,10 +346,10 @@ void FlowGraphCompiler::FinalizePcDescriptors(const Code& code) {
 
 void FlowGraphCompiler::FinalizeDeoptInfo(const Code& code) {
   const Array& array =
-      Array::Handle(Array::New(deopt_stubs_.length(), Heap::kOld));
+      Array::Handle(Array::New(deopt_infos_.length(), Heap::kOld));
   DeoptInfo& info = DeoptInfo::Handle();
-  for (intptr_t i = 0; i < deopt_stubs_.length(); i++) {
-    info = deopt_stubs_[i]->CreateDeoptInfo(this);
+  for (intptr_t i = 0; i < deopt_infos_.length(); i++) {
+    info = deopt_infos_[i]->CreateDeoptInfo(this);
     array.SetAt(i, info);
   }
   code.set_deopt_info_array(array);
@@ -425,7 +484,7 @@ void FlowGraphCompiler::GenerateNumberTypeCheck(Register kClassIdReg,
   } else if (type.IsIntInterface()) {
     args.Add(kMintCid);
     args.Add(kBigintCid);
-  } else if (type.IsDoubleInterface()) {
+  } else if (type.IsDoubleType()) {
     args.Add(kDoubleCid);
   }
   CheckClassIds(kClassIdReg, args, is_instance_lbl, is_not_instance_lbl);
@@ -745,6 +804,48 @@ void ParallelMoveResolver::PerformMove(int index) {
 
   // This move is not blocked.
   EmitMove(index);
+}
+
+
+Condition FlowGraphCompiler::FlipCondition(Condition condition) {
+  switch (condition) {
+    case EQUAL:         return EQUAL;
+    case NOT_EQUAL:     return NOT_EQUAL;
+    case LESS:          return GREATER;
+    case LESS_EQUAL:    return GREATER_EQUAL;
+    case GREATER:       return LESS;
+    case GREATER_EQUAL: return LESS_EQUAL;
+    case BELOW:         return ABOVE;
+    case BELOW_EQUAL:   return ABOVE_EQUAL;
+    case ABOVE:         return BELOW;
+    case ABOVE_EQUAL:   return BELOW_EQUAL;
+    default:
+      UNIMPLEMENTED();
+      return EQUAL;
+  }
+}
+
+
+bool FlowGraphCompiler::EvaluateCondition(Condition condition,
+                                          intptr_t left,
+                                          intptr_t right) {
+  const uintptr_t unsigned_left = static_cast<uintptr_t>(left);
+  const uintptr_t unsigned_right = static_cast<uintptr_t>(right);
+  switch (condition) {
+    case EQUAL:         return left == right;
+    case NOT_EQUAL:     return left != right;
+    case LESS:          return left < right;
+    case LESS_EQUAL:    return left <= right;
+    case GREATER:       return left > right;
+    case GREATER_EQUAL: return left >= right;
+    case BELOW:         return unsigned_left < unsigned_right;
+    case BELOW_EQUAL:   return unsigned_left <= unsigned_right;
+    case ABOVE:         return unsigned_left > unsigned_right;
+    case ABOVE_EQUAL:   return unsigned_left >= unsigned_right;
+    default:
+      UNIMPLEMENTED();
+      return false;
+  }
 }
 
 

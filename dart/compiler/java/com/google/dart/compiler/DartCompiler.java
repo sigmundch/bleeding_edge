@@ -428,7 +428,17 @@ public class DartCompiler {
         for (LibraryNode libNode : lib.getImportPaths()) {
           LibrarySource dep = getImportSource(libSrc, libNode);
           if (dep != null) {
-            lib.addImport(updateLibraries(dep), libNode);
+            LibraryUnit importedLib = updateLibraries(dep);
+            lib.addImport(importedLib, libNode);
+            if (libNode.isExported()) {
+              lib.addExport(importedLib, libNode);
+            }
+          }
+        }
+        for (LibraryNode libNode : lib.getExportPaths()) {
+          LibrarySource dep = getImportSource(libSrc, libNode);
+          if (dep != null) {
+            lib.addExport(updateLibraries(dep), libNode);
           }
         }
         return lib;
@@ -850,14 +860,14 @@ public class DartCompiler {
         }
         
         // auto-magically define "assert" function
-        if (dartSrc.getUri().toString().equals("dart://core/runtime/object.dart")) {
+        if (dartSrc.getUri().toString().equals("dart://core/object.dart")) {
           srcCode += "\nvoid assert(x) {}";
         }
 
         // inject "Type" type from 1.0 M1 specification
         // remove once it will be added into SDK
         // http://code.google.com/p/dart/issues/detail?id=3368
-        if (dartSrc.getUri().toString().equals("dart://core/runtime/object.dart")) {
+        if (dartSrc.getUri().toString().equals("dart://core/object.dart")) {
           srcCode += "\nclass Type {}";
         }
 

@@ -15,8 +15,9 @@ import sys
 import tempfile
 import gsutil
 import ziputils
+import hashlib
 
-from os.path import join
+from os.path import join, basename
 
 BUILD_OS = None
 DART_PATH = None
@@ -124,8 +125,6 @@ class AntWrapper(object):
       args.append('-Dbuild.extra.artifacts={0}'.format(extra_artifacts))
     if is_windows:
       args.append('-autoproxy')
-      #add the JAVA_HOME to the environment for the windows builds
-      local_env['JAVA_HOME'] = 'C:\Program Files\Java\jdk1.6.0_29'
     if extra_args:
       args.extend(extra_args)
     args.append('-Dbuild.local.build=false')
@@ -409,16 +408,16 @@ def main():
       junit_status = 0
 
     if buildos:
+      _InstallArtifacts(buildout, buildos, extra_artifacts)
+      
       # dart-editor-linux.gtk.x86.zip --> darteditor-linux-32.zip
       RenameRcpZipFiles(buildout);
       
       PostProcessEditorBuilds(buildout)
       
-      _InstallArtifacts(buildout, buildos, extra_artifacts)
-      
       version_file = _FindVersionFile(buildout)
       if version_file:
-        UploadFile(version_file)
+        UploadFile(version_file, False)
 
       found_zips = _FindRcpZipFiles(buildout)
       for zipfile in found_zips:
@@ -628,8 +627,14 @@ def InstallDartium(buildroot, buildout, buildos, gsu):
   if not dartiumFiles:
     raise Exception("could not find any dartium files")
 
+  tempList = []
+  
   for dartiumFile in dartiumFiles:
     print '  found dartium: %s' % dartiumFile
+    tempList.append(RemapDartiumUrl(dartiumFile))
+
+  dartiumFiles = tempList
+
   
   for rcpZipFile in rcpZipFiles:
     searchString = None;
@@ -694,6 +699,24 @@ def InstallDartium(buildroot, buildout, buildos, gsu):
   shutil.rmtree(tmp_dir, True)
 
 
+# convert:
+#   gs://dartium-archive/latest/dartium-lucid32-full-9420.9420.zip
+# to:
+#   gs://dartium-archive/dartium-lucid32-full/dartium-lucid32-full-9420.9420.zip  
+def RemapDartiumUrl(url):
+  name = basename(url)
+
+  reResult = re.search('(\S*-\S*-full)-.*', name)
+
+  directory = reResult.group(1)
+  
+  remap = "gs://dartium-archive/%s/%s" % (directory, name)
+  
+  print "    %s ==> %s" % (url, remap)
+  
+  return remap
+  
+
 def _InstallArtifacts(buildout, buildos, extra_artifacts):
   """Install extra build artifacts into the RCP zip files.
 
@@ -748,6 +771,32 @@ def PostProcessEditorBuilds(out_dir):
       os.remove(infofile)
       
       
+def CalculateChecksum(filename):
+  """Calculate the MD5 checksum for filename."""
+
+  md5 = hashlib.md5()
+  
+  with open(filename, 'rb') as file:
+    data = file.read(65536)
+    while len(data) > 0:
+      md5.update(data)
+      data = file.read(65536)
+      
+  return md5.hexdigest()
+
+
+def CreateChecksumFile(filename):
+  """Create and upload an MD5 checksum file for filename."""
+
+  checksum = CalculateChecksum(filename)
+  checksum_filename = '%s.md5sum' % filename
+  
+  with open(checksum_filename, 'w') as file:
+    file.write('%s *%s' % (checksum, os.path.basename(filename)))
+    
+  return checksum_filename
+
+
 def ReplaceInFiles(paths, subs):
   '''Reads a series of files, applies a series of substitutions to each, and
      saves them back out. subs should by a list of (pattern, replace) tuples.'''
@@ -808,7 +857,7 @@ def CreateApiDocs(buildLocation):
   CreateZip(apidir, api_zip)
 
   # upload to continuous/svn_rev and to continuous/latest
-  UploadFile(api_zip)
+  UploadFile(api_zip, False)
   
   
 def CreateSDK(sdkpath):
@@ -931,14 +980,25 @@ def CreateTgz(directory, file):
                  os.path.dirname(directory))
 
 
-def UploadFile(file):
+def UploadFile(file, createChecksum=True):
   """Upload the given file to google storage."""
   
-  gspathRev = "%s/%s" % (GSU_PATH_REV, os.path.basename(file))
-  Gsutil(['cp', '-a', 'public-read', r'file://' + file, gspathRev])
-
-  gspathLatest = "%s/%s" % (GSU_PATH_LATEST, os.path.basename(file))
-  Gsutil(['cp', '-a', 'public-read', gspathRev, gspathLatest])
+  filePathRev = "%s/%s" % (GSU_PATH_REV, os.path.basename(file))
+  filePathLatest = "%s/%s" % (GSU_PATH_LATEST, os.path.basename(file))
+  
+  if (createChecksum):
+    checksum = CreateChecksumFile(file)
+    
+    checksumRev = "%s/%s" % (GSU_PATH_REV, os.path.basename(checksum))
+    checksumLatest = "%s/%s" % (GSU_PATH_LATEST, os.path.basename(checksum))
+  
+  Gsutil(['cp', '-a', 'public-read', r'file://' + file, filePathRev])
+  if (createChecksum):
+    Gsutil(['cp', '-a', 'public-read', r'file://' + checksum, checksumRev])
+    
+  Gsutil(['cp', '-a', 'public-read', filePathRev, filePathLatest])
+  if (createChecksum):
+    Gsutil(['cp', '-a', 'public-read', checksumRev, checksumLatest])
 
 
 def UploadDirectory(filesToUpload, gs_dir):

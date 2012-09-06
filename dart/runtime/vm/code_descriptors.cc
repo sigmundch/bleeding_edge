@@ -15,21 +15,21 @@ void DescriptorList::AddDescriptor(PcDescriptors::Kind kind,
   data.pc_offset = pc_offset;
   data.kind = kind;
   data.deopt_id = deopt_id;
-  data.token_index = token_index;
+  data.SetTokenPos(token_index);
   data.try_index = try_index;
   list_.Add(data);
 }
 
 
-void DescriptorList::AddDeoptInfo(intptr_t pc_offset,
-                                  intptr_t deopt_id,
-                                  intptr_t token_index,
-                                  intptr_t deopt_array_index) {
+void DescriptorList::AddDeoptIndex(intptr_t pc_offset,
+                                   intptr_t deopt_id,
+                                   DeoptReasonId deopt_reason,
+                                   intptr_t deopt_array_index) {
   struct PcDesc data;
   data.pc_offset = pc_offset;
   data.kind = PcDescriptors::kDeoptIndex;
   data.deopt_id = deopt_id;
-  data.token_index = token_index;
+  data.SetDeoptReason(deopt_reason);
   // Try_index is reused for deopt_array_index.
   data.try_index = deopt_array_index;
   list_.Add(data);
@@ -53,8 +53,9 @@ RawPcDescriptors* DescriptorList::FinalizePcDescriptors(uword entry_point) {
 
 
 void StackmapTableBuilder::AddEntry(intptr_t pc_offset,
-                                    BitmapBuilder* bitmap) {
-  stack_map_ = Stackmap::New(pc_offset, bitmap);
+                                    BitmapBuilder* bitmap,
+                                    intptr_t register_bit_count) {
+  stack_map_ = Stackmap::New(pc_offset, bitmap, register_bit_count);
   list_.Add(stack_map_);
 }
 

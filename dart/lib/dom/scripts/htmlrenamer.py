@@ -4,6 +4,7 @@
 # BSD-style license that can be found in the LICENSE file.
 
 _html_interface_renames = {
+    'DOMFormData': 'FormData',
     'DOMWindow': 'Window',
     'WebKitAnimation': 'Animation',
     'WebKitAnimationEvent': 'AnimationEvent',
@@ -106,7 +107,7 @@ _renamed_html_members = {
     'SVGStylable.className': '$dom_svgClassName',
 }
 
-# Members and classes from the dom that should be removed completelly from
+# Members and classes from the dom that should be removed completely from
 # dart:html.  These could be expressed in the IDL instead but expressing this
 # as a simple table instead is more concise.
 # Syntax is: ClassName.(get\.|set\.)?MemberName

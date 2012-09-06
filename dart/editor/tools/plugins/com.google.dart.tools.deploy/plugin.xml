@@ -253,11 +253,15 @@
             content-type="org.eclipse.core.runtime.text"
             file-extensions="js">
       </file-association>
-       <file-association
+      <file-association
+            content-type="org.eclipse.core.runtime.text"
+            file-extensions="json">
+      </file-association>
+      <file-association
             content-type="org.eclipse.core.runtime.text"
             file-extensions="py">
       </file-association>
-       <file-association
+      <file-association
             content-type="org.eclipse.core.runtime.text"
             file-extensions="yaml">
       </file-association>      
@@ -366,12 +370,12 @@
             class="com.google.dart.tools.debug.ui.internal.preferences.DebugPreferencePage"
             id="com.google.dart.tools.debug.debugPreferencePage">
       </page>
-      <!-- TODO(pquitslund): re-enable for further testing -->
+      <!-- TODO(pquitslund): re-enable for further testing
       <page
             class="com.google.dart.tools.ui.update.UpdatePreferencePage"
             id="com.google.dart.tools.ui.update.updatePreferencePage"
             name="%updatePrefPageName">
-      </page>
+      </page-->
    </extension>
 
    <extension

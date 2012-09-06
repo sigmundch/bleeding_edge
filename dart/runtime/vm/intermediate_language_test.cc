@@ -11,28 +11,30 @@ TEST_CASE(InstructionTests) {
   TargetEntryInstr* target_instr =
       new TargetEntryInstr(CatchClauseNode::kInvalidTryIndex);
   EXPECT(target_instr->IsBlockEntry());
-  EXPECT(!target_instr->IsBind());
-  BindInstr* bind_instr =
-      new BindInstr(BindInstr::kUnused, new CurrentContextComp());
-  EXPECT(bind_instr->IsBind());
-  EXPECT(!bind_instr->IsBlockEntry());
+  EXPECT(!target_instr->IsDefinition());
+  CurrentContextInstr* context = new CurrentContextInstr();
+  EXPECT(context->IsDefinition());
+  EXPECT(!context->IsBlockEntry());
 }
 
 
 TEST_CASE(OptimizationTests) {
-  Definition* def1 = new PhiInstr(0);
-  Definition* def2 = new PhiInstr(0);
-  UseVal* use1a = new UseVal(def1);
-  UseVal* use1b = new UseVal(def1);
+  JoinEntryInstr* join =
+      new JoinEntryInstr(CatchClauseNode::kInvalidTryIndex);
+
+  Definition* def1 = new PhiInstr(join, 0);
+  Definition* def2 = new PhiInstr(join, 0);
+  Value* use1a = new Value(def1);
+  Value* use1b = new Value(def1);
   EXPECT(use1a->Equals(use1b));
-  UseVal* use2 = new UseVal(def2);
+  Value* use2 = new Value(def2);
   EXPECT(!use2->Equals(use1a));
 
-  ConstantComp* c1 = new ConstantComp(Bool::ZoneHandle(Bool::True()));
-  ConstantComp* c2 = new ConstantComp(Bool::ZoneHandle(Bool::True()));
+  ConstantInstr* c1 = new ConstantInstr(Bool::ZoneHandle(Bool::True()));
+  ConstantInstr* c2 = new ConstantInstr(Bool::ZoneHandle(Bool::True()));
   EXPECT(c1->Equals(c2));
-  ConstantComp* c3 = new ConstantComp(Object::ZoneHandle());
-  ConstantComp* c4 = new ConstantComp(Object::ZoneHandle());
+  ConstantInstr* c3 = new ConstantInstr(Object::ZoneHandle());
+  ConstantInstr* c4 = new ConstantInstr(Object::ZoneHandle());
   EXPECT(c3->Equals(c4));
   EXPECT(!c3->Equals(c1));
 }

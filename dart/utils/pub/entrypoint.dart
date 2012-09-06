@@ -31,6 +31,9 @@
  * but may be the entrypoint when you're running its tests.
  */
 class Entrypoint {
+  // TODO(rnystrom): Get rid of this when #4820 is fixed.
+  static bool installSelfLink = false;
+
   /**
    * The root package this entrypoint is associated with.
    */
@@ -223,8 +226,18 @@ class Entrypoint {
   Future _installSelfReference(_) {
     var linkPath = join(path, root.name);
     return exists(linkPath).chain((exists) {
-      if (exists) return new Future.immediate(null);
-      return ensureDir(path).chain((_) => createSymlink(root.dir, linkPath));
+      if (installSelfLink) {
+        // Create the symlink if it doesn't exist.
+        if (exists) return new Future.immediate(null);
+        return ensureDir(path).chain((_) => createSymlink(root.dir, linkPath));
+      } else {
+        // TODO(rnystrom): Get rid of this branch when #4820 is fixed.
+        // Delete the old one if it's there.
+        return ensureDir(path).chain((_) {
+          if (!exists) return new Future.immediate(null);
+          return deleteDir(linkPath);
+        });
+      }
     });
   }
 
@@ -303,16 +316,17 @@ class Entrypoint {
   Future _validatePubspec() {
     var future = new Future.immediate(null);;
     if (root.pubspec.isEmpty) {
-      future = exists(join(path, "pubspec.yaml")).transform((exists) {
+      future = exists(join(root.dir, "pubspec.yaml")).transform((exists) {
         if (exists) return;
-        throw 'Could not find a file named "pubspec.yaml" in the directory'
+        throw 'Could not find a file named "pubspec.yaml" in the directory '
           '$path.';
       });
     }
 
     return future.transform((_) {
       if (root.pubspec.name != null) return;
-      throw '"pubspec.yaml" must contain a "name" key.';
+      throw '"pubspec.yaml" is missing the required "name" field (e.g. "name: '
+        '${root.name}").';
     });
   }
 }

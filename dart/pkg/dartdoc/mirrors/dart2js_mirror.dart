@@ -51,7 +51,7 @@ List<ParameterMirror> _parametersFromFunctionSignature(
 
 Dart2JsTypeMirror _convertTypeToTypeMirror(
     Dart2JsMirrorSystem system,
-    Type type,
+    DartType type,
     InterfaceType defaultType,
     [FunctionSignature functionSignature]) {
   if (type === null) {
@@ -102,14 +102,14 @@ MethodMirror _convertElementMethodToMethodMirror(Dart2JsObjectMirror library,
 }
 
 class Dart2JsMethodKind {
-  static final Dart2JsMethodKind NORMAL = const Dart2JsMethodKind("normal");
-  static final Dart2JsMethodKind CONSTRUCTOR
+  static const Dart2JsMethodKind NORMAL = const Dart2JsMethodKind("normal");
+  static const Dart2JsMethodKind CONSTRUCTOR
       = const Dart2JsMethodKind("constructor");
-  static final Dart2JsMethodKind CONST = const Dart2JsMethodKind("const");
-  static final Dart2JsMethodKind FACTORY = const Dart2JsMethodKind("factory");
-  static final Dart2JsMethodKind GETTER = const Dart2JsMethodKind("getter");
-  static final Dart2JsMethodKind SETTER = const Dart2JsMethodKind("setter");
-  static final Dart2JsMethodKind OPERATOR = const Dart2JsMethodKind("operator");
+  static const Dart2JsMethodKind CONST = const Dart2JsMethodKind("const");
+  static const Dart2JsMethodKind FACTORY = const Dart2JsMethodKind("factory");
+  static const Dart2JsMethodKind GETTER = const Dart2JsMethodKind("getter");
+  static const Dart2JsMethodKind SETTER = const Dart2JsMethodKind("setter");
+  static const Dart2JsMethodKind OPERATOR = const Dart2JsMethodKind("operator");
 
   final String text;
 
@@ -212,7 +212,7 @@ class LibraryCompiler extends api.Compiler {
   bool _runList(List<Uri> uriList) {
     try {
       runCompilerList(uriList);
-    } catch (CompilerCancelledException exception) {
+    } on CompilerCancelledException catch (exception) {
       log(exception.toString());
       log('compilation failed');
       return false;
@@ -282,6 +282,7 @@ class LibraryTypeCheckerTask extends TypeCheckerTask {
 //------------------------------------------------------------------------------
 
 class Dart2JsCompilation implements Compilation {
+  bool isWindows = (Platform.operatingSystem == 'windows');
   api.Compiler _compiler;
   Uri cwd;
   bool isAborting = false;
@@ -294,11 +295,12 @@ class Dart2JsCompilation implements Compilation {
     String source;
     try {
       source = readAll(uriPathToNative(uri.path));
-    } catch (FileIOException ex) {
-      throw 'Error: Cannot read "${relativize(cwd, uri)}" (${ex.osError}).';
+    } on FileIOException catch (ex) {
+      throw 'Error: Cannot read "${relativize(cwd, uri, isWindows)}" '
+            '(${ex.osError}).';
     }
     sourceFiles[uri.toString()] =
-      new SourceFile(relativize(cwd, uri), source);
+      new SourceFile(relativize(cwd, uri, isWindows), source);
     return new Future.immediate(source);
   }
 
@@ -610,7 +612,7 @@ class Dart2JsParameterMirror extends Dart2JsElementMirror
   String get defaultValue() {
     if (hasDefaultValue) {
       SendSet expression = _variableElement.cachedNode.asSendSet();
-      return expression.arguments.head.unparse();
+      return unparse(expression.arguments.head);
     }
     return null;
   }
@@ -726,7 +728,7 @@ class Dart2JsInterfaceMirror extends Dart2JsObjectMirror
 
   Map<Object, InterfaceMirror> get interfaces() {
     var map = new Map<String, InterfaceMirror>();
-    Link<Type> link = _class.interfaces;
+    Link<DartType> link = _class.interfaces;
     while (!link.isEmpty()) {
       var type = _convertTypeToTypeMirror(system, link.head,
                                           system.compiler.types.dynamicType);
@@ -962,7 +964,7 @@ class Dart2JsTypeVariableMirror extends Dart2JsTypeElementMirror
 
 abstract class Dart2JsTypeElementMirror extends Dart2JsProxyMirror
     implements Dart2JsTypeMirror {
-  final Type _type;
+  final DartType _type;
 
   Dart2JsTypeElementMirror(Dart2JsMirrorSystem system, this._type)
     : super(system);
@@ -1031,7 +1033,7 @@ class Dart2JsInterfaceTypeMirror extends Dart2JsTypeElementMirror
   List<TypeMirror> get typeArguments() {
     if (_typeArguments == null) {
       _typeArguments = <TypeMirror>[];
-      Link<Type> type = _interfaceType.arguments;
+      Link<DartType> type = _interfaceType.arguments;
       while (type != null && type.head != null) {
         _typeArguments.add(_convertTypeToTypeMirror(system, type.head,
             system.compiler.types.dynamicType));

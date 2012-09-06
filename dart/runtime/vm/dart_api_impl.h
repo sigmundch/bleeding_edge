@@ -113,17 +113,20 @@ class Api : AllStatic {
 
   // Returns true if the handle holds a Smi.
   static bool IsSmi(Dart_Handle handle) {
+    // TODO(turnidge): Assumes RawObject* is at offset zero.  Fix.
     RawObject* raw = *(reinterpret_cast<RawObject**>(handle));
     return !raw->IsHeapObject();
   }
 
   // Returns the value of a Smi.
   static intptr_t SmiValue(Dart_Handle handle) {
+    // TODO(turnidge): Assumes RawObject* is at offset zero.  Fix.
     uword value = *(reinterpret_cast<uword*>(handle));
     return Smi::ValueFromRaw(value);
   }
 
   static intptr_t ClassId(Dart_Handle handle) {
+    // TODO(turnidge): Assumes RawObject* is at offset zero.  Fix.
     RawObject* raw = *(reinterpret_cast<RawObject**>(handle));
     if (!raw->IsHeapObject()) {
       return kSmiCid;
@@ -132,7 +135,7 @@ class Api : AllStatic {
   }
 
   // Generates a handle used to designate an error return.
-  static Dart_Handle NewError(const char* format, ...);
+  static Dart_Handle NewError(const char* format, ...) PRINTF_ATTRIBUTE(1, 2);
 
   // Gets a handle to Null.
   static Dart_Handle Null(Isolate* isolate);
@@ -148,6 +151,9 @@ class Api : AllStatic {
 
   // Performs one-time initialization needed by the API.
   static void InitOnce();
+
+  // Helper function to get the peer value of an external string object.
+  static bool ExternalStringGetPeerHelper(Dart_Handle object, void** peer);
 
  private:
   // Thread local key used by the API. Currently holds the current

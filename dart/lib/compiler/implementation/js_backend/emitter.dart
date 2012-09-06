@@ -9,9 +9,17 @@
 class ClosureInvocationElement extends FunctionElement {
   ClosureInvocationElement(SourceString name,
                            FunctionElement other)
-      : super.from(name, other, other.enclosingElement);
+      : super.from(name, other, other.enclosingElement),
+        methodElement = other;
 
   isInstanceMember() => true;
+
+  Element getOutermostEnclosingMemberOrTopLevel() => methodElement;
+
+  /**
+   * The [member] this invocation refers to.
+   */
+  Element methodElement;
 }
 
 /**
@@ -24,6 +32,7 @@ class CodeEmitterTask extends CompilerTask {
   bool needsInheritFunction = false;
   bool needsDefineClass = false;
   bool needsClosureClass = false;
+  bool needsLazyInitializer = false;
   final Namer namer;
   NativeEmitter nativeEmitter;
   CodeBuffer boundClosureBuffer;
@@ -35,15 +44,13 @@ class CodeEmitterTask extends CompilerTask {
   final Map<int, String> boundClosureCache;
 
   final bool generateSourceMap;
-  final SourceMapBuilder sourceMapBuilder;
 
-  CodeEmitterTask(Compiler compiler, [bool generateSourceMap = false])
-      : namer = compiler.namer,
-        boundClosureBuffer = new CodeBuffer(),
+  CodeEmitterTask(Compiler compiler, this.namer,
+                  [bool generateSourceMap = false])
+      : boundClosureBuffer = new CodeBuffer(),
         mainBuffer = new CodeBuffer(),
         boundClosureCache = new Map<int, String>(),
         generateSourceMap = generateSourceMap,
-        sourceMapBuilder = new SourceMapBuilder(),
         super(compiler) {
     nativeEmitter = new NativeEmitter(this);
   }
@@ -62,6 +69,8 @@ class CodeEmitterTask extends CompilerTask {
       => '${namer.ISOLATE}.${namer.ISOLATE_PROPERTIES}';
   String get supportsProtoName
       => 'supportsProto';
+  String get lazyInitializerName()
+      => '${namer.ISOLATE}.\$lazy';
 
   final String GETTER_SUFFIX = "?";
   final String SETTER_SUFFIX = "!";
@@ -69,24 +78,26 @@ class CodeEmitterTask extends CompilerTask {
 
   String get generateGetterSetterFunction {
     return """
-function(field, prototype) {
-  var len = field.length;
-  var lastChar = field[len - 1];
-  var needsGetter = lastChar == '$GETTER_SUFFIX' || lastChar == '$GETTER_SETTER_SUFFIX';
-  var needsSetter = lastChar == '$SETTER_SUFFIX' || lastChar == '$GETTER_SETTER_SUFFIX';
-  if (needsGetter || needsSetter) field = field.substring(0, len - 1);
-  if (needsGetter) {
-    var getterString = "return this." + field + ";";
-""" /* The supportsProtoCheck below depends on the getter/setter convention.
-       When changing here, update the protoCheck too. */ """
-    prototype["get\$" + field] = new Function(getterString);
-  }
-  if (needsSetter) {
-    var setterString = "this." + field + " = v;";
-    prototype["set\$" + field] = new Function("v", setterString);
-  }
-  return field;
-}""";
+  function(field, prototype) {
+    var len = field.length;
+    var lastChar = field[len - 1];
+    var needsGetter = lastChar == '$GETTER_SUFFIX' || lastChar == '$GETTER_SETTER_SUFFIX';
+    var needsSetter = lastChar == '$SETTER_SUFFIX' || lastChar == '$GETTER_SETTER_SUFFIX';
+    if (needsGetter || needsSetter) field = field.substring(0, len - 1);
+    if (needsGetter) {
+      var getterString = "return this." + field + ";";
+  """
+  /* The supportsProtoCheck below depends on the getter/setter convention.
+         When changing here, update the protoCheck too. */
+  """
+      prototype["get\$" + field] = new Function(getterString);
+    }
+    if (needsSetter) {
+      var setterString = "this." + field + " = v;";
+      prototype["set\$" + field] = new Function("v", setterString);
+    }
+    return field;
+  }""";
   }
 
   String get defineClassFunction {
@@ -252,13 +263,52 @@ function(collectedClasses) {
 }""";
   }
 
+  String get lazyInitializerFunction() {
+    String isolate = namer.CURRENT_ISOLATE;
+    JavaScriptBackend backend = compiler.backend;
+    String cyclicThrow = namer.isolateAccess(backend.cyclicThrowHelper);
+    return """
+function(prototype, staticName, fieldName, getterName, lazyValue) {
+  var sentinelUndefined = {};
+  var sentinelInProgress = {};
+  prototype[fieldName] = sentinelUndefined;
+  var getter = new Function("{ return $isolate." + fieldName + ";}");
+  prototype[getterName] = function() {
+    var result = $isolate[fieldName];
+    try {
+      if (result === sentinelUndefined) {
+        $isolate[fieldName] = sentinelInProgress;
+        try {
+          result = $isolate[fieldName] = lazyValue();
+        } catch (e) {
+          if ($isolate[fieldName] === sentinelInProgress) {
+            $isolate[fieldName] = null;
+          }
+          throw e;
+        }
+      } else if (result === sentinelInProgress) {
+        $cyclicThrow(staticName);
+      }
+      return result;
+    } finally {
+      $isolate[getterName] = getter;
+    }
+  };
+}""";
+  }
+
   void addDefineClassAndFinishClassFunctionsIfNecessary(CodeBuffer buffer) {
     if (needsDefineClass) {
-      String isolate = namer.ISOLATE;
       buffer.add("$defineClassName = $defineClassFunction;\n");
       buffer.add(protoSupportCheck);
       buffer.add("$pendingClassesName = {};\n");
       buffer.add("$finishClassesName = $finishClassesFunction;\n");
+    }
+  }
+
+  void addLazyInitializerFunctionIfNecessary(CodeBuffer buffer) {
+    if (needsLazyInitializer) {
+      buffer.add("$lazyInitializerName = $lazyInitializerFunction;\n");
     }
   }
 
@@ -332,6 +382,9 @@ function(collectedClasses) {
 
     int count = 0;
     int indexOfLastOptionalArgumentInParameters = positionalArgumentCount - 1;
+    TreeElements elements =
+        compiler.enqueuer.resolution.getCachedElements(member);
+
     parameters.forEachParameter((Element element) {
       String jsName = JsNames.getValid(element.name.slowToString());
       if (count < positionalArgumentCount) {
@@ -345,6 +398,11 @@ function(collectedClasses) {
           // one in the real method (which is in Dart source order).
           argumentsBuffer[count] = jsName;
           parametersBuffer[selector.positionalArgumentCount + index] = jsName;
+        // Note that [elements] may be null for a synthetized [member].
+        } else if (elements != null && elements.isParameterChecked(element)) {
+          CodeBuffer argumentBuffer = new CodeBuffer();
+          handler.writeConstant(argumentBuffer, SentinelConstant.SENTINEL);
+          argumentsBuffer[count] = argumentBuffer.toString();
         } else {
           Constant value = handler.initialVariableValues[element];
           if (value == null) {
@@ -389,18 +447,18 @@ function(collectedClasses) {
   }
 
   bool instanceFieldNeedsGetter(Element member) {
-    assert(member.kind === ElementKind.FIELD);
+    assert(member.isField());
     return compiler.codegenWorld.hasInvokedGetter(member, compiler);
   }
 
   bool instanceFieldNeedsSetter(Element member) {
-    assert(member.kind === ElementKind.FIELD);
+    assert(member.isField());
     return (member.modifiers === null || !member.modifiers.isFinalOrConst())
         && compiler.codegenWorld.hasInvokedSetter(member, compiler);
   }
 
   String compiledFieldName(Element member) {
-    assert(member.kind === ElementKind.FIELD);
+    assert(member.isField());
     return member.isNative()
         ? member.name.slowToString()
         : namer.getName(member);
@@ -411,35 +469,53 @@ function(collectedClasses) {
     // TODO(floitsch): we don't need to deal with members of
     // uninstantiated classes, that have been overwritten by subclasses.
 
-    if (member.kind === ElementKind.FUNCTION
-        || member.kind === ElementKind.GENERATIVE_CONSTRUCTOR_BODY
-        || member.kind === ElementKind.GETTER
-        || member.kind === ElementKind.SETTER) {
+    if (member.isFunction()
+        || member.isGenerativeConstructorBody()
+        || member.isGetter()
+        || member.isSetter()) {
       if (member.modifiers !== null && member.modifiers.isAbstract()) return;
       CodeBuffer codeBuffer = compiler.codegenWorld.generatedCode[member];
       if (codeBuffer == null) return;
       defineInstanceMember(namer.getName(member), codeBuffer);
       codeBuffer = compiler.codegenWorld.generatedBailoutCode[member];
       if (codeBuffer !== null) {
-        defineInstanceMember(compiler.namer.getBailoutName(member), codeBuffer);
+        defineInstanceMember(namer.getBailoutName(member), codeBuffer);
       }
       FunctionElement function = member;
       FunctionSignature parameters = function.computeSignature(compiler);
       if (!parameters.optionalParameters.isEmpty()) {
         addParameterStubs(member, defineInstanceMember);
       }
-    } else if (member.kind !== ElementKind.FIELD) {
+    } else if (!member.isField()) {
       compiler.internalError('unexpected kind: "${member.kind}"',
                              element: member);
     }
     emitExtraAccessors(member, defineInstanceMember);
   }
 
-  Set<Element> emitClassFields(ClassElement classElement, CodeBuffer buffer) {
+  String generateCheckedSetter(Element member, String fieldName) {
+    DartType type = member.computeType(compiler);
+    if (type.element.isTypeVariable()
+        || type.element == compiler.dynamicClass
+        || type.element == compiler.objectClass) {
+      // TODO(ngeoffray): Support type checks on type parameters.
+      return null;
+    } else {
+      SourceString helper = compiler.backend.getCheckedModeHelper(type);
+      Element helperElement = compiler.findHelper(helper);
+      String helperName = namer.isolateAccess(helperElement);
+      String additionalArgument = namer.operatorIs(type.element);
+      return " set\$$fieldName: function(v) { "
+          "this.$fieldName = $helperName(v, '$additionalArgument'); }";
+    }
+  }
+
+  List<String> emitClassFields(ClassElement classElement, CodeBuffer buffer) {
     // If the class is never instantiated we still need to set it up for
     // inheritance purposes, but we can simplify its JavaScript constructor.
     bool isInstantiated =
         compiler.codegenWorld.instantiatedClasses.contains(classElement);
+    List<String> checkedSetters = <String>[];
 
     bool isFirstField = true;
     void addField(ClassElement enclosingClass, Element member) {
@@ -475,6 +551,13 @@ function(collectedClasses) {
         String fieldName = isShadowed
             ? namer.shadowedFieldName(member)
             : namer.getName(member);
+        if (needsDynamicSetter && compiler.enableTypeAssertions) {
+          String setter = generateCheckedSetter(member, fieldName);
+          if (setter != null) {
+            needsDynamicSetter = false;
+            checkedSetters.add(setter);
+          }
+        }
         // Getters and setters with suffixes will be generated dynamically.
         buffer.add('"$fieldName');
         if (needsDynamicGetter || needsDynamicSetter) {
@@ -498,6 +581,7 @@ function(collectedClasses) {
         addField,
         includeBackendMembers: true,
         includeSuperMembers: isInstantiated && !classElement.isNative());
+    return checkedSetters;
   }
 
   void emitInstanceMembers(ClassElement classElement,
@@ -509,7 +593,6 @@ function(collectedClasses) {
       needsComma = true;
       buffer.add('\n');
       buffer.add(' $name: ');
-      addMappings(memberBuffer, buffer.length);
       buffer.add(memberBuffer);
     }
 
@@ -567,19 +650,23 @@ function(collectedClasses) {
 
     buffer.add('$classesCollector.$className = {"":\n');
     buffer.add(' [');
-    emitClassFields(classElement, buffer);
+    List<String> checkedSetters = emitClassFields(classElement, buffer);
     buffer.add('],\n');
     // TODO(floitsch): the emitInstanceMember should simply always emit a ',\n'.
     // That does currently not work because the native classes have a different
     // syntax.
-    buffer.add(' super: "$superName"');
+    buffer.add(' "super": "$superName"');
+    if (!checkedSetters.isEmpty()) {
+      buffer.add(',\n');
+      buffer.add('${Strings.join(checkedSetters, ",\n")}');
+    }
     emitInstanceMembers(classElement, buffer, true);
     buffer.add('\n};\n\n');
   }
 
   void generateTypeTests(ClassElement cls,
                          void generateTypeTest(ClassElement element)) {
-    if (compiler.codegenWorld.isChecks.contains(cls)) {
+    if (compiler.codegenWorld.checkedClasses.contains(cls)) {
       generateTypeTest(cls);
     }
     generateInterfacesIsTests(cls, generateTypeTest, new Set<Element>());
@@ -588,10 +675,10 @@ function(collectedClasses) {
   void generateInterfacesIsTests(ClassElement cls,
                                  void generateTypeTest(ClassElement element),
                                  Set<Element> alreadyGenerated) {
-    for (Type interfaceType in cls.interfaces) {
+    for (DartType interfaceType in cls.interfaces) {
       Element element = interfaceType.element;
       if (!alreadyGenerated.contains(element) &&
-          compiler.codegenWorld.isChecks.contains(element)) {
+          compiler.codegenWorld.checkedClasses.contains(element)) {
         alreadyGenerated.add(element);
         generateTypeTest(element);
       }
@@ -658,16 +745,22 @@ function(collectedClasses) {
     }
   }
 
+  void emitStaticFunctionWithNamer(CodeBuffer buffer,
+                                   Element element,
+                                   CodeBuffer functionBuffer,
+                                   String functionNamer(Element element)) {
+    String functionName = functionNamer(element);
+    buffer.add('$isolateProperties.$functionName = ');
+    buffer.add(functionBuffer);
+    buffer.add(';\n\n');
+  }
   void emitStaticFunctionsWithNamer(CodeBuffer buffer,
                                     Map<Element, CodeBuffer> generatedCode,
                                     String functionNamer(Element element)) {
     generatedCode.forEach((Element element, CodeBuffer functionBuffer) {
-      if (!element.isInstanceMember()) {
-        String functionName = functionNamer(element);
-        buffer.add('$isolateProperties.$functionName = ');
-        addMappings(functionBuffer, buffer.length);
-        buffer.add(functionBuffer);
-        buffer.add(';\n\n');
+      if (!element.isInstanceMember() && !element.isField()) {
+        emitStaticFunctionWithNamer(
+            buffer, element, functionBuffer,functionNamer);
       }
     });
   }
@@ -740,8 +833,8 @@ function(collectedClasses) {
       // Either the class was not cached yet, or there are optional parameters.
       // Create a new closure class.
       SourceString name = const SourceString("BoundClosure");
-      ClassElement closureClassElement =
-          new ClosureClassElement(name, compiler, member.getCompilationUnit());
+      ClassElement closureClassElement = new ClosureClassElement(
+          name, compiler, member, member.getCompilationUnit());
       String mangledName = namer.getName(closureClassElement);
       String superName = namer.getName(closureClassElement.superclass);
       needsClosureClass = true;
@@ -799,7 +892,7 @@ $classesCollector.$mangledName = {'':
                              Set<Selector> selectors,
                              DefineMemberFunction defineInstanceMember) {
     String getter;
-    if (member.kind == ElementKind.GETTER) {
+    if (member.isGetter()) {
       getter = "this.${namer.getterName(member.getLibrary(), member.name)}()";
     } else {
       String name = namer.instanceFieldName(member.getLibrary(), member.name);
@@ -840,6 +933,36 @@ $classesCollector.$mangledName = {'':
     }
   }
 
+  void emitLazilyInitializedStaticFields(CodeBuffer buffer) {
+    ConstantHandler handler = compiler.constantHandler;
+    List<VariableElement> lazyFields =
+        handler.getLazilyInitializedFieldsForEmission();
+    if (!lazyFields.isEmpty()) {
+      needsLazyInitializer = true;
+      for (VariableElement element in lazyFields) {
+        assert(compiler.codegenWorld.generatedBailoutCode[element] === null);
+        StringBuffer code = compiler.codegenWorld.generatedCode[element];
+        assert(code != null);
+        // The code only computes the initial value. We build the lazy-check
+        // here:
+        //   lazyInitializer(prototype, 'name', fieldName, getterName, initial);
+        // The name is used for error reporting. The 'initial' must be a
+        // closure that constructs the initial value.
+        buffer.add("$lazyInitializerName(");
+        buffer.add(isolateProperties);
+        buffer.add(", '");
+        buffer.add(element.name.slowToString());
+        buffer.add("', '");
+        buffer.add(namer.getName(element));
+        buffer.add("', '");
+        buffer.add(namer.getLazyInitializerName(element));
+        buffer.add("', ");
+        buffer.add(code);
+        buffer.add(");\n");
+      }
+    }
+  }
+
   void emitCompileTimeConstants(CodeBuffer buffer) {
     ConstantHandler handler = compiler.constantHandler;
     List<Constant> constants = handler.getConstantsForEmission();
@@ -872,12 +995,12 @@ $classesCollector.$mangledName = {'':
 
   void emitExtraAccessors(Element member,
                           DefineMemberFunction defineInstanceMember) {
-    if (member.kind == ElementKind.GETTER || member.kind == ElementKind.FIELD) {
+    if (member.isGetter() || member.isField()) {
       Set<Selector> selectors = compiler.codegenWorld.invokedNames[member.name];
       if (selectors !== null && !selectors.isEmpty()) {
         emitCallStubForGetter(member, selectors, defineInstanceMember);
       }
-    } else if (member.kind == ElementKind.FUNCTION) {
+    } else if (member.isFunction()) {
       if (compiler.codegenWorld.hasInvokedGetter(member, compiler)) {
         emitDynamicFunctionGetter(member, defineInstanceMember);
       }
@@ -899,7 +1022,7 @@ $classesCollector.$mangledName = {'':
     // receiver type.
     Map<ClassElement, Set<ClassElement>> noSuchMethodHolders =
         new Map<ClassElement, Set<ClassElement>>();
-    Set<ClassElement> noSuchMethodHoldersFor(Type type) {
+    Set<ClassElement> noSuchMethodHoldersFor(DartType type) {
       ClassElement element = type.element;
       Set<ClassElement> result = noSuchMethodHolders[element];
       if (result === null) {
@@ -929,7 +1052,7 @@ $classesCollector.$mangledName = {'':
     void addNoSuchMethodHandlers(SourceString ignore, Set<Selector> selectors) {
       // Cache the object class and type.
       ClassElement objectClass = compiler.objectClass;
-      Type objectType = objectClass.computeType(compiler);
+      DartType objectType = objectClass.computeType(compiler);
 
       for (Selector selector in selectors) {
         // Introduce a helper function that determines if the given
@@ -957,7 +1080,7 @@ $classesCollector.$mangledName = {'':
         // If the selector is typed, we check to see if that type may
         // have a user-defined noSuchMethod implementation. If not, we
         // skip the selector altogether.
-        Type receiverType = objectType;
+        DartType receiverType = objectType;
         ClassElement receiverClass = objectClass;
         if (selector is TypedSelector) {
           TypedSelector typedSelector = selector;
@@ -1127,6 +1250,7 @@ if (typeof document != 'undefined' && document.readyState != 'complete') {
       // Static field initializations require the classes and compile-time
       // constants to be set up.
       emitStaticNonFinalFieldInitializations(mainBuffer);
+      emitLazilyInitializedStaticFields(mainBuffer);
 
       isolateProperties = isolatePropertiesName;
       // The following code should not use the short-hand for the
@@ -1147,13 +1271,14 @@ if (typeof document != 'undefined' && document.readyState != 'complete') {
       mainBuffer.add('function init() {\n');
       mainBuffer.add('$isolateProperties = {};\n');
       addDefineClassAndFinishClassFunctionsIfNecessary(mainBuffer);
+      addLazyInitializerFunctionIfNecessary(mainBuffer);
       emitFinishIsolateConstructor(mainBuffer);
       mainBuffer.add('}\n');
       compiler.assembledCode = mainBuffer.toString();
 
       if (generateSourceMap) {
         SourceFile compiledFile = new SourceFile(null, compiler.assembledCode);
-        String sourceMap = sourceMapBuilder.build(compiledFile);
+        String sourceMap = buildSourceMap(mainBuffer, compiledFile);
         // TODO(podivilov): We should find a better way to return source maps to
         // compiler. Using diagnostic handler for that purpose is a temporary
         // hack.
@@ -1164,17 +1289,22 @@ if (typeof document != 'undefined' && document.readyState != 'complete') {
     return compiler.assembledCode;
   }
 
-  void addMappings(CodeBuffer buffer, int bufferOffset) {
+  String buildSourceMap(CodeBuffer buffer, SourceFile compiledFile) {
+    SourceMapBuilder sourceMapBuilder = new SourceMapBuilder();
     buffer.forEachSourceLocation((Element element, Token token, int offset) {
+      if (element == null) {
+        sourceMapBuilder.addMapping(null, null, null, offset);
+        return;
+      }
       SourceFile sourceFile = element.getCompilationUnit().script.file;
       String sourceName = null;
       if (token.kind === IDENTIFIER_TOKEN) {
         sourceName = token.slowToString();
       }
-      int totalOffset = bufferOffset + offset;
       sourceMapBuilder.addMapping(
-          sourceFile, token.charOffset, sourceName, totalOffset);
+          sourceFile, token.charOffset, sourceName, offset);
     });
+    return sourceMapBuilder.build(compiledFile);
   }
 }
 

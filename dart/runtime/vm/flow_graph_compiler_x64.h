@@ -12,7 +12,6 @@
 namespace dart {
 
 class Code;
-class DeoptimizationStub;
 class FlowGraph;
 template <typename T> class GrowableArray;
 class ParsedFunction;
@@ -77,8 +76,7 @@ class FlowGraphCompiler : public ValueObject {
   // no fall-through to regular code is needed.
   bool TryIntrinsify();
 
-  void GenerateCallRuntime(intptr_t deopt_id,
-                           intptr_t token_pos,
+  void GenerateCallRuntime(intptr_t token_pos,
                            const RuntimeEntry& entry,
                            LocationSummary* locs);
 
@@ -87,14 +85,18 @@ class FlowGraphCompiler : public ValueObject {
                     PcDescriptors::Kind kind,
                     LocationSummary* locs);
 
-  void GenerateAssertAssignable(intptr_t deopt_id,
-                                intptr_t token_pos,
+  void GenerateDartCall(intptr_t deopt_id,
+                        intptr_t token_pos,
+                        const ExternalLabel* label,
+                        PcDescriptors::Kind kind,
+                        LocationSummary* locs);
+
+  void GenerateAssertAssignable(intptr_t token_pos,
                                 const AbstractType& dst_type,
                                 const String& dst_name,
                                 LocationSummary* locs);
 
-  void GenerateInstanceOf(intptr_t deopt_id,
-                          intptr_t token_pos,
+  void GenerateInstanceOf(intptr_t token_pos,
                           const AbstractType& type,
                           bool negate_result,
                           LocationSummary* locs);
@@ -127,11 +129,6 @@ class FlowGraphCompiler : public ValueObject {
                              Label* is_instance_lbl);
 
   void EmitComment(Instruction* instr);
-
-  void EmitClassChecksNoSmi(const ICData& ic_data,
-                            Register instance_reg,
-                            Register temp_reg,
-                            Label* deopt);
 
   void EmitInstanceCall(ExternalLabel* target_label,
                         const ICData& ic_data,
@@ -207,12 +204,19 @@ class FlowGraphCompiler : public ValueObject {
     return current_block_->try_index();
   }
 
- private:
-  friend class DeoptimizationStub;
+  // Returns true if the generated code does not call other Dart code or
+  // runtime. Only deoptimization is allowed to occur. Closures are not leaf.
+  bool IsLeaf() const;
 
+  static Condition FlipCondition(Condition condition);
+
+  static bool EvaluateCondition(Condition condition, intptr_t l, intptr_t r);
+
+ private:
   void GenerateDeferredCode();
 
   void EmitInstructionPrologue(Instruction* instr);
+  void EmitInstructionEpilogue(Instruction* instr);
 
   // Emit code to load a Value into register 'dst'.
   void LoadValue(Register dst, Value* value);
@@ -288,10 +292,6 @@ class FlowGraphCompiler : public ValueObject {
   // Perform a greedy local register allocation.  Consider all registers free.
   void AllocateRegistersLocally(Instruction* instr);
 
-  // Returns true if the generated code does not call other Dart code or
-  // runtime. Only deoptimization is allowed to occur. Closures are not leaf.
-  bool IsLeaf() const;
-
   class Assembler* assembler_;
   const ParsedFunction& parsed_function_;
   const GrowableArray<BlockEntryInstr*>& block_order_;
@@ -304,7 +304,7 @@ class FlowGraphCompiler : public ValueObject {
   DescriptorList* pc_descriptors_list_;
   StackmapTableBuilder* stackmap_table_builder_;
   GrowableArray<BlockInfo*> block_info_;
-  GrowableArray<DeoptimizationStub*> deopt_stubs_;
+  GrowableArray<CompilerDeoptInfo*> deopt_infos_;
   GrowableArray<SlowPathCode*> slow_path_code_;
   const GrowableObjectArray& object_table_;
   const bool is_optimizing_;

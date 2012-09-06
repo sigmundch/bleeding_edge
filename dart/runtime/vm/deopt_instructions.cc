@@ -21,11 +21,13 @@ DeoptimizationContext::DeoptimizationContext(intptr_t* to_frame_start,
       from_frame_(NULL),
       from_frame_size_(0),
       registers_copy_(NULL),
+      xmm_registers_copy_(NULL),
       num_args_(num_args),
       isolate_(Isolate::Current()) {
   from_frame_ = isolate_->deopt_frame_copy();
   from_frame_size_ = isolate_->deopt_frame_copy_size();
-  registers_copy_ = isolate_->deopt_registers_copy();
+  registers_copy_ = isolate_->deopt_cpu_registers_copy();
+  xmm_registers_copy_ = isolate_->deopt_xmm_registers_copy();
 }
 
 
@@ -53,9 +55,10 @@ class DeoptStackSlotInstr : public DeoptInstr {
   virtual DeoptInstr::Kind kind() const { return kCopyStackSlot; }
 
   virtual const char* ToCString() const {
-    intptr_t len = OS::SNPrint(NULL, 0, "s%d", stack_slot_index_);
+    const char* format = "s%"Pd"";
+    intptr_t len = OS::SNPrint(NULL, 0, format, stack_slot_index_);
     char* chars = Isolate::Current()->current_zone()->Alloc<char>(len + 1);
-    OS::SNPrint(chars, len + 1, "s%d", stack_slot_index_);
+    OS::SNPrint(chars, len + 1, format, stack_slot_index_);
     return chars;
   }
 
@@ -74,22 +77,60 @@ class DeoptStackSlotInstr : public DeoptInstr {
 };
 
 
-// Deoptimization instruction creating return address using function and
-// deopt-id stored at 'object_table_index'.
-class DeoptRetAddrInstr : public DeoptInstr {
+class DeoptDoubleStackSlotInstr : public DeoptInstr {
  public:
-  explicit DeoptRetAddrInstr(intptr_t object_table_index)
+  explicit DeoptDoubleStackSlotInstr(intptr_t from_index)
+      : stack_slot_index_(from_index) {
+    ASSERT(stack_slot_index_ >= 0);
+  }
+
+  virtual intptr_t from_index() const { return stack_slot_index_; }
+  virtual DeoptInstr::Kind kind() const { return kCopyDoubleStackSlot; }
+
+  virtual const char* ToCString() const {
+    const char* format = "ds%"Pd"";
+    intptr_t len = OS::SNPrint(NULL, 0, format, stack_slot_index_);
+    char* chars = Isolate::Current()->current_zone()->Alloc<char>(len + 1);
+    OS::SNPrint(chars, len + 1, format, stack_slot_index_);
+    return chars;
+  }
+
+  void Execute(DeoptimizationContext* deopt_context, intptr_t to_index) {
+    intptr_t from_index =
+       deopt_context->from_frame_size() - stack_slot_index_ - 1;
+    double* from_addr = reinterpret_cast<double*>(
+        deopt_context->GetFromFrameAddressAt(from_index));
+    intptr_t* to_addr = deopt_context->GetToFrameAddressAt(to_index);
+    *reinterpret_cast<RawSmi**>(to_addr) = Smi::New(0);
+    Isolate::Current()->DeferDoubleMaterialization(
+        *from_addr, reinterpret_cast<RawDouble**>(to_addr));
+  }
+
+ private:
+  const intptr_t stack_slot_index_;  // First argument is 0, always >= 0.
+
+  DISALLOW_COPY_AND_ASSIGN(DeoptDoubleStackSlotInstr);
+};
+
+
+// Deoptimization instruction creating return address using function and
+// deopt-id stored at 'object_table_index'. Uses the deopt-after
+// continuation point.
+class DeoptRetAddrAfterInstr : public DeoptInstr {
+ public:
+  explicit DeoptRetAddrAfterInstr(intptr_t object_table_index)
       : object_table_index_(object_table_index) {
     ASSERT(object_table_index >= 0);
   }
 
   virtual intptr_t from_index() const { return object_table_index_; }
-  virtual DeoptInstr::Kind kind() const { return kSetRetAddress; }
+  virtual DeoptInstr::Kind kind() const { return kSetRetAfterAddress; }
 
   virtual const char* ToCString() const {
-    intptr_t len = OS::SNPrint(NULL, 0, "ret oti:%d", object_table_index_);
+    const char* format = "ret aft oti:%"Pd"";
+    intptr_t len = OS::SNPrint(NULL, 0, format, object_table_index_);
     char* chars = Isolate::Current()->current_zone()->Alloc<char>(len + 1);
-    OS::SNPrint(chars, len + 1, "ret oti:%d", object_table_index_);
+    OS::SNPrint(chars, len + 1, format, object_table_index_);
     return chars;
   }
 
@@ -100,7 +141,8 @@ class DeoptRetAddrInstr : public DeoptInstr {
     deopt_id_as_smi ^= deopt_context->ObjectAt(object_table_index_ + 1);
     const Code& code =
         Code::Handle(deopt_context->isolate(), function.unoptimized_code());
-    uword continue_at_pc = code.GetDeoptPcAtDeoptId(deopt_id_as_smi.Value());
+    uword continue_at_pc =
+        code.GetDeoptAfterPcAtDeoptId(deopt_id_as_smi.Value());
     intptr_t* to_addr = deopt_context->GetToFrameAddressAt(to_index);
     *to_addr = continue_at_pc;
   }
@@ -108,7 +150,48 @@ class DeoptRetAddrInstr : public DeoptInstr {
  private:
   const intptr_t object_table_index_;
 
-  DISALLOW_COPY_AND_ASSIGN(DeoptRetAddrInstr);
+  DISALLOW_COPY_AND_ASSIGN(DeoptRetAddrAfterInstr);
+};
+
+
+// Deoptimization instruction creating return address using function and
+// deopt-id stored at 'object_table_index'. Uses the deopt-before
+// continuation point.
+class DeoptRetAddrBeforeInstr : public DeoptInstr {
+ public:
+  explicit DeoptRetAddrBeforeInstr(intptr_t object_table_index)
+      : object_table_index_(object_table_index) {
+    ASSERT(object_table_index >= 0);
+  }
+
+  virtual intptr_t from_index() const { return object_table_index_; }
+  virtual DeoptInstr::Kind kind() const { return kSetRetBeforeAddress; }
+
+  virtual const char* ToCString() const {
+    const char* format = "ret bef oti:%"Pd"";
+    intptr_t len = OS::SNPrint(NULL, 0, format, object_table_index_);
+    char* chars = Isolate::Current()->current_zone()->Alloc<char>(len + 1);
+    OS::SNPrint(chars, len + 1, format, object_table_index_);
+    return chars;
+  }
+
+  void Execute(DeoptimizationContext* deopt_context, intptr_t to_index) {
+    Function& function = Function::Handle(deopt_context->isolate());
+    function ^= deopt_context->ObjectAt(object_table_index_);
+    Smi& deopt_id_as_smi = Smi::Handle(deopt_context->isolate());
+    deopt_id_as_smi ^= deopt_context->ObjectAt(object_table_index_ + 1);
+    const Code& code =
+        Code::Handle(deopt_context->isolate(), function.unoptimized_code());
+    uword continue_at_pc =
+        code.GetDeoptBeforePcAtDeoptId(deopt_id_as_smi.Value());
+    intptr_t* to_addr = deopt_context->GetToFrameAddressAt(to_index);
+    *to_addr = continue_at_pc;
+  }
+
+ private:
+  const intptr_t object_table_index_;
+
+  DISALLOW_COPY_AND_ASSIGN(DeoptRetAddrBeforeInstr);
 };
 
 
@@ -124,9 +207,10 @@ class DeoptConstantInstr : public DeoptInstr {
   virtual DeoptInstr::Kind kind() const { return kCopyConstant; }
 
   virtual const char* ToCString() const {
-    intptr_t len = OS::SNPrint(NULL, 0, "const oti:%d", object_table_index_);
+    const char* format = "const oti:%"Pd"";
+    intptr_t len = OS::SNPrint(NULL, 0, format, object_table_index_);
     char* chars = Isolate::Current()->current_zone()->Alloc<char>(len + 1);
-    OS::SNPrint(chars, len + 1, "const oti:%d", object_table_index_);
+    OS::SNPrint(chars, len + 1, format, object_table_index_);
     return chars;
   }
 
@@ -145,7 +229,7 @@ class DeoptConstantInstr : public DeoptInstr {
 };
 
 
-// Deoptimization instruction moving a register.
+// Deoptimization instruction moving a CPU register.
 class DeoptRegisterInstr: public DeoptInstr {
  public:
   explicit DeoptRegisterInstr(intptr_t reg_as_int)
@@ -171,6 +255,34 @@ class DeoptRegisterInstr: public DeoptInstr {
 };
 
 
+// Deoptimization instruction moving an XMM register.
+class DeoptXmmRegisterInstr: public DeoptInstr {
+ public:
+  explicit DeoptXmmRegisterInstr(intptr_t reg_as_int)
+      : reg_(static_cast<XmmRegister>(reg_as_int)) {}
+
+  virtual intptr_t from_index() const { return static_cast<intptr_t>(reg_); }
+  virtual DeoptInstr::Kind kind() const { return kCopyXmmRegister; }
+
+  virtual const char* ToCString() const {
+    return Assembler::XmmRegisterName(reg_);
+  }
+
+  void Execute(DeoptimizationContext* deopt_context, intptr_t to_index) {
+    double value = deopt_context->XmmRegisterValue(reg_);
+    intptr_t* to_addr = deopt_context->GetToFrameAddressAt(to_index);
+    *reinterpret_cast<RawSmi**>(to_addr) = Smi::New(0);
+    Isolate::Current()->DeferDoubleMaterialization(
+        value, reinterpret_cast<RawDouble**>(to_addr));
+  }
+
+ private:
+  const XmmRegister reg_;
+
+  DISALLOW_COPY_AND_ASSIGN(DeoptXmmRegisterInstr);
+};
+
+
 // Deoptimization instruction creating a PC marker for the code of
 // function at 'object_table_index'.
 class DeoptPcMarkerInstr : public DeoptInstr {
@@ -184,9 +296,10 @@ class DeoptPcMarkerInstr : public DeoptInstr {
   virtual DeoptInstr::Kind kind() const { return kSetPcMarker; }
 
   virtual const char* ToCString() const {
-    intptr_t len = OS::SNPrint(NULL, 0, "pcmark oti:%d", object_table_index_);
+    const char* format = "pcmark oti:%"Pd"";
+    intptr_t len = OS::SNPrint(NULL, 0, format, object_table_index_);
     char* chars = Isolate::Current()->current_zone()->Alloc<char>(len + 1);
-    OS::SNPrint(chars, len + 1, "pcmark oti:%d", object_table_index_);
+    OS::SNPrint(chars, len + 1, format, object_table_index_);
     return chars;
   }
 
@@ -259,9 +372,12 @@ DeoptInstr* DeoptInstr::Create(intptr_t kind_as_int, intptr_t from_index) {
   Kind kind = static_cast<Kind>(kind_as_int);
   switch (kind) {
     case kCopyStackSlot: return new DeoptStackSlotInstr(from_index);
-    case kSetRetAddress: return new DeoptRetAddrInstr(from_index);
+    case kCopyDoubleStackSlot: return new DeoptDoubleStackSlotInstr(from_index);
+    case kSetRetAfterAddress: return new DeoptRetAddrAfterInstr(from_index);
+    case kSetRetBeforeAddress: return new DeoptRetAddrBeforeInstr(from_index);
     case kCopyConstant:  return new DeoptConstantInstr(from_index);
     case kCopyRegister:  return new DeoptRegisterInstr(from_index);
+    case kCopyXmmRegister: return new DeoptXmmRegisterInstr(from_index);
     case kSetPcMarker:   return new DeoptPcMarkerInstr(from_index);
     case kSetCallerFp:   return new DeoptCallerFpInstr();
     case kSetCallerPc:   return new DeoptCallerPcInstr();
@@ -284,15 +400,25 @@ intptr_t DeoptInfoBuilder::FindOrAddObjectInTable(const Object& obj) const {
 }
 
 
-// Will be neeeded for inlined functions, currently trivial.
-void DeoptInfoBuilder::AddReturnAddress(const Function& function,
-                                        intptr_t deopt_id,
-                                        intptr_t to_index) {
+void DeoptInfoBuilder::AddReturnAddressBefore(const Function& function,
+                                              intptr_t deopt_id,
+                                              intptr_t to_index) {
   const intptr_t object_table_index = object_table_.Length();
   object_table_.Add(function);
   object_table_.Add(Smi::ZoneHandle(Smi::New(deopt_id)));
   ASSERT(to_index == instructions_.length());
-  instructions_.Add(new DeoptRetAddrInstr(object_table_index));
+  instructions_.Add(new DeoptRetAddrBeforeInstr(object_table_index));
+}
+
+
+void DeoptInfoBuilder::AddReturnAddressAfter(const Function& function,
+                                             intptr_t deopt_id,
+                                             intptr_t to_index) {
+  const intptr_t object_table_index = object_table_.Length();
+  object_table_.Add(function);
+  object_table_.Add(Smi::ZoneHandle(Smi::New(deopt_id)));
+  ASSERT(to_index == instructions_.length());
+  instructions_.Add(new DeoptRetAddrAfterInstr(object_table_index));
 }
 
 
@@ -314,12 +440,20 @@ void DeoptInfoBuilder::AddCopy(const Location& from_loc,
     deopt_instr = new DeoptConstantInstr(object_table_index);
   } else if (from_loc.IsRegister()) {
     deopt_instr = new DeoptRegisterInstr(from_loc.reg());
+  } else if (from_loc.IsXmmRegister()) {
+    deopt_instr = new DeoptXmmRegisterInstr(from_loc.xmm_reg());
   } else if (from_loc.IsStackSlot()) {
     intptr_t from_index = (from_loc.stack_index() < 0) ?
         from_loc.stack_index() + num_args_ :
         from_loc.stack_index() + num_args_ -
             ParsedFunction::kFirstLocalSlotIndex + 1;
     deopt_instr = new DeoptStackSlotInstr(from_index);
+  } else if (from_loc.IsDoubleStackSlot()) {
+    intptr_t from_index = (from_loc.stack_index() < 0) ?
+        from_loc.stack_index() + num_args_ :
+        from_loc.stack_index() + num_args_ -
+            ParsedFunction::kFirstLocalSlotIndex + 1;
+    deopt_instr = new DeoptDoubleStackSlotInstr(from_index);
   } else {
     UNREACHABLE();
   }

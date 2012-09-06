@@ -48,6 +48,7 @@ class NativeEmitter {
         nativeBuffer = new CodeBuffer();
 
   Compiler get compiler => emitter.compiler;
+  JavaScriptBackend get backend => compiler.backend;
 
   void addRedirectingMethod(FunctionElement element, String name) {
     redirectingMethods[element] = name;
@@ -56,35 +57,35 @@ class NativeEmitter {
   String get dynamicName {
     Element element = compiler.findHelper(
         const SourceString('dynamicFunction'));
-    return compiler.namer.isolateAccess(element);
+    return backend.namer.isolateAccess(element);
   }
 
   String get dynamicSetMetadataName {
     Element element = compiler.findHelper(
         const SourceString('dynamicSetMetadata'));
-    return compiler.namer.isolateAccess(element);
+    return backend.namer.isolateAccess(element);
   }
 
   String get typeNameOfName {
     Element element = compiler.findHelper(
         const SourceString('getTypeNameOf'));
-    return compiler.namer.isolateAccess(element);
+    return backend.namer.isolateAccess(element);
   }
 
   String get defPropName {
     Element element = compiler.findHelper(
         const SourceString('defineProperty'));
-    return compiler.namer.isolateAccess(element);
+    return backend.namer.isolateAccess(element);
   }
 
   String get toStringHelperName {
     Element element = compiler.findHelper(
         const SourceString('toStringForNativeObject'));
-    return compiler.namer.isolateAccess(element);
+    return backend.namer.isolateAccess(element);
   }
 
   String get defineNativeClassName
-      => '${compiler.namer.CURRENT_ISOLATE}.\$defineNativeClass';
+      => '${backend.namer.CURRENT_ISOLATE}.\$defineNativeClass';
 
   String get defineNativeClassFunction {
     return """
@@ -102,7 +103,7 @@ function(cls, fields, methods) {
   void generateNativeLiteral(ClassElement classElement) {
     String quotedNative = classElement.nativeName.slowToString();
     String nativeCode = quotedNative.substring(2, quotedNative.length - 1);
-    String className = compiler.namer.getName(classElement);
+    String className = backend.namer.getName(classElement);
     nativeBuffer.add(className);
     nativeBuffer.add(' = ');
     nativeBuffer.add(nativeCode);
@@ -155,7 +156,8 @@ function(cls, fields, methods) {
     }
 
     CodeBuffer fieldBuffer = new CodeBuffer();
-    emitter.emitClassFields(classElement, fieldBuffer);
+    List<String> checkedSetters =
+        emitter.emitClassFields(classElement, fieldBuffer);
 
     CodeBuffer methodBuffer = new CodeBuffer();
     emitter.emitInstanceMembers(classElement, methodBuffer, false);
@@ -166,6 +168,10 @@ function(cls, fields, methods) {
     nativeBuffer.add("$defineNativeClassName('$nativeName', [");
     nativeBuffer.add(fieldBuffer);
     nativeBuffer.add('], {');
+    if (!checkedSetters.isEmpty()) {
+      nativeBuffer.add('${Strings.join(checkedSetters, ",\n")}');
+      nativeBuffer.add(',\n');
+    }
     nativeBuffer.add(methodBuffer);
     nativeBuffer.add('\n});\n\n');
 
@@ -183,13 +189,13 @@ function(cls, fields, methods) {
     FunctionSignature parameters = member.computeSignature(compiler);
     Element converter =
         compiler.findHelper(const SourceString('convertDartClosureToJS'));
-    String closureConverter = compiler.namer.isolateAccess(converter);
+    String closureConverter = backend.namer.isolateAccess(converter);
     parameters.forEachParameter((Element parameter) {
       String name = parameter.name.slowToString();
       // If [name] is not in [argumentsBuffer], then the parameter is
       // an optional parameter that was not provided for that stub.
       if (argumentsBuffer.indexOf(name) == -1) return;
-      Type type = parameter.computeType(compiler).unalias(compiler);
+      DartType type = parameter.computeType(compiler).unalias(compiler);
       if (type is FunctionType) {
         // The parameter type is a function type either directly or through
         // typedef(s).
@@ -228,7 +234,7 @@ function(cls, fields, methods) {
       // When calling a method that has a native body, we call it
       // with our calling conventions.
       String arguments = Strings.join(argumentsBuffer, ",");
-      code.add('  return this.${compiler.namer.getName(member)}($arguments)');
+      code.add('  return this.${backend.namer.getName(member)}($arguments)');
     } else {
       // When calling a JS method, we call it with the native name.
       String name = redirectingMethods[member];
@@ -388,9 +394,9 @@ function(cls, fields, methods) {
   }
 
   void emitIsChecks(Map<String, String> objectProperties) {
-    for (Element type in compiler.codegenWorld.isChecks) {
-      if (!requiresNativeIsCheck(type)) continue;
-      String name = compiler.namer.operatorIs(type);
+    for (Element element in compiler.codegenWorld.checkedClasses) {
+      if (!requiresNativeIsCheck(element)) continue;
+      String name = backend.namer.operatorIs(element);
       objectProperties[name] = 'function() { return false; }';
     }
   }
@@ -411,7 +417,7 @@ function(cls, fields, methods) {
 
     // In order to have the toString method on every native class,
     // we must patch the JS Object prototype with a helper method.
-    String toStringName = compiler.namer.instanceMethodName(
+    String toStringName = backend.namer.instanceMethodName(
         null, const SourceString('toString'), 0);
     objectProperties[toStringName] =
         'function() { return $toStringHelperName(this); }';

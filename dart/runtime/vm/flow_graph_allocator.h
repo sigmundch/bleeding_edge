@@ -19,6 +19,9 @@ class UsePosition;
 
 class FlowGraphAllocator : public ValueObject {
  public:
+  // Number of stack slots needed for a double spill slot.
+  static const intptr_t kDoubleSpillSlotFactor = kDoubleSize / kWordSize;
+
   explicit FlowGraphAllocator(const FlowGraph& flow_graph);
 
   void AllocateRegisters();
@@ -123,6 +126,8 @@ class FlowGraphAllocator : public ValueObject {
                             BlockEntryInstr* source_block,
                             BlockEntryInstr* target_block);
 
+  // Returns true if the target location is the spill slot for the given range.
+  bool TargetLocationIsSpillSlot(LiveRange* range, Location target);
 
   // Update location slot corresponding to the use with location allocated for
   // the use's live range.

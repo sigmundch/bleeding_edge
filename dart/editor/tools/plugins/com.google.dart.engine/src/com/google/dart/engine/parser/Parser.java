@@ -109,6 +109,7 @@ public class Parser {
    */
   private boolean inSwitch = false;
 
+  private static final String DYNAMIC = "Dynamic"; //$NON-NLS-1$
   private static final String EXPORT = "export"; //$NON-NLS-1$
   private static final String HIDE = "hide"; //$NON-NLS-1$
   private static final String IMPORT = "import"; //$NON-NLS-1$
@@ -116,7 +117,6 @@ public class Parser {
   private static final String OF = "of"; //$NON-NLS-1$
   private static final String ON = "on"; //$NON-NLS-1$
   private static final String PART = "part"; //$NON-NLS-1$
-  private static final String RESOURCE = "resource"; //$NON-NLS-1$
   private static final String SHOW = "show"; //$NON-NLS-1$
 
   private static final ArrayList<Expression> EMPTY_EXPRESSION_LIST = new ArrayList<Expression>(0);
@@ -166,6 +166,18 @@ public class Parser {
   public Statement parseStatement(Token token) {
     currentToken = token;
     return parseStatement();
+  }
+
+  /**
+   * Parse a sequence of statements, starting with the given token.
+   * 
+   * @param token the first token of the sequence of statement
+   * @return the statements that were parsed, or {@code null} if the tokens do not represent a
+   *         recognizable sequence of statements
+   */
+  public ArrayList<Statement> parseStatements(Token token) {
+    currentToken = token;
+    return parseStatements();
   }
 
   /**
@@ -219,9 +231,9 @@ public class Parser {
       start += 1;
     }
     int end = lexeme.length();
-    if (lexeme.endsWith("\"\"\"") || lexeme.endsWith("'''")) { //$NON-NLS-1$ //$NON-NLS-2$
+    if (end > 3 && (lexeme.endsWith("\"\"\"") || lexeme.endsWith("'''"))) { //$NON-NLS-1$ //$NON-NLS-2$
       end -= 3;
-    } else if (lexeme.endsWith("\"") || lexeme.endsWith("'")) { //$NON-NLS-1$ //$NON-NLS-2$
+    } else if (end > 1 && (lexeme.endsWith("\"") || lexeme.endsWith("'"))) { //$NON-NLS-1$ //$NON-NLS-2$
       end -= 1;
     }
     StringBuilder builder = new StringBuilder(end - start + 1);
@@ -417,7 +429,8 @@ public class Parser {
       // There was no type name, so this can't be a declaration.
       return false;
     }
-    return skipSimpleIdentifier(token) != null;
+    token = skipSimpleIdentifier(token);
+    return token != null && token.getType() != TokenType.OPEN_PAREN;
   }
 
   /**
@@ -693,13 +706,39 @@ public class Parser {
     while (true) {
       while (matches(TokenType.OPEN_PAREN)) {
         ArgumentList argumentList = parseArgumentList();
-        expression = new FunctionExpressionInvocation(expression, argumentList);
+        if (expression instanceof SimpleIdentifier) {
+          expression = new MethodInvocation(null, null, (SimpleIdentifier) expression, argumentList);
+        } else if (expression instanceof PrefixedIdentifier) {
+          PrefixedIdentifier identifier = (PrefixedIdentifier) expression;
+          expression = new MethodInvocation(
+              identifier.getPrefix(),
+              identifier.getPeriod(),
+              identifier.getIdentifier(),
+              argumentList);
+        } else if (expression instanceof PropertyAccess) {
+          PropertyAccess access = (PropertyAccess) expression;
+          expression = new MethodInvocation(
+              access.getTarget(),
+              access.getOperator(),
+              access.getPropertyName(),
+              argumentList);
+        } else {
+          expression = new FunctionExpressionInvocation(expression, argumentList);
+        }
         if (!orPrimaryWithSelectors) {
           isOptional = false;
         }
       }
-      Expression selectorExpression = parseAssignableSelector(expression, isOptional);
+      Expression selectorExpression = parseAssignableSelector(expression, isOptional
+          || (expression instanceof PrefixedIdentifier));
       if (selectorExpression == expression) {
+        if (!isOptional && (expression instanceof PrefixedIdentifier)) {
+          PrefixedIdentifier identifier = (PrefixedIdentifier) expression;
+          expression = new PropertyAccess(
+              identifier.getPrefix(),
+              identifier.getPeriod(),
+              identifier.getIdentifier());
+        }
         return expression;
       }
       expression = selectorExpression;
@@ -947,8 +986,7 @@ public class Parser {
       abstractKeyword = getAndAdvance();
     }
     Token keyword = expect(Keyword.CLASS);
-    SimpleIdentifier name = parseSimpleIdentifier();
-    validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_TYPE_NAME);
+    SimpleIdentifier name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_TYPE_NAME);
     TypeParameterList typeParameters = null;
     if (matches(TokenType.LT)) {
       typeParameters = parseTypeParameterList();
@@ -1075,8 +1113,7 @@ public class Parser {
       } else if (peekMatches(TokenType.PERIOD) && peekMatches(3, TokenType.OPEN_PAREN)) {
         SimpleIdentifier returnType = parseSimpleIdentifier();
         Token period = getAndAdvance();
-        SimpleIdentifier name = parseSimpleIdentifier();
-        validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
+        SimpleIdentifier name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
         return parseConstructor(
             comment,
             externalKeyword,
@@ -1212,7 +1249,7 @@ public class Parser {
     List<CompilationUnitMember> declarations = new ArrayList<CompilationUnitMember>();
     Token memberStart = currentToken;
     while (!matches(TokenType.EOF)) {
-      if (matches(IMPORT) || matches(LIBRARY) || matches(PART) || matches(RESOURCE)) {
+      if (matches(IMPORT) || matches(LIBRARY) || matches(PART)) {
         if (declarationFound && !errorGenerated) {
           // reportError(ParserErrorCode.?);
           errorGenerated = true;
@@ -1351,8 +1388,7 @@ public class Parser {
     SimpleIdentifier name = null;
     if (matches(TokenType.PERIOD)) {
       period = getAndAdvance();
-      name = parseSimpleIdentifier();
-      validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
+      name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
     }
     return parseConstructor(
         comment,
@@ -1501,8 +1537,6 @@ public class Parser {
       return parseLibraryDirective();
     } else if (lexeme.equals(PART)) {
       return parsePartDirective();
-    } else if (lexeme.equals(RESOURCE)) {
-      return parseResourceDirective();
     } else {
       // Internal error
       return null;
@@ -1627,11 +1661,15 @@ public class Parser {
    * expression ::=
    *     assignableExpression assignmentOperator expression
    *   | conditionalExpression cascadeSection*
+   *   | throwExpression
    * </pre>
    * 
    * @return the expression that was parsed
    */
   private Expression parseExpression() {
+    if (matches(Keyword.THROW)) {
+      return parseThrowExpression();
+    }
     //
     // assignableExpression is a subset of conditionalExpression, so we can parse a conditional
     // expression and then determine whether it is followed by an assignmentOperator, checking for
@@ -1679,11 +1717,15 @@ public class Parser {
    * expressionWithoutCascade ::=
    *     assignableExpression assignmentOperator expressionWithoutCascade
    *   | conditionalExpression
+   *   | throwExpressionWithoutCascade
    * </pre>
    * 
    * @return the expression that was parsed
    */
   private Expression parseExpressionWithoutCascade() {
+    if (matches(Keyword.THROW)) {
+      return parseThrowExpressionWithoutCascade();
+    }
     //
     // assignableExpression is a subset of conditionalExpression, so we can parse a conditional
     // expression and then determine whether it is followed by an assignmentOperator, checking for
@@ -1907,8 +1949,7 @@ public class Parser {
       if (!matches(TokenType.SEMICOLON)) {
         if (matchesIdentifier() && peekMatches(Keyword.IN)) {
           List<VariableDeclaration> variables = new ArrayList<VariableDeclaration>();
-          SimpleIdentifier variableName = parseSimpleIdentifier();
-          validateName(variableName, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_VARIABLE_NAME);
+          SimpleIdentifier variableName = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_VARIABLE_NAME);
           variables.add(new VariableDeclaration(null, variableName, null, null));
           variableList = new VariableDeclarationList(null, null, variables);
         } else if (isInitializedVariableDeclaration()) {
@@ -2046,8 +2087,7 @@ public class Parser {
     } else if (matches(Keyword.SET)) {
       keyword = getAndAdvance();
     }
-    SimpleIdentifier name = parseSimpleIdentifier();
-    validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
+    SimpleIdentifier name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
     FormalParameterList parameters = null;
     if (!isGetter) {
       parameters = parseFormalParameterList();
@@ -2098,8 +2138,7 @@ public class Parser {
     }
     SimpleIdentifier name = null;
     if (matchesIdentifier()) {
-      name = parseSimpleIdentifier();
-      validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
+      name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
     }
     FormalParameterList parameters = parseFormalParameterList();
     FunctionBody body = parseFunctionBody(false, true);
@@ -2127,8 +2166,7 @@ public class Parser {
   private MethodDeclaration parseGetter(Comment comment, Token externalKeyword,
       Token staticKeyword, TypeName returnType) {
     Token propertyKeyword = expect(Keyword.GET);
-    SimpleIdentifier name = parseSimpleIdentifier();
-    validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
+    SimpleIdentifier name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
     if (matches(TokenType.OPEN_PAREN) && peekMatches(TokenType.CLOSE_PAREN)) {
       // reportError(ParserErrorCode.GETTER_WITH_PARAMETERS);
       advance();
@@ -2525,8 +2563,7 @@ public class Parser {
     if (!peekMatches(TokenType.OPEN_PAREN)) {
       returnType = parseReturnType();
     }
-    SimpleIdentifier name = parseSimpleIdentifier();
-    validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
+    SimpleIdentifier name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
     FormalParameterList parameters = parseFormalParameterList();
     FunctionBody body = parseFunctionBody(staticKeyword == null, false);
     if (externalKeyword != null && !(body instanceof EmptyFunctionBody)) {
@@ -2576,8 +2613,7 @@ public class Parser {
         // reportError(ParserErrorCode.?);
       }
       Token period = getAndAdvance();
-      SimpleIdentifier name = parseSimpleIdentifier();
-      validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
+      SimpleIdentifier name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
       FormalParameterList parameters = parseFormalParameterList();
       return parseConstructor(
           comment,
@@ -2588,8 +2624,7 @@ public class Parser {
           name,
           parameters);
     }
-    SimpleIdentifier name = parseSimpleIdentifier();
-    validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
+    SimpleIdentifier name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
     FormalParameterList parameters = parseFormalParameterList();
     if (matches(TokenType.COLON)) {
       if (staticKeyword != null) {
@@ -2719,7 +2754,7 @@ public class Parser {
       } else if (keyword == Keyword.SWITCH) {
         return parseSwitchStatement();
       } else if (keyword == Keyword.THROW) {
-        return parseThrowStatement();
+        return new ExpressionStatement(parseThrowExpression(), expect(TokenType.SEMICOLON));
       } else if (keyword == Keyword.TRY) {
         return parseTryStatement();
       } else if (keyword == Keyword.WHILE) {
@@ -3076,23 +3111,6 @@ public class Parser {
   }
 
   /**
-   * Parse a resource directive.
-   * 
-   * <pre>
-   * resourceDirective ::=
-   *     'resource' stringLiteral ';'
-   * </pre>
-   * 
-   * @return the resource directive that was parsed
-   */
-  private ResourceDirective parseResourceDirective() {
-    Token keyword = expect(RESOURCE);
-    StringLiteral resourceUri = parseStringLiteral();
-    Token semicolon = expect(TokenType.SEMICOLON);
-    return new ResourceDirective(keyword, resourceUri, semicolon);
-  }
-
-  /**
    * Parse a return statement.
    * 
    * <pre>
@@ -3152,8 +3170,7 @@ public class Parser {
   private MethodDeclaration parseSetter(Comment comment, Token externalKeyword,
       Token staticKeyword, TypeName returnType) {
     Token propertyKeyword = expect(Keyword.SET);
-    SimpleIdentifier name = parseSimpleIdentifier();
-    validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
+    SimpleIdentifier name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_FUNCTION_NAME);
     FormalParameterList parameters = parseFormalParameterList();
     FunctionBody body = parseFunctionBody(true, false);
     if (externalKeyword != null && !(body instanceof EmptyFunctionBody)) {
@@ -3215,6 +3232,29 @@ public class Parser {
   }
 
   /**
+   * Parse a simple identifier and validate that it is not a built-in identifier.
+   * 
+   * <pre>
+   * identifier ::=
+   *     IDENTIFIER
+   * </pre>
+   * 
+   * @param errorCode the error code to be used to report a built-in identifier is one is found
+   * @return the simple identifier that was parsed
+   */
+  private SimpleIdentifier parseSimpleIdentifier(ParserErrorCode errorCode) {
+    if (matchesIdentifier()) {
+      Token token = getAndAdvance();
+      if (token.getType() == TokenType.KEYWORD || token.getLexeme().equals(DYNAMIC)) {
+        reportError(errorCode, token, token.getLexeme());
+      }
+      return new SimpleIdentifier(token);
+    }
+    reportError(ParserErrorCode.EXPECTED_IDENTIFIER);
+    return createSyntheticSimpleIdentifier();
+  }
+
+  /**
    * Parse a statement.
    * 
    * <pre>
@@ -3227,8 +3267,7 @@ public class Parser {
   private Statement parseStatement() {
     List<Label> labels = new ArrayList<Label>();
     while (matchesIdentifier() && peekMatches(TokenType.COLON)) {
-      SimpleIdentifier label = parseSimpleIdentifier();
-      validateName(label, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_LABEL);
+      SimpleIdentifier label = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_LABEL);
       Token colon = expect(TokenType.COLON);
       labels.add(new Label(label, colon));
     }
@@ -3375,8 +3414,7 @@ public class Parser {
       while (!matches(TokenType.EOF) && !matches(TokenType.CLOSE_CURLY_BRACKET)) {
         List<Label> labels = new ArrayList<Label>();
         while (matchesIdentifier() && peekMatches(TokenType.COLON)) {
-          SimpleIdentifier identifier = parseSimpleIdentifier();
-          validateName(identifier, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_LABEL);
+          SimpleIdentifier identifier = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_LABEL);
           String label = identifier.getToken().getLexeme();
           if (definedLabels.contains(label)) {
             reportError(ParserErrorCode.DUPLICATE_LABEL_IN_SWITCH_STATEMENT, identifier.getToken());
@@ -3420,23 +3458,43 @@ public class Parser {
   }
 
   /**
-   * Parse a throw statement.
+   * Parse a throw expression.
    * 
    * <pre>
-   * throwStatement ::=
+   * throwExpression ::=
    *     'throw' expression? ';'
    * </pre>
    * 
-   * @return the throw statement that was parsed
+   * @return the throw expression that was parsed
    */
-  private Statement parseThrowStatement() {
+  private Expression parseThrowExpression() {
     Token keyword = expect(Keyword.THROW);
     if (matches(TokenType.SEMICOLON)) {
-      return new ThrowStatement(keyword, null, getAndAdvance());
+      return new ThrowExpression(keyword, null, getAndAdvance());
     }
     Expression expression = parseExpression();
-    Token semicolon = expect(TokenType.SEMICOLON);
-    return new ThrowStatement(keyword, expression, semicolon);
+    Token semicolon = null; //expect(TokenType.SEMICOLON);
+    return new ThrowExpression(keyword, expression, semicolon);
+  }
+
+  /**
+   * Parse a throw expression.
+   * 
+   * <pre>
+   * throwExpressionWithoutCascade ::=
+   *     'throw' expressionWithoutCascade? ';'
+   * </pre>
+   * 
+   * @return the throw expression that was parsed
+   */
+  private Expression parseThrowExpressionWithoutCascade() {
+    Token keyword = expect(Keyword.THROW);
+    if (matches(TokenType.SEMICOLON)) {
+      return new ThrowExpression(keyword, null, getAndAdvance());
+    }
+    Expression expression = parseExpressionWithoutCascade();
+    Token semicolon = null; //expect(TokenType.SEMICOLON);
+    return new ThrowExpression(keyword, expression, semicolon);
   }
 
   /**
@@ -3528,8 +3586,7 @@ public class Parser {
     if (!peekMatches(TokenType.OPEN_PAREN) && !peekMatches(TokenType.LT)) {
       returnType = parseReturnType();
     }
-    SimpleIdentifier name = parseSimpleIdentifier();
-    validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_TYPEDEF_NAME);
+    SimpleIdentifier name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_TYPEDEF_NAME);
     TypeParameterList typeParameters = null;
     if (matches(TokenType.LT)) {
       typeParameters = parseTypeParameterList();
@@ -3593,8 +3650,7 @@ public class Parser {
    * @return the type parameter that was parsed
    */
   private TypeParameter parseTypeParameter() {
-    SimpleIdentifier name = parseSimpleIdentifier();
-    validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_TYPE_VARIABLE_NAME);
+    SimpleIdentifier name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_TYPE_VARIABLE_NAME);
     if (matches(Keyword.EXTENDS)) {
       Token keyword = getAndAdvance();
       TypeName bound = parseTypeName();
@@ -3700,8 +3756,7 @@ public class Parser {
    */
   private VariableDeclaration parseVariableDeclaration() {
     Comment localComment = parseDocumentationComment();
-    SimpleIdentifier name = parseSimpleIdentifier();
-    validateName(name, false, ParserErrorCode.BUILT_IN_IDENTIFIER_AS_VARIABLE_NAME);
+    SimpleIdentifier name = parseSimpleIdentifier(ParserErrorCode.BUILT_IN_IDENTIFIER_AS_VARIABLE_NAME);
     Token equals = null;
     Expression initializer = null;
     if (matches(TokenType.EQ)) {
@@ -4261,23 +4316,5 @@ public class Parser {
       builder.append(currentChar);
     }
     return currentIndex + 1;
-  }
-
-  /**
-   * Validate that the given name is a valid name. It is sometimes and error and sometimes a warning
-   * if a built-in identifier is used in place of an identifier. Generate the appropriate error if
-   * the name is a built-in identifier.
-   * 
-   * @param name the name being tested
-   * @param dynamicAllowed {@code true} if the built-in identifier "Dynamic" is allowed
-   * @param errorCode the error code to use if the name is a built-in identifier.
-   */
-  private void validateName(SimpleIdentifier name, boolean dynamicAllowed, ParserErrorCode errorCode) {
-    Token token = name.getToken();
-    if (token.getType() == TokenType.KEYWORD) {
-      reportError(errorCode, token, token.getLexeme());
-    } else if (!dynamicAllowed && token.getLexeme().equals("Dynamic")) {
-      reportError(errorCode, token, token.getLexeme());
-    }
   }
 }

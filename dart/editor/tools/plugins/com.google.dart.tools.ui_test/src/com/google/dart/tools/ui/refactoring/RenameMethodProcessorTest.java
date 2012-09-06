@@ -460,6 +460,36 @@ public final class RenameMethodProcessorTest extends RefactoringTest {
         "  }",
         "}");
   }
+  
+  public void test_OK_inexactReferences() throws Exception {
+    setTestUnitContent(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "class A {",
+        "  test() {}",
+        "}",
+        "f1(A a) {",
+        "  a.test();",
+        "}",
+        "f2(a) {",
+        "  a.test();",
+        "}",
+        "");
+    Method method = findElement("test() {}");
+    // do rename
+    renameMethod(method, "newName");
+    assertTestUnitContent(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "class A {",
+        "  newName() {}",
+        "}",
+        "f1(A a) {",
+        "  a.newName();",
+        "}",
+        "f2(a) {",
+        "  a.newName();",
+        "}",
+        "");
+  }
 
   public void test_OK_singleUnit_onReference() throws Exception {
     setTestUnitContent(
@@ -786,37 +816,6 @@ public final class RenameMethodProcessorTest extends RefactoringTest {
     }
     // no source changes
     assertEquals(source, testUnit.getSource());
-  }
-
-  /**
-   * We should warn about renaming external elements, but allow rename.
-   */
-  public void test_preCondition_externalElement() throws Exception {
-    setTestUnitContent(
-        "// filler filler filler filler filler filler filler filler filler filler",
-        "main() {",
-        "  Strings.concatAll(['0']);",
-        "  Strings.concatAll(['1']);",
-        "}",
-        "");
-    Method method = findElement("concatAll(['0'])");
-    // try to rename
-    showStatusCancel = false;
-    renameMethod(method, "newName");
-    // warning should be displayed
-    assertThat(openInformationMessages).isEmpty();
-    assertThat(showStatusMessages).hasSize(1);
-    assertEquals(RefactoringStatus.ERROR, showStatusSeverities.get(0).intValue());
-    assertThat(showStatusMessages.get(0)).contains(
-        "Only workspace references will be changed for method defined outside of workspace");
-    // status was non-fatal error, so rename was done
-    assertTestUnitContent(
-        "// filler filler filler filler filler filler filler filler filler filler",
-        "main() {",
-        "  Strings.newName(['0']);",
-        "  Strings.newName(['1']);",
-        "}",
-        "");
   }
 
   public void test_preCondition_hasCompilationErrors() throws Exception {

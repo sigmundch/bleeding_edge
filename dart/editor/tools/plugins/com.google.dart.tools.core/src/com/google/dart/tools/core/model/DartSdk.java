@@ -30,7 +30,7 @@ import java.io.IOException;
  *          Chromium/   <-- Dartium
  *       lib/
  *          core/
- *             core_runtime.dart
+ *             core.dart
  *             ... other core library files ...
  *          ... other libraries ...
  *       util/
@@ -131,6 +131,13 @@ public class DartSdk {
    */
   public File getLibraryDirectory() {
     return new File(getDirectory(), "lib");
+  }
+
+  /**
+   * @return the Dart Editor index file for the SDK libraries
+   */
+  public File getLibraryIndexFile() {
+    return new File(new File(getLibraryDirectory(), "_internal"), "index.idx");
   }
 
   /**

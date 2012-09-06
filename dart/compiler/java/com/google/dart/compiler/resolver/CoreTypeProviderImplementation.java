@@ -25,13 +25,8 @@ public class CoreTypeProviderImplementation implements CoreTypeProvider {
   private final DynamicType dynamicType;
   private final Type voidType;
   private final Type nullType;
-  private final InterfaceType fallThroughError;
   private final InterfaceType mapType;
-  @SuppressWarnings("unused")
-  private final InterfaceType mapLiteralType;
-  private final InterfaceType objectArrayType;
   private final InterfaceType objectType;
-  private final InterfaceType stringImplementation;
   private final InterfaceType iteratorType;
   private final InterfaceType typeType;
 
@@ -47,15 +42,9 @@ public class CoreTypeProviderImplementation implements CoreTypeProvider {
     this.voidType = Types.newVoidType();
     // Currently, there is no need for a special null type.
     this.nullType = dynamicType;
-    this.fallThroughError = getType("FallThroughError", scope, listener);
     this.mapType = getType("Map", scope, listener);
-    this.mapLiteralType = getType("LinkedHashMapImplementation", scope, listener);
-    this.objectArrayType = getType(new String[] {
-        "ListImplementation", "GrowableObjectArray", "ListFactory"}, scope, listener);
     this.objectType = getType("Object", scope, listener);
-    this.stringImplementation = getType(new String[] {
-        "StringImplementation", "OneByteString"}, scope, listener);
-    iteratorType = getType("Iterator", scope, listener);
+    this.iteratorType = getType("Iterator", scope, listener);
     this.typeType = getType("Type", scope, listener);
   }
 
@@ -65,23 +54,6 @@ public class CoreTypeProviderImplementation implements CoreTypeProvider {
       DartCompilationError error =
           new DartCompilationError(null, Location.NONE,
               ResolverErrorCode.CANNOT_RESOLVE_SDK_TYPE, name);
-      listener.onError(error);
-      return Types.newDynamicType();
-    }
-    return element.getType();
-  }
-
-  private static InterfaceType getType(String[] names, Scope scope, DartCompilerListener listener) {
-    ClassElement element = null;
-    for (String name : names) {
-      element = (ClassElement) scope.findElement(scope.getLibrary(), name);
-      if (element != null)
-        break;
-    }
-    if (element == null) {
-      DartCompilationError error =
-          new DartCompilationError(null, Location.NONE,
-              ResolverErrorCode.CANNOT_RESOLVE_SDK_TYPE, names[0]);
       listener.onError(error);
       return Types.newDynamicType();
     }
@@ -119,11 +91,6 @@ public class CoreTypeProviderImplementation implements CoreTypeProvider {
   }
 
   @Override
-  public InterfaceType getArrayLiteralType(Type elementType) {
-    return getArrayType(elementType);
-  }
-
-  @Override
   public DynamicType getDynamicType() {
     return dynamicType;
   }
@@ -139,23 +106,8 @@ public class CoreTypeProviderImplementation implements CoreTypeProvider {
   }
 
   @Override
-  public InterfaceType getFallThroughError() {
-    return fallThroughError;
-  }
-
-  @Override
   public InterfaceType getMapType(Type key, Type value) {
     return mapType.subst(Arrays.asList(key, value), mapType.getElement().getTypeParameters());
-  }
-
-  @Override
-  public InterfaceType getMapLiteralType(Type key, Type value) {
-    return getMapType(key, value);
-  }
-
-  @Override
-  public InterfaceType getObjectArrayType() {
-    return objectArrayType;
   }
 
   @Override
@@ -166,11 +118,6 @@ public class CoreTypeProviderImplementation implements CoreTypeProvider {
   @Override
   public InterfaceType getNumType() {
     return numType;
-  }
-
-  @Override
-  public InterfaceType getStringImplementationType() {
-    return stringImplementation;
   }
 
   @Override

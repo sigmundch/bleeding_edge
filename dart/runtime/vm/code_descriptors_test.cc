@@ -72,7 +72,7 @@ CODEGEN_TEST_GENERATE(StackmapCodegen, test) {
       EXPECT_EQ(expectation0[i], stack_bitmap->Get(i));
     }
     // Add a stack map entry at pc offset 0.
-    stackmap_table_builder->AddEntry(0, stack_bitmap);
+    stackmap_table_builder->AddEntry(0, stack_bitmap, 0);
 
     stack_bitmap = new BitmapBuilder();
     EXPECT(stack_bitmap != NULL);
@@ -89,7 +89,7 @@ CODEGEN_TEST_GENERATE(StackmapCodegen, test) {
       EXPECT_EQ(expectation1[i], stack_bitmap->Get(i));
     }
     // Add a stack map entry at pc offset 1.
-    stackmap_table_builder->AddEntry(1, stack_bitmap);
+    stackmap_table_builder->AddEntry(1, stack_bitmap, 0);
 
     stack_bitmap = new BitmapBuilder();
     EXPECT(stack_bitmap != NULL);
@@ -108,7 +108,7 @@ CODEGEN_TEST_GENERATE(StackmapCodegen, test) {
       EXPECT_EQ(expectation2[i], stack_bitmap->Get(i));
     }
     // Add a stack map entry at pc offset 2.
-    stackmap_table_builder->AddEntry(2, stack_bitmap);
+    stackmap_table_builder->AddEntry(2, stack_bitmap, 0);
 
     stack_bitmap = new BitmapBuilder();
     EXPECT(stack_bitmap != NULL);
@@ -130,7 +130,7 @@ CODEGEN_TEST_GENERATE(StackmapCodegen, test) {
       EXPECT_EQ(expectation3[i], stack_bitmap->Get(i));
     }
     // Add a stack map entry at pc offset 3.
-    stackmap_table_builder->AddEntry(3, stack_bitmap);
+    stackmap_table_builder->AddEntry(3, stack_bitmap, 0);
 
     const Error& error =
         Error::Handle(Compiler::CompileParsedFunction(parsed_function));
@@ -182,18 +182,22 @@ CODEGEN_TEST_GENERATE(StackmapCodegen, test) {
 CODEGEN_TEST_RUN(StackmapCodegen, Smi::New(1))
 
 
-DEFINE_NATIVE_ENTRY(NativeFunc, 2) {
-  GET_NATIVE_ARGUMENT(Smi, i, arguments->At(0));
-  GET_NATIVE_ARGUMENT(Smi, k, arguments->At(1));
-  EXPECT_EQ(10, i.Value());
-  EXPECT_EQ(20, k.Value());
+static void NativeFunc(Dart_NativeArguments args) {
+  Dart_EnterScope();
+  Dart_Handle i = Dart_GetNativeArgument(args, 0);
+  Dart_Handle k = Dart_GetNativeArgument(args, 1);
+  int64_t value = -1;
+  EXPECT_VALID(Dart_IntegerToInt64(i, &value));
+  EXPECT_EQ(10, value);
+  EXPECT_VALID(Dart_IntegerToInt64(k, &value));
+  EXPECT_EQ(20, value);
   Isolate::Current()->heap()->CollectAllGarbage();
 }
 
 
 static Dart_NativeFunction native_resolver(Dart_Handle name,
                                            int argument_count) {
-  return reinterpret_cast<Dart_NativeFunction>(&DN_NativeFunc);
+  return reinterpret_cast<Dart_NativeFunction>(&NativeFunc);
 }
 
 
@@ -257,7 +261,8 @@ TEST_CASE(StackmapGC) {
   for (int i = 0; i < descriptors.Length(); ++i) {
     if (descriptors.DescriptorKind(i) == PcDescriptors::kFuncCall) {
       stackmap_table_builder->AddEntry(descriptors.PC(i) - code.EntryPoint(),
-                                       stack_bitmap);
+                                       stack_bitmap,
+                                       0);
       ++call_count;
     }
   }

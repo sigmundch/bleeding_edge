@@ -80,7 +80,6 @@ import com.google.dart.engine.ast.PrefixExpression;
 import com.google.dart.engine.ast.PrefixedIdentifier;
 import com.google.dart.engine.ast.PropertyAccess;
 import com.google.dart.engine.ast.RedirectingConstructorInvocation;
-import com.google.dart.engine.ast.ResourceDirective;
 import com.google.dart.engine.ast.ReturnStatement;
 import com.google.dart.engine.ast.ScriptTag;
 import com.google.dart.engine.ast.SimpleFormalParameter;
@@ -93,7 +92,7 @@ import com.google.dart.engine.ast.SwitchCase;
 import com.google.dart.engine.ast.SwitchDefault;
 import com.google.dart.engine.ast.SwitchStatement;
 import com.google.dart.engine.ast.ThisExpression;
-import com.google.dart.engine.ast.ThrowStatement;
+import com.google.dart.engine.ast.ThrowExpression;
 import com.google.dart.engine.ast.TopLevelVariableDeclaration;
 import com.google.dart.engine.ast.TryStatement;
 import com.google.dart.engine.ast.TypeAlias;
@@ -513,12 +512,6 @@ public class RecursiveASTVisitor<R> implements ASTVisitor<R> {
   }
 
   @Override
-  public R visitResourceDirective(ResourceDirective node) {
-    node.visitChildren(this);
-    return null;
-  }
-
-  @Override
   public R visitReturnStatement(ReturnStatement node) {
     node.visitChildren(this);
     return null;
@@ -591,7 +584,7 @@ public class RecursiveASTVisitor<R> implements ASTVisitor<R> {
   }
 
   @Override
-  public R visitThrowStatement(ThrowStatement node) {
+  public R visitThrowExpression(ThrowExpression node) {
     node.visitChildren(this);
     return null;
   }

@@ -8,6 +8,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
@@ -39,6 +40,7 @@ import com.google.dart.compiler.ast.DartDefault;
 import com.google.dart.compiler.ast.DartDoWhileStatement;
 import com.google.dart.compiler.ast.DartDoubleLiteral;
 import com.google.dart.compiler.ast.DartEmptyStatement;
+import com.google.dart.compiler.ast.DartExportDirective;
 import com.google.dart.compiler.ast.DartExprStmt;
 import com.google.dart.compiler.ast.DartExpression;
 import com.google.dart.compiler.ast.DartField;
@@ -172,6 +174,7 @@ public class TypeAnalyzer implements DartCompilationPhase {
     private Type expected;
     private MethodElement currentMethod;
     private InterfaceType currentClass;
+    private final InterfaceType objectType;
     private final InterfaceType boolType;
     private final InterfaceType numType;
     private final InterfaceType intType;
@@ -198,9 +201,24 @@ public class TypeAnalyzer implements DartCompilationPhase {
         }
       }
       void setType(VariableElement element, Type newType) {
-        rememberOldType(element, element.getType());
-        newTypes.put(element, newType);
-        Elements.setType(element, newType);
+        if (canSetType(element)) {
+          rememberOldType(element, element.getType());
+          newTypes.put(element, newType);
+          Elements.setType(element, newType);
+        }
+      }
+      boolean canSetType(VariableElement element) {
+        Type type = element.getType();
+        // no type declared, no assignment yet
+        if (TypeKind.of(type) == TypeKind.DYNAMIC) {
+          return true;
+        }
+        // was assignment, inferred
+        if (type != null && type.isInferred()) {
+          return true;
+        }
+        // was declared with type, keep it
+        return false;
       }
       Map<VariableElement, Type> getNewTypesAndRestoreOld() {
         for (Entry<VariableElement, Type> entry : oldTypes.entrySet()) {
@@ -226,6 +244,7 @@ public class TypeAnalyzer implements DartCompilationPhase {
       this.stringType = typeProvider.getStringType();
       this.defaultLiteralMapType = typeProvider.getMapType(stringType, dynamicType);
       this.voidType = typeProvider.getVoidType();
+      this.objectType = typeProvider.getObjectType();
       this.boolType = typeProvider.getBoolType();
       this.numType = typeProvider.getNumType();
       this.intType = typeProvider.getIntType();
@@ -262,8 +281,8 @@ public class TypeAnalyzer implements DartCompilationPhase {
     }
 
     private void onError(SourceInfo errorTarget, ErrorCode errorCode, Object... arguments) {
-      Source source = errorTarget.getSource();
       if (suppressSdkWarnings && errorCode.getErrorSeverity() == ErrorSeverity.WARNING) {
+        Source source = errorTarget.getSource();
         if (source != null && PackageLibraryManager.isDartUri(source.getUri())) {
           return;
         }
@@ -324,7 +343,7 @@ public class TypeAnalyzer implements DartCompilationPhase {
 
     private String methodNameForUnaryOperator(DartNode diagnosticNode, Token operator) {
       if (operator == Token.SUB) {
-        return "operator negate";
+        return "operator -";
       } else if (operator == Token.BIT_NOT) {
         return "operator ~";
       }
@@ -332,8 +351,8 @@ public class TypeAnalyzer implements DartCompilationPhase {
     }
 
     private String methodNameForBinaryOperator(Token operator) {
-      if (operator == Token.EQ) {
-        return "operator equals";
+      if (operator.getSyntax().equals("-")) {
+        return "operator -binary";
       }
       return "operator " + operator.getSyntax();
     }
@@ -350,7 +369,7 @@ public class TypeAnalyzer implements DartCompilationPhase {
         FunctionType methodType = getMethodType(lhsType, member, methodName, diagnosticNode);
         checkDeprecated(problemTarget, element);
         Type returnType = checkInvocation(Collections.<DartExpression> singletonList(rhs),
-            diagnosticNode, methodName, methodType);
+            diagnosticNode, methodName, methodType, null);
         // tweak return type for int/int and int/double operators
         {
           boolean lhsInt = intType.equals(lhsType);
@@ -374,6 +393,23 @@ public class TypeAnalyzer implements DartCompilationPhase {
         }
         // done
         return returnType;
+      } else {
+        return dynamicType;
+      }
+    }
+    
+    private Type analyzeTernaryOperator(DartNode node, Type lhsType, Token operator,
+        DartNode diagnosticNode, DartExpression arg1, DartExpression arg2) {
+      String methodName = methodNameForBinaryOperator(operator);
+      HasSourceInfo problemTarget = getOperatorHasSourceInfo(node);
+      Member member = lookupMember(lhsType, methodName, problemTarget);
+      if (member != null) {
+        Element element = member.getElement();
+        node.setElement(element);
+        FunctionType methodType = getMethodType(lhsType, member, methodName, diagnosticNode);
+        checkDeprecated(problemTarget, element);
+        return checkInvocation(ImmutableList.of(arg1, arg2), diagnosticNode, methodName,
+            methodType, null);
       } else {
         return dynamicType;
       }
@@ -595,8 +631,10 @@ public class TypeAnalyzer implements DartCompilationPhase {
       Member member = itype.lookupMember(methodName);
       if (member == null && problemTarget != null) {
         if (typeChecksForInferredTypes || !receiver.isInferred()) {
-          typeError(problemTarget, TypeErrorCode.INTERFACE_HAS_NO_METHOD_NAMED, receiver,
-              methodName);
+          ErrorCode code = receiver.isInferred()
+              ? TypeErrorCode.INTERFACE_HAS_NO_METHOD_NAMED_INFERRED
+              : TypeErrorCode.INTERFACE_HAS_NO_METHOD_NAMED;
+          typeError(problemTarget, code, receiver, methodName);
         }
         return null;
       }
@@ -909,7 +947,10 @@ public class TypeAnalyzer implements DartCompilationPhase {
       }
       // do check and report error
       if (!types.isAssignable(t, s)) {
-        typeError(node, TypeErrorCode.TYPE_NOT_ASSIGNMENT_COMPATIBLE, s, t);
+        TypeErrorCode errorCode = t.isInferred() || s.isInferred()
+            ? TypeErrorCode.TYPE_NOT_ASSIGNMENT_COMPATIBLE_INFERRED
+            : TypeErrorCode.TYPE_NOT_ASSIGNMENT_COMPATIBLE;
+        typeError(node, errorCode, s, t);
         return false;
       }
       // OK
@@ -934,6 +975,15 @@ public class TypeAnalyzer implements DartCompilationPhase {
 
     private FunctionType getMethodType(Type receiver, Member member, String name,
                                          DartNode diagnosticNode) {
+      FunctionType functionType = getMethodType0(receiver, member, name, diagnosticNode);
+      if (receiver.isInferred()) {
+        functionType = (FunctionType) Types.makeInferred(functionType);
+      }
+      return functionType;
+    }
+      
+    private FunctionType getMethodType0(Type receiver, Member member, String name,
+        DartNode diagnosticNode) {
       if (member == null) {
         return dynamicType;
       }
@@ -971,7 +1021,9 @@ public class TypeAnalyzer implements DartCompilationPhase {
         }
         default:
           if (typeChecksForInferredTypes || !receiver.isInferred()) {
-            typeError(diagnosticNode, TypeErrorCode.NOT_A_METHOD_IN, name, receiver);
+            TypeErrorCode errorCode = receiver.isInferred()
+                ? TypeErrorCode.NOT_A_METHOD_IN_INFERRED : TypeErrorCode.NOT_A_METHOD_IN;
+            typeError(diagnosticNode, errorCode, name, receiver);
           }
           return dynamicType;
       }
@@ -1002,7 +1054,8 @@ public class TypeAnalyzer implements DartCompilationPhase {
 
     private Type checkArguments(DartNode diagnosticNode,
                                 List<DartExpression> argumentNodes,
-                                Iterator<Type> argumentTypes, FunctionType ftype) {
+                                Iterator<Type> argumentTypes, FunctionType ftype,
+                                List<VariableElement> parameters) {
       int argumentIndex = 0;
       // Check positional parameters.
       {
@@ -1013,10 +1066,14 @@ public class TypeAnalyzer implements DartCompilationPhase {
             Type argumentType = argumentTypes.next();
             argumentType.getClass(); // quick null check
             DartExpression argumentNode = argumentNodes.get(argumentIndex);
-            argumentNode.setInvocationParameterId(argumentIndex);
             if (argumentNode instanceof DartNamedExpression) {
               onError(argumentNode, TypeErrorCode.EXPECTED_POSITIONAL_ARGUMENT, parameterType);
               return ftype.getReturnType();
+            }
+            if (parameters != null) {
+              argumentNode.setInvocationParameterId(parameters.get(argumentIndex));
+            } else {
+              argumentNode.setInvocationParameterId(argumentIndex);
             }
             if (checkAssignable(argumentNode, parameterType, argumentType)) {
               inferFunctionLiteralParametersTypes(argumentNode, parameterType);
@@ -1044,7 +1101,11 @@ public class TypeAnalyzer implements DartCompilationPhase {
           Type argumentType = argumentTypes.next();
           argumentType.getClass(); // quick null check
           DartExpression argumentNode = argumentNodes.get(argumentIndex);
-          argumentNode.setInvocationParameterId(argumentIndex);
+          if (parameters != null) {
+            argumentNode.setInvocationParameterId(parameters.get(argumentIndex));
+          } else {
+            argumentNode.setInvocationParameterId(argumentIndex);
+          }
           if (checkAssignable(argumentNode, optionalType, argumentType)) {
             inferFunctionLiteralParametersTypes(argumentNode, optionalType);
           }
@@ -1072,7 +1133,11 @@ public class TypeAnalyzer implements DartCompilationPhase {
           Type argumentType = argumentTypes.next();
           argumentType.getClass(); // quick null check
           DartExpression argumentNode = argumentNodes.get(argumentIndex);
-          argumentNode.setInvocationParameterId(argumentIndex);
+          if (parameters != null) {
+            argumentNode.setInvocationParameterId(parameters.get(argumentIndex));
+          } else {
+            argumentNode.setInvocationParameterId(argumentIndex);
+          }
           if (checkAssignable(argumentNode, namedType, argumentType)) {
             inferFunctionLiteralParametersTypes(argumentNode, namedType);
           }
@@ -1086,8 +1151,19 @@ public class TypeAnalyzer implements DartCompilationPhase {
           DartExpression argumentNode = namedExpression.getExpression();
           // Prepare parameter name.
           String parameterName = namedExpression.getName().getName();
-          namedExpression.setInvocationParameterId(parameterName);
-          argumentNode.setInvocationParameterId(parameterName);
+          if (parameters != null) {
+            for (VariableElement parameter : parameters) {
+              if (Objects.equal(parameter.getName(), parameterName)) {
+                namedExpression.setInvocationParameterId(parameter);
+                namedExpression.getName().setInvocationParameterId(parameter);
+                argumentNode.setInvocationParameterId(parameter);
+                break;
+              }
+            }
+          } else {
+            namedExpression.setInvocationParameterId(parameterName);
+            argumentNode.setInvocationParameterId(parameterName);
+          }
           if (usedNamedParametersPositional.contains(parameterName)) {
             onError(namedExpression, TypeErrorCode.DUPLICATE_NAMED_ARGUMENT);
           } else if (usedNamedParametersNamed.contains(parameterName)) {
@@ -1250,9 +1326,22 @@ public class TypeAnalyzer implements DartCompilationPhase {
     @Override
     public Type visitArrayAccess(DartArrayAccess node) {
       Type target = typeOf(node.getTarget());
-      return analyzeBinaryOperator(node, target, Token.INDEX, node, node.getKey());
+      DartExpression argKey = node.getKey();
+      // t[k] = v
+      if (node.getParent() instanceof DartBinaryExpression) {
+        DartBinaryExpression binaryExpression = (DartBinaryExpression) node.getParent();
+        if (binaryExpression.getArg1() == node
+            && binaryExpression.getOperator().isAssignmentOperator()) {
+          DartExpression argValue = binaryExpression.getArg2();
+          analyzeTernaryOperator(node, target, Token.ASSIGN_INDEX, node, argKey, argValue);
+          binaryExpression.setElement(node.getElement());
+          return argValue.getType();
+        }
+      }
+      // print( t[k] )
+      return analyzeBinaryOperator(node, target, Token.INDEX, node, argKey);
     }
-
+    
     /**
      * Asserts that given {@link DartExpression} is valid for using in "assert" statement.
      */
@@ -1569,13 +1658,17 @@ public class TypeAnalyzer implements DartCompilationPhase {
     @Override
     public Type visitForInStatement(DartForInStatement node) {
       Type variableType;
-      VariableElement variableElement;
+      VariableElement variableElement = null;
       if (node.introducesVariable()) {
         variableType = typeOf(node.getVariableStatement());
         variableElement = node.getVariableStatement().getVariables().get(0).getElement();
       } else {
         variableType = typeOf(node.getIdentifier());
-        variableElement = (VariableElement) node.getIdentifier().getElement();
+        // in most cases variable, but sometimes field
+        NodeElement identifierElement = node.getIdentifier().getElement();
+        if (identifierElement instanceof VariableElement) {
+          variableElement = (VariableElement) identifierElement;
+        }
       }
       // prepare Iterable type
       DartExpression iterableExpression = node.getIterable();
@@ -1606,7 +1699,7 @@ public class TypeAnalyzer implements DartCompilationPhase {
       // visit body with inferred variable type
       VariableElementsRestorer variableRestorer = new VariableElementsRestorer();
       try {
-        if (elementType != null) {
+        if (variableElement != null && elementType != null) {
           variableRestorer.setType(variableElement, elementType);
         }
         BlockTypeContext blockTypeContext = new BlockTypeContext();
@@ -1917,8 +2010,8 @@ public class TypeAnalyzer implements DartCompilationPhase {
           }
         }
       }
-      // operator "equals" should return "bool"
-      if (modifiers.isOperator() && methodElement.getName().equals("equals")
+      // operator == should return "bool"
+      if (modifiers.isOperator() && methodElement.getName().equals("==")
           && returnTypeNode != null) {
         Type returnType = node.getElement().getFunctionType().getReturnType();
         if (!Objects.equal(returnType, boolType)) {
@@ -1927,8 +2020,8 @@ public class TypeAnalyzer implements DartCompilationPhase {
         }
       }
       // operator "negate" should return numeric type
-      if (modifiers.isOperator() && methodElement.getName().equals("negate")
-          && returnTypeNode != null) {
+      if (modifiers.isOperator() && methodElement.getName().equals("-")
+          && methodElement.getParameters().isEmpty() && returnTypeNode != null) {
         Type returnType = node.getElement().getFunctionType().getReturnType();
         if (!types.isSubtype(returnType, numType)) {
           typeError(returnTypeNode, TypeErrorCode.OPERATOR_NEGATE_NUM_RETURN_TYPE);
@@ -2152,7 +2245,9 @@ public class TypeAnalyzer implements DartCompilationPhase {
       InterfaceType.Member member = cls.lookupMember(name);
       if (member == null) {
         if (typeChecksForInferredTypes || !receiver.isInferred()) {
-          typeError(node.getName(), TypeErrorCode.NOT_A_MEMBER_OF, name, cls);
+          TypeErrorCode errorCode = receiver.isInferred() ? TypeErrorCode.NOT_A_MEMBER_OF_INFERRED
+              : TypeErrorCode.NOT_A_MEMBER_OF;
+          typeError(node.getName(), errorCode, name, cls);
         }
         return dynamicType;
       }
@@ -2294,9 +2389,10 @@ public class TypeAnalyzer implements DartCompilationPhase {
           // compatibility of "switch expression" and "case expression" types
           checkAssignable(caseExpr, switchType, caseType);
           // should not have "operator =="
-          {
+          if (!Objects.equal(caseType, intType) && !Objects.equal(caseType, doubleType)
+              && !Objects.equal(caseType, stringType)) {
             Member operator = lookupMember(caseType, methodNameForBinaryOperator(Token.EQ), null);
-            if (operator != null) {
+            if (operator != null && !Objects.equal(operator.getHolder(), objectType)) {
               onError(caseExpr, TypeErrorCode.CASE_EXPRESSION_TYPE_SHOULD_NOT_HAVE_EQUALS, caseType);
             }
           }
@@ -2373,7 +2469,7 @@ public class TypeAnalyzer implements DartCompilationPhase {
               node.setElement(element);
               FunctionType methodType = getMethodType(type, member, name, node);
               checkDeprecated(problemTarget, element);
-              return checkInvocation(Collections.<DartExpression>emptyList(), node, name, methodType);
+              return checkInvocation(Collections.<DartExpression>emptyList(), node, name, methodType, null);
             } else {
               return dynamicType;
             }
@@ -2389,7 +2485,15 @@ public class TypeAnalyzer implements DartCompilationPhase {
           }
           InterfaceType itype = types.getInterfaceType(type);
           String operatorMethodName = methodNameForUnaryOperator(node, operator);
+          if (operator == Token.DEC) {
+            operatorMethodName = "operator -binary";
+          }
           Member member = itype.lookupMember(operatorMethodName);
+          // TODO(scheglov) remove after library migration from "operator negate()" to "operator -()"
+          if (member == null && operator == Token.SUB) {
+            operatorMethodName = "operator negate";
+            member = itype.lookupMember(operatorMethodName);
+          }
           if (member == null) {
             HasSourceInfo errorTarget = getOperatorHasSourceInfo(node);
             return typeError(errorTarget, TypeErrorCode.CANNOT_BE_RESOLVED,
@@ -2421,6 +2525,7 @@ public class TypeAnalyzer implements DartCompilationPhase {
 
     @Override
     public Type visitUnit(DartUnit node) {
+      blockOldTypes.addFirst(new BlockTypeContext());
       return typeAsVoid(node);
     }
 
@@ -2510,10 +2615,17 @@ public class TypeAnalyzer implements DartCompilationPhase {
     private Type checkInvocation(DartInvocation node, DartNode diagnosticNode, String name,
         Type type) {
       List<DartExpression> argumentNodes = node.getArguments();
+      List<VariableElement> parameters;
+      if (node.getElement() instanceof MethodElement) {
+        MethodElement methodElement = (MethodElement) node.getElement();
+        parameters = methodElement.getParameters();
+      } else {
+        parameters = null;
+      }
       if (node instanceof DartMethodInvocation) {
         DartMethodInvocation invocation = (DartMethodInvocation) node;
         if (invocation.isCascade()) {
-          checkInvocation(argumentNodes, diagnosticNode, name, type);
+          checkInvocation(argumentNodes, diagnosticNode, name, type, parameters);
           DartExpression target = invocation.getTarget();
           if (target == null) {
             return getCurrentClass();
@@ -2521,11 +2633,11 @@ public class TypeAnalyzer implements DartCompilationPhase {
           return target.accept(this);
         }
       }
-      return checkInvocation(argumentNodes, diagnosticNode, name, type);
+      return checkInvocation(argumentNodes, diagnosticNode, name, type, parameters);
     }
 
     private Type checkInvocation(List<DartExpression> argumentNodes, DartNode diagnosticNode,
-        String name, Type type) {
+        String name, Type type, List<VariableElement> parameters) {
       // Prepare argument types.
       List<Type> argumentTypes = Lists.newArrayListWithCapacity(argumentNodes.size());
       for (DartExpression argumentNode : argumentNodes) {
@@ -2537,10 +2649,10 @@ public class TypeAnalyzer implements DartCompilationPhase {
         switch (TypeKind.of(type)) {
           case FUNCTION_ALIAS:
             return checkArguments(diagnosticNode, argumentNodes, argumentTypes.iterator(),
-                Types.asFunctionType((FunctionAliasType) type));
+                Types.asFunctionType((FunctionAliasType) type), parameters);
           case FUNCTION:
             return checkArguments(diagnosticNode, argumentNodes, argumentTypes.iterator(),
-                (FunctionType) type);
+                (FunctionType) type, parameters);
           case DYNAMIC:
             return type;
           default:
@@ -2845,7 +2957,11 @@ public class TypeAnalyzer implements DartCompilationPhase {
 
     @Override
     public Type visitImportDirective(DartImportDirective node) {
-      //return typeAsVoid(node);
+      return voidType;
+    }
+    
+    @Override
+    public Type visitExportDirective(DartExportDirective node) {
       return voidType;
     }
 

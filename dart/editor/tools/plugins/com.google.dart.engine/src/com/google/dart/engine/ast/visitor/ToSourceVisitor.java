@@ -85,7 +85,6 @@ import com.google.dart.engine.ast.PrefixExpression;
 import com.google.dart.engine.ast.PrefixedIdentifier;
 import com.google.dart.engine.ast.PropertyAccess;
 import com.google.dart.engine.ast.RedirectingConstructorInvocation;
-import com.google.dart.engine.ast.ResourceDirective;
 import com.google.dart.engine.ast.ReturnStatement;
 import com.google.dart.engine.ast.ScriptTag;
 import com.google.dart.engine.ast.SimpleFormalParameter;
@@ -98,7 +97,7 @@ import com.google.dart.engine.ast.SwitchCase;
 import com.google.dart.engine.ast.SwitchDefault;
 import com.google.dart.engine.ast.SwitchStatement;
 import com.google.dart.engine.ast.ThisExpression;
-import com.google.dart.engine.ast.ThrowStatement;
+import com.google.dart.engine.ast.ThrowExpression;
 import com.google.dart.engine.ast.TopLevelVariableDeclaration;
 import com.google.dart.engine.ast.TryStatement;
 import com.google.dart.engine.ast.TypeAlias;
@@ -730,14 +729,6 @@ public class ToSourceVisitor implements ASTVisitor<Void> {
   }
 
   @Override
-  public Void visitResourceDirective(ResourceDirective node) {
-    writer.print("resource ");
-    visit(node.getResourceUri());
-    writer.print(";");
-    return null;
-  }
-
-  @Override
   public Void visitReturnStatement(ReturnStatement node) {
     Expression expression = node.getExpression();
     if (expression == null) {
@@ -831,7 +822,7 @@ public class ToSourceVisitor implements ASTVisitor<Void> {
   }
 
   @Override
-  public Void visitThrowStatement(ThrowStatement node) {
+  public Void visitThrowExpression(ThrowExpression node) {
     writer.print("throw ");
     visit(node.getExpression());
     writer.print(";");

@@ -84,7 +84,7 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
    * <p>
    * http://code.google.com/p/dart/issues/detail?id=4785
    */
-  public void test_labelForBlockInSWitchCase() throws Exception {
+  public void test_labelForBlockInSwitchCase() throws Exception {
     AnalyzeLibraryResult libraryResult = analyzeLibrary(
         "// filler filler filler filler filler filler filler filler filler filler",
         "main() {",
@@ -359,7 +359,7 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
         "// filler filler filler filler filler filler filler filler filler filler",
         "class C {",
         "  const C();",
-        "  operator equals(other) => false;",
+        "  operator ==(other) => false;",
         "}",
         "const C CONST = const C();",
         "foo(var v) {",
@@ -1352,7 +1352,7 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     }
     {
       DartMethodDefinition fB = (DartMethodDefinition) unit.getTopLevelNodes().get(1);
-      assertEquals("<dynamic>", fB.getElement().getReturnType().getElement().getName());
+      assertEquals("Dynamic", fB.getElement().getReturnType().getElement().getName());
     }
     {
       DartMethodDefinition fC = (DartMethodDefinition) unit.getTopLevelNodes().get(2);
@@ -1360,7 +1360,7 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     }
     {
       DartMethodDefinition fD = (DartMethodDefinition) unit.getTopLevelNodes().get(3);
-      assertEquals("<dynamic>", fD.getElement().getReturnType().getElement().getName());
+      assertEquals("Dynamic", fD.getElement().getReturnType().getElement().getName());
     }
   }
 
@@ -1896,8 +1896,8 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
           "");
       assertErrors(
           result.getErrors(),
-          errEx(TypeErrorCode.NOT_A_MEMBER_OF, 9, 5, 1),
-          errEx(TypeErrorCode.INTERFACE_HAS_NO_METHOD_NAMED, 10, 5, 1));
+          errEx(TypeErrorCode.NOT_A_MEMBER_OF_INFERRED, 9, 5, 1),
+          errEx(TypeErrorCode.INTERFACE_HAS_NO_METHOD_NAMED_INFERRED, 10, 5, 1));
     }
   }
 
@@ -1962,8 +1962,29 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
           "");
       assertErrors(
           result.getErrors(),
-          errEx(TypeErrorCode.TYPE_NOT_ASSIGNMENT_COMPATIBLE, 7, 7, 1));
+          errEx(TypeErrorCode.TYPE_NOT_ASSIGNMENT_COMPATIBLE_INFERRED, 7, 7, 1));
     }
+  }
+
+  /**
+   * When we resolved method from inferred type, it is possible that arguments of invocation
+   * don't is not assignable to the parameters. So, we report warning. But if we would not infer
+   * types, there would be no warnings.
+   * <p>
+   * http://code.google.com/p/dart/issues/detail?id=4849
+   */
+  public void test_inferredTypes_invocationOfMethodFromInferredType_arguments() throws Exception {
+    AnalyzeLibraryResult result = analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "class A {",
+        "  foo(int p) {}",
+        "}",
+        "main() {",
+        "  var a = new A();",
+        "  a.foo('');",
+        "}",
+        "");
+    assertErrors(result.getErrors());
   }
 
   public void test_typesPropagation_assignAtDeclaration() throws Exception {
@@ -1994,6 +2015,26 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
       String expectedTypeString = expectedList.get(i);
       assertInferredElementTypeString(testUnit, "v" + i, expectedTypeString);
     }
+  }
+
+  /**
+   * We should infer types only if variable declared without type.
+   */
+  public void test_typesPropagation_dontChangeDeclaredType() throws Exception {
+    AnalyzeLibraryResult libraryResult = analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "class A {}",
+        "class B extends A {}",
+        "main() {",
+        "  B v = new B();",
+        "  var v1 = v;",
+        "  v = new A();",
+        "  var v2 = v;",
+        "}",
+        "");
+    assertErrors(libraryResult.getErrors());
+    assertInferredElementTypeString(testUnit, "v1", "B");
+    assertInferredElementTypeString(testUnit, "v2", "B");
   }
 
   public void test_typesPropagation_multiAssign() throws Exception {
@@ -2210,6 +2251,44 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
         "");
     assertInferredElementTypeString(testUnit, "a1", "List<String>");
     assertInferredElementTypeString(testUnit, "b1", "List<String>");
+  }
+  
+  /**
+   * <p>
+   * http://code.google.com/p/dart/issues/detail?id=4791
+   */
+  public void test_typesPropagation_multiAssign_type_null() throws Exception {
+    analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "f() {",
+        "  var v = null;",
+        "  var v1 = v;",
+        "  if (true) {",
+        "    v = '';",
+        "    var v2 = v;",
+        "  }",
+        "  var v3 = v;",
+        "}",
+        "");
+    assertInferredElementTypeString(testUnit, "v1", "Dynamic");
+    assertInferredElementTypeString(testUnit, "v2", "String");
+    assertInferredElementTypeString(testUnit, "v3", "String");
+  }
+
+  /**
+   * There was bug that when we analyze assignment in initializer, we don't have context.
+   */
+  public void test_typesPropagation_multiAssign_assignmentOutsideFunction() throws Exception {
+    analyzeLibrary(
+        "// filler filler filler filler filler filler filler filler filler filler",
+        "class A {",
+        "  A(p) {}",
+        "}",
+        "class B extends A {",
+        "  B(p) : super(p = 0) {}",
+        "}",
+        "");
+    // no exceptions
   }
 
   /**
@@ -3052,7 +3131,7 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
   }
 
   /**
-   * It is a static warning if the return type of the user-declared operator negate is explicitly
+   * It is a static warning if the return type of the user-declared "operator -" is explicitly
    * declared and not a numerical type.
    * <p>
    * http://code.google.com/p/dart/issues/detail?id=3224
@@ -3061,19 +3140,19 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     AnalyzeLibraryResult libraryResult = analyzeLibrary(
         "// filler filler filler filler filler filler filler filler filler filler",
         "class A {",
-        "  num operator negate() {}",
+        "  num operator -() {}",
         "}",
         "class B {",
-        "  int operator negate() {}",
+        "  int operator -() {}",
         "}",
         "class C {",
-        "  double operator negate() {}",
+        "  double operator -() {}",
         "}",
         "class D {",
-        "  String operator negate() {}",
+        "  String operator -() {}",
         "}",
         "class E {",
-        "  Object operator negate() {}",
+        "  Object operator -() {}",
         "}",
         "");
     assertErrors(
@@ -3083,24 +3162,25 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
   }
 
   /**
-   * It is a static warning if the return type of the user-declared operator equals is explicitly
+   * It is a static warning if the return type of the user-declared operator == is explicitly
    * declared and not bool.
    */
   public void test_equalsOperator_type() throws Exception {
     AnalyzeLibraryResult libraryResult = analyzeLibrary(
         "// filler filler filler filler filler filler filler filler filler filler",
         "class A {",
-        "  bool operator equals(other) {}",
+        "  bool operator ==(other) {}",
         "}",
         "class B {",
-        "  String operator equals(other) {}",
+        "  String operator ==(other) {}",
         "}",
         "class C {",
-        "  Object operator equals(other) {}",
+        "  Object operator ==(other) {}",
         "}",
         "");
     assertErrors(
         libraryResult.getErrors(),
+        errEx(TypeErrorCode.CANNOT_OVERRIDE_METHOD_NOT_SUBTYPE, 6, 19, 2),
         errEx(TypeErrorCode.OPERATOR_EQUALS_BOOL_RETURN_TYPE, 6, 3, 6),
         errEx(TypeErrorCode.OPERATOR_EQUALS_BOOL_RETURN_TYPE, 9, 3, 6));
   }
@@ -3112,7 +3192,7 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
     AnalyzeLibraryResult libraryResult = analyzeLibrary(
             "// filler filler filler filler filler filler filler filler filler filler",
             "class C {",
-            "  operator equals(other) => false;",
+            "  operator ==(other) => false;",
             "}",
             "main() {",
             "  new C() == new C();",
@@ -3561,12 +3641,17 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
         errEx(TypeErrorCode.FIELD_HAS_NO_SETTER, 5, 11, 6));
   }
 
+  /**
+   * Test for "operator []=".
+   * <p>
+   * http://code.google.com/p/dart/issues/detail?id=4881
+   */
   public void test_assignArrayElement() throws Exception {
     AnalyzeLibraryResult libraryResult = analyzeLibrary(
         "// filler filler filler filler filler filler filler filler filler filler",
         "class C {" +
         "  get method() { }",
-        "  operator [](arg) {}",
+        "  operator []=(k, v) {}",
         "}",
         "main () {",
         "  new C()[0] = 1;",
@@ -4033,9 +4118,10 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
       });
     }
     abstract void checkArgs(int invocationIndex);
-    void assertId(int index, Object expected) {
+    void assertId(int index, String expectedParameterName) {
       DartExpression argument = arguments.get(index);
-      assertEquals(expected, argument.getInvocationParameterId());
+      String idString = argument.getInvocationParameterId().toString();
+      assertEquals("PARAMETER " + expectedParameterName, idString);
     }
   }
 
@@ -4055,21 +4141,21 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
       void checkArgs(int invocationIndex) {
         switch (invocationIndex) {
           case 0: {
-            assertId(0, Integer.valueOf(0));
-            assertId(1, Integer.valueOf(1));
+            assertId(0, "a");
+            assertId(1, "b");
             break;
           }
           case 1: {
-            assertId(0, Integer.valueOf(0));
-            assertId(1, Integer.valueOf(1));
-            assertId(2, Integer.valueOf(2));
+            assertId(0, "a");
+            assertId(1, "b");
+            assertId(2, "c");
             break;
           }
           case 3: {
-            assertId(0, Integer.valueOf(0));
-            assertId(1, Integer.valueOf(1));
-            assertId(2, Integer.valueOf(2));
-            assertId(3, Integer.valueOf(3));
+            assertId(0, "a");
+            assertId(1, "b");
+            assertId(2, "c");
+            assertId(3, "d");
             break;
           }
         }
@@ -4094,25 +4180,25 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
       void checkArgs(int invocationIndex) {
         switch (invocationIndex) {
           case 0: {
-            assertId(0, Integer.valueOf(0));
-            assertId(1, Integer.valueOf(1));
+            assertId(0, "a");
+            assertId(1, "b");
             break;
           }
           case 1: {
-            assertId(0, Integer.valueOf(0));
-            assertId(1, Integer.valueOf(1));
+            assertId(0, "a");
+            assertId(1, "b");
             assertId(2, "c");
             break;
           }
           case 2: {
-            assertId(0, Integer.valueOf(0));
-            assertId(1, Integer.valueOf(1));
+            assertId(0, "a");
+            assertId(1, "b");
             assertId(2, "d");
             break;
           }
           case 3: {
-            assertId(0, Integer.valueOf(0));
-            assertId(1, Integer.valueOf(1));
+            assertId(0, "a");
+            assertId(1, "b");
             assertId(2, "d");
             assertId(3, "c");
             break;
@@ -4157,7 +4243,6 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
   }
 
   /**
-   * TODO(scheglov)
    * <p>
    * http://code.google.com/p/dart/issues/detail?id=3968
    */
@@ -4234,6 +4319,26 @@ public class TypeAnalyzerCompilerTest extends CompilerTestCase {
         "}",
         ""));
     assertErrors(libraryResult.getErrors());
+  }
+
+  /**
+   * <p>
+   * http://code.google.com/p/dart/issues/detail?id=4900
+   */
+  public void test_forInLoop_fieldAsVariable() throws Exception {
+      AnalyzeLibraryResult result = analyzeLibrary(
+          "// filler filler filler filler filler filler filler filler filler filler",
+          "var v;",
+          "get l => v;",
+          "set l(x) {v = x;}",
+          "main() {",
+          "  for (l in [1, 2, 3]) {",
+          "    process(l);",
+          "  }",
+          "}",
+          "process(x) {}",
+          "");
+      assertErrors(result.getErrors());
   }
 
   private <T extends DartNode> T findNode(final Class<T> clazz, String pattern) {

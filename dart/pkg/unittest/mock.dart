@@ -41,21 +41,21 @@ _MockFailureHandler _mockFailureHandler = null;
 /**
  * [_noArg] is a sentinel value representing no argument.
  */
-final _noArg = const _Sentinel();
+const _noArg = const _Sentinel();
 
 /** The ways in which a call to a mock method can be handled. */
 class Action {
   /** Do nothing (void method) */
-  static final IGNORE = const Action._('IGNORE');
+  static const IGNORE = const Action._('IGNORE');
 
   /** Return a supplied value. */
-  static final RETURN = const Action._('RETURN');
+  static const RETURN = const Action._('RETURN');
 
   /** Throw a supplied value. */
-  static final THROW = const Action._('THROW');
+  static const THROW = const Action._('THROW');
 
   /** Call a supplied function. */
-  static final PROXY = const Action._('PROXY');
+  static const PROXY = const Action._('PROXY');
 
   const Action._(this.name);
 
@@ -367,10 +367,10 @@ class LogEntryList {
   add(LogEntry entry) => logs.add(entry);
 
   /** Get the first entry, or null if no entries. */
-  get first() => (logs == null || logs.length == 0) ? null : logs[0];
+  get first => (logs == null || logs.length == 0) ? null : logs[0];
 
   /** Get the last entry, or null if no entries. */
-  get last() => (logs == null || logs.length == 0) ? null : logs.last();
+  get last => (logs == null || logs.length == 0) ? null : logs.last();
 
   /** Creates a LogEntry predicate function from the argument. */
   Function _makePredicate(arg) {
@@ -901,16 +901,16 @@ Matcher happenedAtMost(count) {
 }
 
 /** [neverHappened] matches zero calls. */
-final Matcher neverHappened = const _TimesMatcher(0, 0);
+const Matcher neverHappened = const _TimesMatcher(0, 0);
 
 /** [happenedOnce] matches exactly one call. */
-final Matcher happenedOnce = const _TimesMatcher(1, 1);
+const Matcher happenedOnce = const _TimesMatcher(1, 1);
 
 /** [happenedAtLeastOnce] matches one or more calls. */
-final Matcher happenedAtLeastOnce = const _TimesMatcher(1);
+const Matcher happenedAtLeastOnce = const _TimesMatcher(1);
 
 /** [happenedAtMostOnce] matches zero or one call. */
-final Matcher happenedAtMostOnce = const _TimesMatcher(0, 1);
+const Matcher happenedAtMostOnce = const _TimesMatcher(0, 1);
 
 /**
  * [_ResultMatcher]s are used to make assertions about the results
@@ -972,13 +972,13 @@ Matcher throwing(value) =>
 /** Special values for use with [_ResultSetMatcher] [frequency]. */
 class _Frequency {
   /** Every call/throw must match */
-  static final ALL = const _Frequency._('ALL');
+  static const ALL = const _Frequency._('ALL');
 
   /** At least one call/throw must match. */
-  static final SOME = const _Frequency._('SOME');
+  static const SOME = const _Frequency._('SOME');
 
   /** No calls/throws should match. */
-  static final NONE = const _Frequency._('NONE');
+  static const NONE = const _Frequency._('NONE');
 
   const _Frequency._(this.name);
 
@@ -1211,7 +1211,7 @@ class Mock {
   /** Whether to create an audit log or not. */
   bool _logging;
 
-  bool get logging() => _logging;
+  bool get logging => _logging;
   set logging(bool value) {
     if (value && log == null) {
       log = new LogEntryList();

@@ -3,15 +3,15 @@
 # BSD-style license that can be found in the LICENSE file.
 
 # Pub only runs on the VM, so just rule out all compilers.
-[ $compiler == frog || $compiler == dart2js || $compiler == dart2dart || $compiler == dartc ]
+[ $compiler == dart2js || $compiler == dart2dart || $compiler == dartc ]
 pub_test: Skip
 pub_install_test: Skip
 pub_install_git_test: Skip
-pub_install_repo_test: Skip
+pub_install_hosted_test: Skip
 pub_install_sdk_test: Skip
 pub_update_test: Skip
 pub_update_git_test: Skip
-pub_update_repo_test: Skip
+pub_update_hosted_test: Skip
 version_test: Skip
 pubspec_test: Skip
 lock_file_test: Skip
@@ -25,11 +25,11 @@ version_solver_test: Fail # dart:io is using private named parameters
 pub_test: Skip
 pub_install_test: Skip
 pub_install_git_test: Skip
-pub_install_repo_test: Skip
+pub_install_hosted_test: Skip
 pub_install_sdk_test: Skip
 pub_update_test: Skip
 pub_update_git_test: Skip
-pub_update_repo_test: Skip
+pub_update_hosted_test: Skip
 version_test: Skip
 pubspec_test: Skip
 lock_file_test: Skip
@@ -40,14 +40,14 @@ version_solver_test: Skip
 pub_test: Skip
 pub_install_test: Skip
 pub_install_git_test: Skip
-pub_install_repo_test: Skip
+pub_install_hosted_test: Skip
 pub_install_sdk_test: Skip
 pub_update_test: Skip
 pub_update_git_test: Skip
-pub_update_repo_test: Skip
-
-[ $compiler == frog ]
-yaml_test: Fail # Issue 3215
+pub_update_hosted_test: Skip
 
 [ $runtime == opera ]
 *: Skip
+
+[ $compiler == dart2js && $checked ]
+yaml_test: Fail # Issue 3720

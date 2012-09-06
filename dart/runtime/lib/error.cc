@@ -46,6 +46,7 @@ DEFINE_NATIVE_ENTRY(AssertionError_throwNew, 2) {
   // Throw AssertionError instance.
   Exceptions::Throw(assertion_error);
   UNREACHABLE();
+  return Object::null();
 }
 
 
@@ -68,6 +69,8 @@ DEFINE_NATIVE_ENTRY(TypeError_throwNew, 5) {
       String::Handle(Type::Handle(src_value.GetType()).UserVisibleName());
   Exceptions::CreateAndThrowTypeError(location, src_type_name,
                                       dst_type_name, dst_name, malformed_error);
+  UNREACHABLE();
+  return Object::null();
 }
 
 
@@ -98,6 +101,39 @@ DEFINE_NATIVE_ENTRY(FallThroughError_throwNew, 1) {
   // Throw FallThroughError instance.
   Exceptions::Throw(fallthrough_error);
   UNREACHABLE();
+  return Object::null();
+}
+
+
+// Allocate and throw a new AbstractClassInstantiationError.
+// Arg0: Token position of allocation statement.
+// Arg1: class name of the abstract class that cannot be instantiated.
+// Return value: none, throws an exception.
+DEFINE_NATIVE_ENTRY(AbstractClassInstantiationError_throwNew, 2) {
+  GET_NATIVE_ARGUMENT(Smi, smi_pos, arguments->At(0));
+  GET_NATIVE_ARGUMENT(String, class_name, arguments->At(1));
+  intptr_t error_pos = smi_pos.Value();
+
+  // Allocate a new instance of type AbstractClassInstantiationError.
+  const Instance& error = Instance::Handle(Exceptions::NewInstance(
+      "AbstractClassInstantiationErrorImplementation"));
+  ASSERT(!error.IsNull());
+
+  // Initialize 'url', 'line' and 'className' fields.
+  DartFrameIterator iterator;
+  iterator.NextFrame();  // Skip native call.
+  const Script& script = Script::Handle(Exceptions::GetCallerScript(&iterator));
+  const Class& cls = Class::Handle(error.clazz());
+  Exceptions::SetField(error, cls, "url", String::Handle(script.url()));
+  intptr_t line, column;
+  script.GetTokenLocation(error_pos, &line, &column);
+  Exceptions::SetField(error, cls, "line", Smi::Handle(Smi::New(line)));
+  Exceptions::SetField(error, cls, "className", class_name);
+
+  // Throw AbstractClassInstantiationError instance.
+  Exceptions::Throw(error);
+  UNREACHABLE();
+  return Object::null();
 }
 
 
@@ -126,6 +162,7 @@ DEFINE_NATIVE_ENTRY(StaticResolutionException_throwNew, 1) {
 
   Exceptions::Throw(resolution_exception);
   UNREACHABLE();
+  return Object::null();
 }
 
 }  // namespace dart

@@ -490,7 +490,7 @@ class ResourceServerHandler implements Runnable {
     in.readFully(data);
 
     String str = new String(data);
-    str = URLDecoder.decode(str);
+    str = URLDecoder.decode(str, "UTF-8");
 
     if ("/log".equals(file)) {
       handleLoggingPost(str);
@@ -634,6 +634,7 @@ class ResourceServerHandler implements Runnable {
     return javaFile;
   }
 
+  @SuppressWarnings("deprecation")
   private HttpHeader parseHeader(DataInputStream in) throws IOException {
     HttpHeader header = new HttpHeader();
 

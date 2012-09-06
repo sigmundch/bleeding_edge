@@ -68,6 +68,10 @@ class ParsedFunction : public ValueObject {
     saved_context_var_ = saved_context_var;
   }
 
+  // Returns NULL if this function does not save the arguments descriptor on
+  // entry.
+  LocalVariable* GetSavedArgumentsDescriptorVar() const;
+
   LocalVariable* expression_temp_var() const {
     ASSERT(has_expression_temp_var());
     return expression_temp_var_;
@@ -122,7 +126,7 @@ class Parser : public ValueObject {
   static void PrintMessage(const Script& script,
                            intptr_t token_pos,
                            const char* message_header,
-                           const char* format, ...);
+                           const char* format, ...) PRINTF_ATTRIBUTE(4, 5);
 
   // Build an error object containing a formatted error or warning message.
   // A null script means no source and a negative token_pos means no position.
@@ -249,20 +253,23 @@ class Parser : public ValueObject {
                             va_list args);
 
   // Reports error/warning message at location of current token.
-  void ErrorMsg(const char* msg, ...);
-  void Warning(const char* msg, ...);
+  void ErrorMsg(const char* msg, ...) PRINTF_ATTRIBUTE(2, 3);
+  void Warning(const char* msg, ...)  PRINTF_ATTRIBUTE(2, 3);
   void Unimplemented(const char* msg);
 
   // Reports error message at given location.
-  void ErrorMsg(intptr_t token_pos, const char* msg, ...);
-  void Warning(intptr_t token_pos, const char* msg, ...);
+  void ErrorMsg(intptr_t token_pos, const char* msg, ...)
+      PRINTF_ATTRIBUTE(3, 4);
+  void Warning(intptr_t token_pos, const char* msg, ...)
+      PRINTF_ATTRIBUTE(3, 4);
 
   // Reports an already formatted error message.
   void ErrorMsg(const Error& error);
 
   // Concatenates two error messages, the previous and the current one.
   void AppendErrorMsg(
-      const Error& prev_error, intptr_t token_pos, const char* format, ...);
+      const Error& prev_error, intptr_t token_pos, const char* format, ...)
+      PRINTF_ATTRIBUTE(4, 5);
 
   const Instance& EvaluateConstExpr(AstNode* expr);
   AstNode* RunStaticFieldInitializer(const Field& field);
@@ -312,7 +319,7 @@ class Parser : public ValueObject {
                                 ParamList* params);
   void CheckConstFieldsInitialized(const Class& cls);
   void AddImplicitConstructor(ClassDesc* members);
-  void CheckConstructorCycles(ClassDesc* members);
+  void CheckConstructors(ClassDesc* members);
   void ParseInitializedInstanceFields(
       const Class& cls,
       LocalVariable* receiver,
@@ -459,6 +466,7 @@ class Parser : public ValueObject {
                            bool is_const,
                            const AbstractTypeArguments& type_arguments);
   AstNode* ParseNewOperator();
+  AstNode* ParseArgumentDefinitionTest();
 
   // An implicit argument, if non-null, is prepended to the returned list.
   ArgumentListNode* ParseActualParameters(ArgumentListNode* implicit_arguments,
@@ -476,6 +484,10 @@ class Parser : public ValueObject {
                                   bool consume_cascades);
 
   LocalVariable* LookupLocalScope(const String& ident);
+  bool IsFormalParameter(const String& ident,
+                         Function* owner_function,
+                         LocalScope** owner_scope,
+                         intptr_t* local_index);
   void CheckInstanceFieldAccess(intptr_t field_pos, const String& field_name);
   RawClass* TypeParametersScopeClass() const;
   const Type* ReceiverType(intptr_t type_pos) const;

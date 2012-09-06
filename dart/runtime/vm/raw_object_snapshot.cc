@@ -141,7 +141,8 @@ RawUnresolvedClass* UnresolvedClass::ReadFrom(SnapshotReader* reader,
   intptr_t num_flds = (unresolved_class.raw()->to() -
                        unresolved_class.raw()->from());
   for (intptr_t i = 0; i <= num_flds; i++) {
-    *(unresolved_class.raw()->from() + i) = reader->ReadObjectRef();
+    unresolved_class.StorePointer((unresolved_class.raw()->from() + i),
+                                  reader->ReadObjectRef());
   }
   return unresolved_class.raw();
 }
@@ -206,7 +207,7 @@ RawType* Type::ReadFrom(SnapshotReader* reader,
   // allocations may happen.
   intptr_t num_flds = (type.raw()->to() - type.raw()->from());
   for (intptr_t i = 0; i <= num_flds; i++) {
-    *(type.raw()->from() + i) = reader->ReadObjectRef();
+    type.StorePointer((type.raw()->from() + i), reader->ReadObjectRef());
   }
 
   // If object needs to be a canonical object, Canonicalize it.
@@ -264,7 +265,8 @@ RawTypeParameter* TypeParameter::ReadFrom(SnapshotReader* reader,
   intptr_t num_flds = (type_parameter.raw()->to() -
                        type_parameter.raw()->from());
   for (intptr_t i = 0; i <= num_flds; i++) {
-    *(type_parameter.raw()->from() + i) = reader->ReadObjectRef();
+    type_parameter.StorePointer((type_parameter.raw()->from() + i),
+                                reader->ReadObjectRef());
   }
 
   return type_parameter.raw();
@@ -652,11 +654,12 @@ RawTokenStream* TokenStream::ReadFrom(SnapshotReader* reader,
   // Set the object tags.
   token_stream.set_tags(tags);
 
-  // Read the stream of tokens into the TokenStream object.
-  {
+  // Read the stream of tokens into the TokenStream object for script
+  // snapshots as we made a copy of token stream.
+  if (kind == Snapshot::kScript) {
     NoGCScope no_gc;
-    reader->ReadBytes(reinterpret_cast<uint8_t*>(token_stream.EntryAddr(0)),
-                      len);
+    RawExternalUint8Array* stream = token_stream.GetStream();
+    reader->ReadBytes(stream->ptr()->external_data_->data(), len);
   }
 
   // Read in the literal/identifier token array.
@@ -685,9 +688,10 @@ void RawTokenStream::WriteTo(SnapshotWriter* writer,
   writer->WriteIntptrValue(writer->GetObjectTags(this));
 
   // Write out the length field and the token stream.
-  intptr_t len = Smi::Value(ptr()->length_);
-  writer->Write<RawObject*>(ptr()->length_);
-  writer->WriteBytes(reinterpret_cast<uint8_t*>(ptr()->data_), len);
+  RawExternalUint8Array* stream = ptr()->stream_;
+  intptr_t len = Smi::Value(stream->ptr()->length_);
+  writer->Write<RawObject*>(stream->ptr()->length_);
+  writer->WriteBytes(stream->ptr()->external_data_->data(), len);
 
   // Write out the literal/identifier token array.
   writer->WriteObjectImpl(ptr()->token_objects_);
@@ -1033,7 +1037,7 @@ RawContext* Context::ReadFrom(SnapshotReader* reader,
   // allocations may happen.
   intptr_t num_flds = (context.raw()->to(num_vars) - context.raw()->from());
   for (intptr_t i = 0; i <= num_flds; i++) {
-    *(context.raw()->from() + i) = reader->ReadObjectRef();
+    context.StorePointer((context.raw()->from() + i), reader->ReadObjectRef());
   }
 
   return context.raw();
@@ -1180,7 +1184,8 @@ RawApiError* ApiError::ReadFrom(SnapshotReader* reader,
   // allocations may happen.
   intptr_t num_flds = (api_error.raw()->to() - api_error.raw()->from());
   for (intptr_t i = 0; i <= num_flds; i++) {
-    *(api_error.raw()->from() + i) = reader->ReadObjectRef();
+    api_error.StorePointer((api_error.raw()->from() + i),
+                           reader->ReadObjectRef());
   }
 
   return api_error.raw();
@@ -1225,7 +1230,8 @@ RawLanguageError* LanguageError::ReadFrom(SnapshotReader* reader,
   intptr_t num_flds =
       (language_error.raw()->to() - language_error.raw()->from());
   for (intptr_t i = 0; i <= num_flds; i++) {
-    *(language_error.raw()->from() + i) = reader->ReadObjectRef();
+    language_error.StorePointer((language_error.raw()->from() + i),
+                                reader->ReadObjectRef());
   }
 
   return language_error.raw();

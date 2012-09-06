@@ -26,6 +26,9 @@
 
 namespace dart {
 
+DEFINE_FLAG(bool, deoptimize_alot, false,
+    "Deoptimizes all live frames when we are about to return to Dart code from"
+    " native entries.");
 DEFINE_FLAG(bool, inline_cache, true, "Enable inline caches");
 DEFINE_FLAG(bool, trace_deopt, false, "Trace deoptimization");
 DEFINE_FLAG(bool, trace_ic, false, "Trace IC handling");
@@ -357,7 +360,7 @@ static void PrintTypeCheck(
   const Type& instance_type = Type::Handle(instance.GetType());
   ASSERT(instance_type.IsInstantiated());
   if (type.IsInstantiated()) {
-    OS::Print("%s: '%s' %d %s '%s' %d (pc: 0x%x).\n",
+    OS::Print("%s: '%s' %"Pd" %s '%s' %"Pd" (pc: %#"Px").\n",
               message,
               String::Handle(instance_type.Name()).ToCString(),
               Class::Handle(instance_type.type_class()).id(),
@@ -369,7 +372,7 @@ static void PrintTypeCheck(
     // Instantiate type before printing.
     const AbstractType& instantiated_type =
         AbstractType::Handle(type.InstantiateFrom(instantiator_type_arguments));
-    OS::Print("%s: '%s' %s '%s' instantiated from '%s' (pc: 0x%x).\n",
+    OS::Print("%s: '%s' %s '%s' instantiated from '%s' (pc: %#"Px").\n",
               message,
               String::Handle(instance_type.Name()).ToCString(),
               (result.raw() == Bool::True()) ? "is" : "is !",
@@ -501,7 +504,7 @@ static void UpdateTypeTestCache(
         (last_instantiator_type_arguments.raw() ==
          instantiator_type_arguments.raw())) {
       if (FLAG_trace_type_checks) {
-        OS::Print("%d ", i);
+        OS::Print("%"Pd" ", i);
         if (type_arguments_replaced) {
           PrintTypeCheck("Duplicate cache entry (canonical.)", instance, type,
               instantiator_type_arguments, result);
@@ -525,9 +528,9 @@ static void UpdateTypeTestCache(
     if (!test_type.IsInstantiated()) {
       test_type = type.InstantiateFrom(instantiator_type_arguments);
     }
-    OS::Print("  Updated test cache 0x%x ix:%d:\n"
-        "    [0x%x %s %d, 0x%x %s]\n"
-        "    [0x%x %s %d, 0x%x %s] %s\n",
+    OS::Print("  Updated test cache %p ix:%"Pd":\n"
+        "    [%p %s %"Pd", %p %s]\n"
+        "    [%p %s %"Pd", %p %s] %s\n",
         new_cache.raw(),
         len,
         instance_class.raw(),
@@ -651,6 +654,38 @@ DEFINE_RUNTIME_ENTRY(TypeCheck, 6) {
 }
 
 
+// Test whether a formal parameter was defined by a passed-in argument.
+// Arg0: formal parameter index as Smi.
+// Arg1: formal parameter name as Symbol.
+// Arg2: arguments descriptor array.
+// Return value: true or false.
+DEFINE_RUNTIME_ENTRY(ArgumentDefinitionTest, 3) {
+  ASSERT(arguments.Count() ==
+         kArgumentDefinitionTestRuntimeEntry.argument_count());
+  const Smi& param_index = Smi::CheckedHandle(arguments.At(0));
+  const String& param_name = String::CheckedHandle(arguments.At(1));
+  ASSERT(param_name.IsSymbol());
+  const Array& arg_desc = Array::CheckedHandle(arguments.At(2));
+  const intptr_t num_pos_args = Smi::CheckedHandle(arg_desc.At(1)).Value();
+  // Check if the formal parameter is defined by a positional argument.
+  bool is_defined = num_pos_args > param_index.Value();
+  if (!is_defined) {
+    // Check if the formal parameter is defined by a named argument.
+    const intptr_t num_named_args =
+        Smi::CheckedHandle(arg_desc.At(0)).Value() - num_pos_args;
+    String& arg_name = String::Handle();
+    for (intptr_t i = 0; i < num_named_args; i++) {
+      arg_name ^= arg_desc.At(2*i + 2);
+      if (arg_name.raw() == param_name.raw()) {
+        is_defined = true;
+        break;
+      }
+    }
+  }
+  arguments.SetReturn(Bool::Handle(Bool::Get(is_defined)));
+}
+
+
 // Report that the type of the given object is not bool in conditional context.
 // Arg0: bad object.
 // Return value: none, throws a TypeError.
@@ -725,7 +760,7 @@ DEFINE_RUNTIME_ENTRY(PatchStaticCall, 0) {
   ASSERT(target != new_target);
   CodePatcher::PatchStaticCallAt(caller_frame->pc(), new_target);
   if (FLAG_trace_patching) {
-    OS::Print("PatchStaticCall: patching from 0x%x to '%s' 0x%x\n",
+    OS::Print("PatchStaticCall: patching from %#"Px" to '%s' %#"Px"\n",
         caller_frame->pc(),
         target_function.ToFullyQualifiedCString(),
         new_target);
@@ -792,7 +827,7 @@ DEFINE_RUNTIME_ENTRY(ResolveCompileInstanceFunction, 1) {
   const Instance& receiver = Instance::CheckedHandle(arguments.At(0));
   const Code& code = Code::Handle(
       ResolveCompileInstanceCallTarget(isolate, receiver));
-  arguments.SetReturn(Code::Handle(code.raw()));
+  arguments.SetReturn(code);
 }
 
 
@@ -886,8 +921,8 @@ static RawFunction* InlineCacheMissHandler(
     ic_data.AddCheck(class_ids, target_function);
   }
   if (FLAG_trace_ic) {
-    OS::Print("InlineCacheMissHandler %d call at 0x%x' "
-              "adding <%s> id:%d -> <%s>\n",
+    OS::Print("InlineCacheMissHandler %d call at %#"Px"' "
+              "adding <%s> id:%"Pd" -> <%s>\n",
         args.length(),
         caller_frame->pc(),
         Class::Handle(receiver.clazz()).ToCString(),
@@ -1248,7 +1283,7 @@ static void PrintCaller(const char* msg) {
   ASSERT(top_frame != NULL);
   const Function& top_function = Function::Handle(
       top_frame->LookupDartFunction());
-  OS::Print("Failed: '%s' %s @ 0x%x\n",
+  OS::Print("Failed: '%s' %s @ %#"Px"\n",
       msg, top_function.ToFullyQualifiedCString(), top_frame->pc());
   StackFrame* caller_frame = iterator.NextFrame();
   if (caller_frame != NULL) {
@@ -1350,7 +1385,7 @@ DEFINE_RUNTIME_ENTRY(FixCallersTarget, 1) {
     ASSERT(target != new_entry_point);  // Why patch otherwise.
     CodePatcher::PatchStaticCallAt(frame->pc(), new_entry_point);
     if (FLAG_trace_patching) {
-      OS::Print("FixCallersTarget: patching from 0x%x to '%s' 0x%x\n",
+      OS::Print("FixCallersTarget: patching from %#"Px" to '%s' %#"Px"\n",
           frame->pc(),
           target_function.ToFullyQualifiedCString(),
           new_entry_point);
@@ -1376,6 +1411,7 @@ static void GetDeoptIxDescrAtPc(const Code& code,
                                 intptr_t* deopt_id,
                                 intptr_t* deopt_reason,
                                 intptr_t* deopt_index) {
+  ASSERT(code.is_optimized());
   const PcDescriptors& descriptors =
       PcDescriptors::Handle(code.pc_descriptors());
   ASSERT(!descriptors.IsNull());
@@ -1395,17 +1431,51 @@ static void GetDeoptIxDescrAtPc(const Code& code,
 }
 
 
+// Currently checks only that all optimized frames have kDeoptIndex
+// and unoptimized code has the kDeoptAfter.
+void DeoptimizeAll() {
+  DartFrameIterator iterator;
+  StackFrame* frame = iterator.NextFrame();
+  Code& optimized_code = Code::Handle();
+  Function& function = Function::Handle();
+  Code& unoptimized_code = Code::Handle();
+  while (frame != NULL) {
+    optimized_code = frame->LookupDartCode();
+    if (optimized_code.is_optimized()) {
+      intptr_t deopt_id, deopt_reason, deopt_index;
+      GetDeoptIxDescrAtPc(optimized_code, frame->pc(),
+                          &deopt_id, &deopt_reason, &deopt_index);
+      ASSERT(deopt_id != Isolate::kNoDeoptId);
+      function = optimized_code.function();
+      unoptimized_code = function.unoptimized_code();
+      ASSERT(!unoptimized_code.IsNull());
+      uword continue_at_pc =
+          unoptimized_code.GetDeoptAfterPcAtDeoptId(deopt_id);
+      ASSERT(continue_at_pc != 0);
+    }
+    frame = iterator.NextFrame();
+  }
+}
+
 
 // Copy saved registers into the isolate buffer.
-static void CopySavedRegisters(intptr_t* saved_registers_address) {
-  intptr_t* registers_copy = new intptr_t[kNumberOfCpuRegisters];
-  ASSERT(registers_copy != NULL);
-  ASSERT(saved_registers_address != NULL);
-  for (intptr_t i = 0; i < kNumberOfCpuRegisters; i++) {
-    registers_copy[i] = *saved_registers_address;
-    saved_registers_address++;
+static void CopySavedRegisters(uword saved_registers_address) {
+  double* xmm_registers_copy = new double[kNumberOfXmmRegisters];
+  ASSERT(xmm_registers_copy != NULL);
+  for (intptr_t i = 0; i < kNumberOfXmmRegisters; i++) {
+    xmm_registers_copy[i] = *reinterpret_cast<double*>(saved_registers_address);
+    saved_registers_address += kDoubleSize;
   }
-  Isolate::Current()->set_deopt_registers_copy(registers_copy);
+  Isolate::Current()->set_deopt_xmm_registers_copy(xmm_registers_copy);
+
+  intptr_t* cpu_registers_copy = new intptr_t[kNumberOfCpuRegisters];
+  ASSERT(cpu_registers_copy != NULL);
+  for (intptr_t i = 0; i < kNumberOfCpuRegisters; i++) {
+    cpu_registers_copy[i] =
+        *reinterpret_cast<intptr_t*>(saved_registers_address);
+    saved_registers_address += kWordSize;
+  }
+  Isolate::Current()->set_deopt_cpu_registers_copy(cpu_registers_copy);
 }
 
 
@@ -1439,14 +1509,14 @@ static void CopyFrame(const Code& optimized_code, const StackFrame& frame) {
 // Copies saved registers and caller's frame into temporary buffers.
 // Returns the stack size of unoptimzied frame.
 DEFINE_LEAF_RUNTIME_ENTRY(intptr_t, DeoptimizeCopyFrame,
-                          intptr_t* saved_registers_address) {
+                          uword saved_registers_address) {
   Isolate* isolate = Isolate::Current();
   Zone zone(isolate);
   HANDLESCOPE(isolate);
 
   // All registers have been saved below last-fp.
-  const uword last_fp =
-      reinterpret_cast<uword>(saved_registers_address + kNumberOfCpuRegisters);
+  const uword last_fp = saved_registers_address +
+      kNumberOfCpuRegisters * kWordSize + kNumberOfXmmRegisters * kDoubleSize;
   CopySavedRegisters(saved_registers_address);
 
   // Get optimized code and frame that need to be deoptimized.
@@ -1466,7 +1536,7 @@ DEFINE_LEAF_RUNTIME_ENTRY(intptr_t, DeoptimizeCopyFrame,
     intptr_t deopt_id, deopt_reason, deopt_index;
     GetDeoptIxDescrAtPc(optimized_code, caller_frame->pc(),
                         &deopt_id, &deopt_reason, &deopt_index);
-    OS::Print("Deoptimizing (reason %d '%s') at pc 0x%x id %d '%s'\n",
+    OS::Print("Deoptimizing (reason %"Pd" '%s') at pc %#"Px" id %"Pd" '%s'\n",
         deopt_reason,
         DeoptReasonToText(deopt_reason),
         caller_frame->pc(),
@@ -1480,22 +1550,16 @@ DEFINE_LEAF_RUNTIME_ENTRY(intptr_t, DeoptimizeCopyFrame,
   ASSERT(!deopt_info_array.IsNull());
   DeoptInfo& deopt_info = DeoptInfo::Handle();
   deopt_info ^= deopt_info_array.At(deopt_index);
-  if (deopt_info.IsNull()) {
-    // TODO(srdjan): Deprecate.
-    // Include the space for return address.
-    intptr_t stack_size_in_bytes = caller_frame->fp() - caller_frame->sp();
-    return stack_size_in_bytes + kWordSize;
-  } else {
-    // For functions with optional argument deoptimization info does not
-    // describe incoming arguments.
-    const Function& function = Function::Handle(optimized_code.function());
-    const intptr_t num_args = (function.num_optional_parameters() > 0) ?
-        0 : function.num_fixed_parameters();
-    intptr_t unoptimized_stack_size =
-        + deopt_info.Length() - num_args
-        - 2;  // Subtract caller FP and PC.
-    return unoptimized_stack_size * kWordSize;
-  }
+  ASSERT(!deopt_info.IsNull());
+  // For functions with optional argument deoptimization info does not
+  // describe incoming arguments.
+  const Function& function = Function::Handle(optimized_code.function());
+  const intptr_t num_args = (function.num_optional_parameters() > 0) ?
+      0 : function.num_fixed_parameters();
+  intptr_t unoptimized_stack_size =
+      + deopt_info.Length() - num_args
+      - 2;  // Subtract caller FP and PC.
+  return unoptimized_stack_size * kWordSize;
 }
 END_LEAF_RUNTIME_ENTRY
 
@@ -1524,12 +1588,12 @@ static void DeoptimizeWithDeoptInfo(const Code& code,
                                       to_frame_size,
                                       Array::Handle(code.object_table()),
                                       num_args);
-  for (intptr_t to_index = 0; to_index < len; to_index++) {
+  for (intptr_t to_index = len - 1; to_index >= 0; to_index--) {
     deopt_instructions[to_index]->Execute(&deopt_context, to_index);
   }
   if (FLAG_trace_deopt) {
     for (intptr_t i = 0; i < len; i++) {
-      OS::Print("*%d. [0x%0" PRIxPTR "] 0x%012" PRIxPTR " [%s]\n",
+      OS::Print("*%"Pd". [%p] %#014"Px" [%s]\n",
           i,
           &start[i],
           start[i],
@@ -1557,15 +1621,17 @@ DEFINE_LEAF_RUNTIME_ENTRY(void, DeoptimizeFillFrame, uword last_fp) {
   ASSERT(!unoptimized_code.IsNull() && !unoptimized_code.is_optimized());
 
   intptr_t* frame_copy = isolate->deopt_frame_copy();
-  intptr_t* registers_copy = isolate->deopt_registers_copy();
+  intptr_t* cpu_registers_copy = isolate->deopt_cpu_registers_copy();
+  double* xmm_registers_copy = isolate->deopt_xmm_registers_copy();
 
   intptr_t deopt_id, deopt_reason, deopt_index;
   GetDeoptIxDescrAtPc(optimized_code, caller_frame->pc(),
                       &deopt_id, &deopt_reason, &deopt_index);
   ASSERT(deopt_id != Isolate::kNoDeoptId);
-  uword continue_at_pc = unoptimized_code.GetDeoptPcAtDeoptId(deopt_id);
+  uword continue_at_pc = unoptimized_code.GetDeoptBeforePcAtDeoptId(deopt_id);
+  ASSERT(continue_at_pc != 0);
   if (FLAG_trace_deopt) {
-    OS::Print("  -> continue at 0x%x\n", continue_at_pc);
+    OS::Print("  -> continue at %#"Px"\n", continue_at_pc);
     // TODO(srdjan): If we could allow GC, we could print the line where
     // deoptimization occured.
   }
@@ -1574,33 +1640,15 @@ DEFINE_LEAF_RUNTIME_ENTRY(void, DeoptimizeFillFrame, uword last_fp) {
   ASSERT(!deopt_info_array.IsNull());
   DeoptInfo& deopt_info = DeoptInfo::Handle();
   deopt_info ^= deopt_info_array.At(deopt_index);
-  if (deopt_info.IsNull()) {
-    // TODO(srdjan): Deprecate.
-    const intptr_t deopt_frame_copy_size = isolate->deopt_frame_copy_size();
-    const intptr_t pc_marker_index =
-        ((caller_frame->fp() - caller_frame->sp()) / kWordSize);
-    // Patch the return PC and saved PC marker in frame to point to the
-    // unoptimized version.
-    frame_copy[0] = continue_at_pc;
-    frame_copy[pc_marker_index] =
-        unoptimized_code.EntryPoint() +
-        AssemblerMacros::kOffsetOfSavedPCfromEntrypoint;
-    intptr_t* start =
-        reinterpret_cast<intptr_t*>(caller_frame->sp() - kWordSize);
-    for (intptr_t i = 0; i < deopt_frame_copy_size; i++) {
-      if (FLAG_trace_deopt) {
-        OS::Print("%d. 0x%x\n", i, frame_copy[i]);
-      }
-      *(start + i) = frame_copy[i];
-    }
-  } else {
-    DeoptimizeWithDeoptInfo(optimized_code, deopt_info, *caller_frame);
-  }
+  ASSERT(!deopt_info.IsNull());
+  DeoptimizeWithDeoptInfo(optimized_code, deopt_info, *caller_frame);
 
   isolate->SetDeoptFrameCopy(NULL, 0);
-  isolate->set_deopt_registers_copy(NULL);
+  isolate->set_deopt_cpu_registers_copy(NULL);
+  isolate->set_deopt_xmm_registers_copy(NULL);
   delete[] frame_copy;
-  delete[] registers_copy;
+  delete[] cpu_registers_copy;
+  delete[] xmm_registers_copy;
 
   // Clear invocation counter so that the function gets optimized after
   // classes have been collected.
@@ -1612,5 +1660,27 @@ DEFINE_LEAF_RUNTIME_ENTRY(void, DeoptimizeFillFrame, uword last_fp) {
   }
 }
 END_LEAF_RUNTIME_ENTRY
+
+
+DEFINE_RUNTIME_ENTRY(DeoptimizeMaterializeDoubles, 0) {
+  DeferredDouble* deferred_double = Isolate::Current()->DetachDeferredDoubles();
+
+  while (deferred_double != NULL) {
+    DeferredDouble* current = deferred_double;
+    deferred_double = deferred_double->next();
+
+    RawDouble** slot = current->slot();
+    *slot = Double::New(current->value());
+
+    if (FLAG_trace_deopt) {
+      OS::Print("materialing double at %p: %g\n",
+                current->slot(),
+                current->value());
+    }
+
+    delete current;
+  }
+}
+
 
 }  // namespace dart

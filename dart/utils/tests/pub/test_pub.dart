@@ -19,8 +19,8 @@
 #import('../../../pkg/unittest/unittest.dart');
 #import('../../lib/file_system.dart', prefix: 'fs');
 #import('../../pub/git_source.dart');
+#import('../../pub/hosted_source.dart');
 #import('../../pub/io.dart');
-#import('../../pub/repo_source.dart');
 #import('../../pub/sdk_source.dart');
 #import('../../pub/utils.dart');
 #import('../../pub/yaml/yaml.dart');
@@ -265,7 +265,7 @@ Map package(String name, String version, [List dependencies]) {
  */
 Map dependency(String name, [String versionConstraint]) {
   var url = port.transform((p) => "http://localhost:$p");
-  var dependency = {"repo": {"name": name, "url": url}};
+  var dependency = {"hosted": {"name": name, "url": url}};
   if (versionConstraint != null) dependency["version"] = versionConstraint;
   return dependency;
 }
@@ -292,13 +292,27 @@ DirectoryDescriptor packageCacheDir(String name, String version) {
 
 /**
  * Describes a directory for a Git package. This directory is of the form found
- * in the global package cache.
+ * in the revision cache of the global package cache.
  */
-DirectoryDescriptor gitPackageCacheDir(String name, [int modifier]) {
+DirectoryDescriptor gitPackageRevisionCacheDir(String name, [int modifier]) {
   var value = name;
   if (modifier != null) value = "$name $modifier";
   return dir(new RegExp("$name${@'-[a-f0-9]+'}"), [
     file('$name.dart', 'main() => "$value";')
+  ]);
+}
+
+/**
+ * Describes a directory for a Git package. This directory is of the form found
+ * in the repo cache of the global package cache.
+ */
+DirectoryDescriptor gitPackageRepoCacheDir(String name) {
+  return dir(new RegExp("$name${@'-[a-f0-9]+'}"), [
+    dir('branches'),
+    dir('hooks'),
+    dir('info'),
+    dir('objects'),
+    dir('refs')
   ]);
 }
 
@@ -338,7 +352,7 @@ DirectoryDescriptor cacheDir(Map packages) {
     }
   });
   return dir(cachePath, [
-    dir('repo', [
+    dir('hosted', [
       async(port.transform((p) => dir('localhost%58$p', contents)))
     ])
   ]);
@@ -366,8 +380,8 @@ Future<Map> _dependencyListToMap(List<Map> dependencies) {
       case "git":
         source = new GitSource();
         break;
-      case "repo":
-        source = new RepoSource();
+      case "hosted":
+        source = new HostedSource();
         break;
       case "sdk":
         source = new SdkSource('');
@@ -379,7 +393,7 @@ Future<Map> _dependencyListToMap(List<Map> dependencies) {
       result[source.packageName(dependency[sourceName])] = dependency;
     }
     return result;
-  }); 
+  });
 }
 
 /**
@@ -549,7 +563,7 @@ Future _runScheduled(Directory parentDir, List<_ScheduledEvent> scheduled) {
   if (scheduled == null) return new Future.immediate(null);
   var iterator = scheduled.iterator();
 
-  Future runNextEvent([_]) {
+  Future runNextEvent(_) {
     if (_abortScheduled || !iterator.hasNext()) {
       _abortScheduled = false;
       scheduled.clear();
@@ -560,11 +574,11 @@ Future _runScheduled(Directory parentDir, List<_ScheduledEvent> scheduled) {
     if (future != null) {
       return future.chain(runNextEvent);
     } else {
-      return runNextEvent();
+      return runNextEvent(null);
     }
   }
 
-  return runNextEvent();
+  return runNextEvent(null);
 }
 
 /**
@@ -815,7 +829,9 @@ class DirectoryDescriptor extends Descriptor {
    */
   final List<Descriptor> contents;
 
-  DirectoryDescriptor(Pattern name, this.contents) : super(name);
+  DirectoryDescriptor(Pattern name, List<Descriptor> contents)
+    : this.contents = contents == null ? <Descriptor>[] : contents,
+      super(name);
 
   /**
    * Creates the file within [dir]. Returns a [Future] that is completed after
@@ -956,6 +972,14 @@ class GitRepoDescriptor extends DirectoryDescriptor {
       });
     });
     return completer.future;
+  }
+
+  /// Schedule a Git command to run in this repository.
+  void scheduleGit(List<String> args) {
+    _schedule((parentDir) {
+      var gitDir = new Directory(join(parentDir, name));
+      return _runGit(args, gitDir);
+    });
   }
 
   Future<String> _runGit(List<String> args, Directory workingDir) {

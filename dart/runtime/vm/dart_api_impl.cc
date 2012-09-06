@@ -73,7 +73,7 @@ const char* CanonicalFunction(const char* func) {
     intptr_t max = (max_elements);                                             \
     if (len < 0 || len > max) {                                                \
       return Api::NewError(                                                    \
-          "%s expects argument '%s' to be in the range [0..%ld].",             \
+          "%s expects argument '%s' to be in the range [0..%"Pd"].",           \
           CURRENT_FUNC, #length, max);                                         \
     }                                                                          \
   } while (0)
@@ -130,7 +130,7 @@ RawObject* Api::UnwrapHandle(Dart_Handle object) {
          PersistentHandle::raw_offset() == 0 &&
          LocalHandle::raw_offset() == 0);
 #endif
-  return *(reinterpret_cast<RawObject**>(object));
+  return (reinterpret_cast<LocalHandle*>(object))->raw();
 }
 
 #define DEFINE_UNWRAP(type)                                                    \
@@ -251,6 +251,36 @@ void Api::InitOnce() {
   ASSERT(api_native_key_ == Thread::kUnsetThreadLocalKey);
   api_native_key_ = Thread::CreateThreadLocal();
   ASSERT(api_native_key_ != Thread::kUnsetThreadLocalKey);
+}
+
+
+bool Api::ExternalStringGetPeerHelper(Dart_Handle object, void** peer) {
+  NoGCScope no_gc_scope;
+  RawObject* raw_obj = Api::UnwrapHandle(object);
+  switch (Api::ClassId(object)) {
+    case kExternalOneByteStringCid: {
+      RawExternalOneByteString* raw_string =
+          reinterpret_cast<RawExternalOneByteString*>(raw_obj)->ptr();
+      ExternalStringData<uint8_t>* data = raw_string->external_data_;
+      *peer = data->peer();
+      return true;
+    }
+    case kExternalTwoByteStringCid: {
+      RawExternalTwoByteString* raw_string =
+          reinterpret_cast<RawExternalTwoByteString*>(raw_obj)->ptr();
+      ExternalStringData<uint16_t>* data = raw_string->external_data_;
+      *peer = data->peer();
+      return true;
+    }
+    case kExternalFourByteStringCid: {
+      RawExternalFourByteString* raw_string =
+          reinterpret_cast<RawExternalFourByteString*>(raw_obj)->ptr();
+      ExternalStringData<uint32_t>* data = raw_string->external_data_;
+      *peer = data->peer();
+      return true;
+    }
+  }
+  return false;
 }
 
 
@@ -811,7 +841,7 @@ DART_EXPORT Dart_Handle Dart_CreateSnapshot(uint8_t** buffer,
   }
   const char* msg = CheckIsolateState(isolate);
   if (msg != NULL) {
-    return Api::NewError(msg);
+    return Api::NewError("%s", msg);
   }
   // Since this is only a snapshot the root library should not be set.
   isolate->object_store()->set_root_library(Library::Handle(isolate));
@@ -835,7 +865,7 @@ DART_EXPORT Dart_Handle Dart_CreateScriptSnapshot(uint8_t** buffer,
   }
   const char* msg = CheckIsolateState(isolate);
   if (msg != NULL) {
-    return Api::NewError(msg);
+    return Api::NewError("%s", msg);
   }
   Library& library =
       Library::Handle(isolate, isolate->object_store()->root_library());
@@ -1157,7 +1187,7 @@ DART_EXPORT Dart_Handle Dart_ObjectIsType(Dart_Handle object,
   // Finalize all classes.
   const char* msg = CheckIsolateState(isolate);
   if (msg != NULL) {
-    return Api::NewError(msg);
+    return Api::NewError("%s", msg);
   }
   if (obj.IsInstance()) {
     const Type& type = Type::Handle(isolate,
@@ -1526,43 +1556,13 @@ DART_EXPORT bool Dart_IsExternalString(Dart_Handle object) {
 }
 
 
-bool ExternalStringGetPeerHelper(Dart_Handle object, void** peer) {
-  NoGCScope no_gc_scope;
-  RawObject* raw_obj = Api::UnwrapHandle(object);
-  switch (Api::ClassId(object)) {
-    case kExternalOneByteStringCid: {
-      RawExternalOneByteString* raw_string =
-          reinterpret_cast<RawExternalOneByteString*>(raw_obj)->ptr();
-      ExternalStringData<uint8_t>* data = raw_string->external_data_;
-      *peer = data->peer();
-      return true;
-    }
-    case kExternalTwoByteStringCid: {
-      RawExternalTwoByteString* raw_string =
-          reinterpret_cast<RawExternalTwoByteString*>(raw_obj)->ptr();
-      ExternalStringData<uint16_t>* data = raw_string->external_data_;
-      *peer = data->peer();
-      return true;
-    }
-    case kExternalFourByteStringCid: {
-      RawExternalFourByteString* raw_string =
-          reinterpret_cast<RawExternalFourByteString*>(raw_obj)->ptr();
-      ExternalStringData<uint32_t>* data = raw_string->external_data_;
-      *peer = data->peer();
-      return true;
-    }
-  }
-  return false;
-}
-
-
 DART_EXPORT Dart_Handle Dart_ExternalStringGetPeer(Dart_Handle object,
                                                    void** peer) {
   if (peer == NULL) {
     RETURN_NULL_ERROR(peer);
   }
 
-  if (ExternalStringGetPeerHelper(object, peer)) {
+  if (Api::ExternalStringGetPeerHelper(object, peer)) {
     return Api::Success(Isolate::Current());
   }
 
@@ -2480,7 +2480,7 @@ DART_EXPORT Dart_Handle Dart_ClassGetDefault(Dart_Handle clazz) {
   // Finalize all classes.
   const char* msg = CheckIsolateState(isolate);
   if (msg != NULL) {
-    return Api::NewError(msg);
+    return Api::NewError("%s", msg);
   }
 
   if (cls.HasFactoryClass() && cls.HasResolvedFactoryClass()) {
@@ -2521,7 +2521,7 @@ DART_EXPORT Dart_Handle Dart_ClassGetInterfaceAt(Dart_Handle clazz,
   // Finalize all classes.
   const char* msg = CheckIsolateState(isolate);
   if (msg != NULL) {
-    return Api::NewError(msg);
+    return Api::NewError("%s", msg);
   }
 
   const Array& interface_types = Array::Handle(isolate, cls.interfaces());
@@ -3060,7 +3060,7 @@ DART_EXPORT Dart_Handle Dart_New(Dart_Handle clazz,
   }
   const char* msg = CheckIsolateState(isolate);
   if (msg != NULL) {
-    return Api::NewError(msg);
+    return Api::NewError("%s", msg);
   }
 
   // Check for interfaces with default implementations.
@@ -3215,7 +3215,7 @@ DART_EXPORT Dart_Handle Dart_Invoke(Dart_Handle target,
     // Finalize all classes.
     const char* msg = CheckIsolateState(isolate);
     if (msg != NULL) {
-      return Api::NewError(msg);
+      return Api::NewError("%s", msg);
     }
 
     const Class& cls = Class::Cast(obj);
@@ -3254,7 +3254,7 @@ DART_EXPORT Dart_Handle Dart_Invoke(Dart_Handle target,
     if (finalize_classes) {
       const char* msg = CheckIsolateState(isolate);
       if (msg != NULL) {
-        return Api::NewError(msg);
+        return Api::NewError("%s", msg);
       }
     }
 
@@ -3347,7 +3347,7 @@ DART_EXPORT Dart_Handle Dart_GetField(Dart_Handle container, Dart_Handle name) {
     // Finalize all classes.
     const char* msg = CheckIsolateState(isolate);
     if (msg != NULL) {
-      return Api::NewError(msg);
+      return Api::NewError("%s", msg);
     }
     // To access a static field we may need to use the Field or the
     // getter Function.
@@ -3716,12 +3716,17 @@ DART_EXPORT int Dart_GetNativeArgumentCount(Dart_NativeArguments args) {
 }
 
 
+// This function has friend access to SetReturnUnsafe.
+void SetReturnValueHelper(Dart_NativeArguments args, Dart_Handle retval) {
+  NoGCScope no_gc_scope;
+  NativeArguments* arguments = reinterpret_cast<NativeArguments*>(args);
+  arguments->SetReturnUnsafe(Api::UnwrapHandle(retval));
+}
+
+
 DART_EXPORT void Dart_SetReturnValue(Dart_NativeArguments args,
                                      Dart_Handle retval) {
-  NativeArguments* arguments = reinterpret_cast<NativeArguments*>(args);
-  Isolate* isolate = arguments->isolate();
-  DARTSCOPE(isolate);
-  arguments->SetReturn(Object::Handle(isolate, Api::UnwrapHandle(retval)));
+  SetReturnValueHelper(args, retval);
 }
 
 
@@ -3733,18 +3738,6 @@ DART_EXPORT Dart_Handle Dart_SetLibraryTagHandler(
   Isolate* isolate = Isolate::Current();
   CHECK_ISOLATE(isolate);
   isolate->set_library_tag_handler(handler);
-  return Api::Success(isolate);
-}
-
-
-DART_EXPORT Dart_Handle Dart_SetImportMap(Dart_Handle import_map) {
-  Isolate* isolate = Isolate::Current();
-  DARTSCOPE(isolate);
-  const Array& mapping_array = Api::UnwrapArrayHandle(isolate, import_map);
-  if (mapping_array.IsNull()) {
-    RETURN_TYPE_ERROR(isolate, import_map, Array);
-  }
-  isolate->object_store()->set_import_map(mapping_array);
   return Api::Success(isolate);
 }
 
@@ -3911,7 +3904,7 @@ DART_EXPORT Dart_Handle Dart_CompileAll() {
   Dart_Handle result;
   const char* msg = CheckIsolateState(isolate);
   if (msg != NULL) {
-    return Api::NewError(msg);
+    return Api::NewError("%s", msg);
   }
   CompileAll(isolate, &result);
   return result;
@@ -4062,7 +4055,7 @@ DART_EXPORT Dart_Handle Dart_LoadLibrary(Dart_Handle url,
     isolate->object_store()->set_builtin_library(library);
     const char* msg = CheckIsolateState(isolate);
     if (msg != NULL) {
-      return Api::NewError(msg);
+      return Api::NewError("%s", msg);
     }
   }
   return result;
