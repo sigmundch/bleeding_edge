@@ -9,7 +9,9 @@
     <title>Game of Life Components</title>
   </head>
   <body>
+    <!-- An individual cell for our version of Conway's Game of Life. -->
     <element extends="div" name="x-cell" apply-author-styles>
+      <!-- The DOM portion is trivial; see the styling and Dart behavior. -->
       <template>
       </template>
     </element>
@@ -19,6 +21,14 @@
         <button type="button" id="start">Start</button>
         <button type="button" id="stop">Stop</button>
         <button type="button" id="step">Step</button>
+      </template>
+    </element>
+
+    <element extends="div" name="x-game-of-life" apply-author-styles>
+      <template>
+        <!-- Not much is here, since the cells will be instantiated
+             programatically, once we know how many to make. -->
+        <div is="x-control-panel"></div>
       </template>
     </element>
   </body>
