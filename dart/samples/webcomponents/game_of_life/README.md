@@ -4,7 +4,7 @@ Conway's Game of Life
 This package contains a reusable Game of Life widget built using Dart web
 components. Here's a rundown of what's here:
 
-  `componenets/`  contains the web components used to build the game
+  `components/`  contains the web components used to build the game
   `test/` contains unit tests
   `index.html`, `game_of_life.dart` are a sample app consisting of exactly one
       Game of Life widget and nothing else.
