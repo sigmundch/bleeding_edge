@@ -5,21 +5,11 @@
 #library('game_of_life');
 
 #import('dart:html');
-#import('dart:isolate');
 #import('dart:math', prefix: 'Math');
 #import('package:dart-web-components/lib/js_polyfill/web_components.dart');
 
-#source('components/components.dart');
+#import('components/components.dart');
 
 void main() {
-  _componentsSetup();
-}
-
-void _componentsSetup() {
-  Map<String, Function> map = {
-    'x-cell' : () => new Cell.component(),
-    'x-control-panel' : () => new ControlPanel.component(),
-    'x-game-of-life' : () => new GameOfLife.component()
-  };
-  initializeComponents((String name) => map[name], true);
+  gameOfLifeComponentsSetup();
 }

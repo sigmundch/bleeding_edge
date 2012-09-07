@@ -2,12 +2,18 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+#library('game_of_life_components');
+
+#import('dart:html');
+#import('dart:math', prefix: 'Math');
+#import('package:dart-web-components/lib/js_polyfill/web_components.dart');
+
 typedef void Ping();
 
 // We've done things this way because we can't have default values for fields
 // inside a web component right now (see bug 4957).
 
-/** How should the (square) board be by default? Measured in cells/side. */
+/** How big should the (square) board be by default? Measured in cells/side. */
 final int DEFAULT_GAME_SIZE = 40;
 
 /**
@@ -21,6 +27,31 @@ final int DEFAULT_PANEL_OFFSET = 20;
 
 /** How many milliseconds between steps by default? */
 final int DEFAULT_STEP_TIME = 100;
+
+/** 
+ * Maps tag names to Dart constructors for components in this library.
+ * Singleton.
+ */
+Map<String, WebComponentFactory> get CTOR_MAP {
+  if (_CTOR_MAP == null) {
+    _CTOR_MAP = {
+      'x-cell' : () => new Cell.component(),
+      'x-control-panel' : () => new ControlPanel.component(),
+      'x-game-of-life' : () => new GameOfLife.component()
+    };
+  }
+  return _CTOR_MAP;
+}
+
+Map<String, WebComponentFactory> _CTOR_MAP;
+
+/** 
+ * If the importing code uses only the components in this library, 
+ * this function will do all necessary component initialization.
+ */
+void gameOfLifeComponentsSetup() {
+  initializeComponents((String name) => CTOR_MAP[name], true);
+}
 
 /**
  * A single cell in the Game Of Life. Listens to a GameOfLife parent component
@@ -131,6 +162,7 @@ class Cell extends DivElementImpl implements WebComponent, Hashable {
     }
     aliveThisStep = aliveNextStep;
   }
+
 }
 
 /** 
@@ -207,7 +239,7 @@ class GameOfLife extends DivElementImpl implements WebComponent {
 
   // These cannot be initialized here right now -- see bug 4957.
 
-  /** How should the (square) board be? Measured in cells/side. */
+  /** How big should the (square) board be? Measured in cells/side. */
   int GAME_SIZE;
 
   /** How many pixels long is the side of a cell? (Note: must match the CSS!) */
@@ -312,18 +344,8 @@ class GameOfLife extends DivElementImpl implements WebComponent {
     // set up position styles
     computedStyles = new StyleElement();
     _root.nodes.add(computedStyles);
-    var positionStyles = '';
-    _forEachCell((i, j) => 
-        positionStyles = _addPositionId(positionStyles, i, j));
-    computedStyles.innerHTML = positionStyles;
-
-    // add cells
-    _forEachCell((i, j) {
-      var cell = new Cell();
-      cell.game = this;
-      cell.id = 'x${i}y${j}';
-      _root.nodes.add(cell);
-    });
+    var computedStylesBuffer = new StringBuffer(); 
+    _forEachCell((i, j) =>  _addPositionId(computedStylesBuffer, i, j));
 
     // position the control panel
     var panelStyle = 
@@ -333,7 +355,17 @@ class GameOfLife extends DivElementImpl implements WebComponent {
           left: ${PANEL_OFFSET}px;
         }
         ''';
-    computedStyles.innerHTML = '${computedStyles.innerHTML}\n$panelStyle';
+    computedStylesBuffer.add('${computedStyles.innerHTML}\n$panelStyle');
+
+    computedStyles.innerHTML = computedStylesBuffer.toString();
+
+    // add cells
+    _forEachCell((i, j) {
+      var cell = new Cell();
+      cell.game = this;
+      cell.id = _generatePositionString(i, j);
+      _root.nodes.add(cell);
+    });
 
     // bind the control panel
     var controlPanel = _root.query('div[is="x-control-panel"]');
@@ -362,14 +394,17 @@ class GameOfLife extends DivElementImpl implements WebComponent {
   /**
    * Appends correct cell positioning information for cell ([i], [j]) to [curr].
    */
-  String _addPositionId(String curr, int i, int j) =>
+  String _addPositionId(StringBuffer curr, int i, int j) =>
+      curr.add(
       '''
-      $curr
-      #x${i}y${j} {
+      #${_generatePositionString(i, j)} {
         left: ${CELL_SIZE * i}px;
         top: ${CELL_SIZE * j}px;
       }
-      ''';
+      ''');
+
+  /** Returns the cell id corresponding to ([i], [j]). */
+  String _generatePositionString(int i, int j) => 'x${i}y${j}';
 
   /** 
    * Is the coordinate ([x],[y]) in the game grid, given the current
@@ -377,6 +412,33 @@ class GameOfLife extends DivElementImpl implements WebComponent {
    */
   bool inGrid(x, y) =>
     (x >=0 && y >=0 && x < GAME_SIZE && y < GAME_SIZE);
+
+  /** 
+   * Set cell ([i],[j])'s aliveness to [alive]. Throws an
+   * IllegalArgumentException if ([i],[j]) is not a valid cell (i.e. if it is
+   * outside of the grid).
+   */
+  void setAliveness(int i, int j, bool alive) {
+    _validateGridPosition(i, j);
+    _query('#${_generatePositionString(i, j)}').aliveThisStep = alive;
+  }
+
+  /**
+   * Is cell ([i], [j]) currently alive? Throws an IllegalArgumentException if
+   * ([i], [j]) is not a valid cell (i.e. it is outside the grid).
+   */
+  bool isAlive(int i, int j) {
+    _validateGridPosition(i, j);
+    return _query('#{_generatePositionString(i,j)}').aliveThisStep;
+  }
+
+  /** Throw an IllegalArgumentException if ([i], [j]) is not a valid cell. */
+  void _validateGridPosition(int i, int j) {
+    if (i < 0 || j < 0 || !inGrid(i,j)) {
+      throw new IllegalArgumentException('(${i}, ${j}) is a bad coordinate');
+    }
+    assert(inGrid(i,j) && i >= 0 && j >= 0);
+  }
 }
 
 /** Events container for a GameOfLife. */
