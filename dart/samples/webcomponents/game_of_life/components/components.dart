@@ -8,6 +8,7 @@
 #import('dart:math', prefix: 'Math');
 #import('package:dart-web-components/lib/js_polyfill/web_components.dart');
 
+/** Functions used to propogate a tick to cells. */
 typedef void Ping();
 
 // We've done things this way because we can't have default values for fields
