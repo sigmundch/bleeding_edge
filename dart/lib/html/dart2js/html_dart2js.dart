@@ -14792,8 +14792,6 @@ class SelectElementImpl extends ElementImpl implements SelectElement native "*HT
 
   final bool willValidate;
 
-  void add(ElementImpl element, ElementImpl before) native;
-
   bool checkValidity() native;
 
   NodeImpl item(int index) native;
@@ -17471,6 +17469,13 @@ class WindowImpl extends EventTargetImpl implements Window native "@*DOMWindow" 
     localStorage['dart-port:$name'] = JSON.stringify(serialized);
   }
 
+  String createObjectUrl(object) native '''
+    return (window.URL || window.webkitURL).createObjectURL(object)
+  ''';
+
+  void revokeObjectUrl(String objectUrl) native '''
+    (window.URL || window.webkitURL).revokeObjectURL(objectUrl)
+  ''';
 
   WindowEventsImpl get on() =>
     new WindowEventsImpl(this);
@@ -18322,6 +18327,11 @@ class _Elements {
 
   factory ScriptElement() {
     ScriptElementImpl _e = _document.$dom_createElement("script");
+    return _e;
+  }
+
+  factory SelectElement() {
+    SelectElementImpl _e = _document.$dom_createElement("select");
     return _e;
   }
 
@@ -33228,7 +33238,9 @@ interface ScriptProfileNode {
 // WARNING: Do not edit - generated code.
 
 /// @domName HTMLSelectElement
-interface SelectElement extends Element {
+interface SelectElement extends Element default _Elements {
+
+  SelectElement();
 
   /** @domName HTMLSelectElement.autofocus */
   bool autofocus;
@@ -33280,9 +33292,6 @@ interface SelectElement extends Element {
 
   /** @domName HTMLSelectElement.willValidate */
   final bool willValidate;
-
-  /** @domName HTMLSelectElement.add */
-  void add(Element element, Element before);
 
   /** @domName HTMLSelectElement.checkValidity */
   bool checkValidity();
@@ -36439,6 +36448,16 @@ interface Window extends EventTarget {
 
   IDBFactory get indexedDB();
 
+  /**
+   * Creates a new object URL for the specified object. The URL will be
+   * available until revokeObjectUrl is called.
+   * [object] can be a Blob, MediaStream or MediaSource.
+   */
+  String createObjectUrl(object);
+
+  /** @domName DOMURL.revokeObjectURL */
+  void revokeObjectUrl(String objectUrl);
+
 
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
@@ -38951,16 +38970,16 @@ class DOMWindowCrossFrameImpl implements Window {
 
   // TODO(vsm): Add frames to navigate subframes.  See 2312.
 
-  bool get closed() => _closed(_window);
+  bool get closed => _closed(_window);
   static bool _closed(win) native "return win.closed;";
 
-  Window get opener() => _createSafe(_opener(_window));
+  Window get opener => _createSafe(_opener(_window));
   static Window _opener(win) native "return win.opener;";
 
-  Window get parent() => _createSafe(_parent(_window));
+  Window get parent => _createSafe(_parent(_window));
   static Window _parent(win) native "return win.parent;";
 
-  Window get top() => _createSafe(_top(_window));
+  Window get top => _createSafe(_top(_window));
   static Window _top(win) native "return win.top;";
 
   // Methods.
@@ -39096,41 +39115,41 @@ class _LocationWrapper implements Location {
   // TODO(sra): Replace all the _set and _get calls with 'JS' forms.
 
   // final List<String> ancestorOrigins;
-  List<String> get ancestorOrigins() => _get(_ptr, 'ancestorOrigins');
+  List<String> get ancestorOrigins => _get(_ptr, 'ancestorOrigins');
 
   // String hash;
-  String get hash() => _get(_ptr, 'hash');
+  String get hash => _get(_ptr, 'hash');
   void set hash(String value) => _set(_ptr, 'hash', value);
 
   // String host;
-  String get host() => _get(_ptr, 'host');
+  String get host => _get(_ptr, 'host');
   void set host(String value) => _set(_ptr, 'host', value);
 
   // String hostname;
-  String get hostname() => _get(_ptr, 'hostname');
+  String get hostname => _get(_ptr, 'hostname');
   void set hostname(String value) => _set(_ptr, 'hostname', value);
 
   // String href;
-  String get href() => _get(_ptr, 'href');
+  String get href => _get(_ptr, 'href');
   void set href(String value) => _set(_ptr, 'href', value);
 
   // final String origin;
-  String get origin() => _get(_ptr, 'origin');
+  String get origin => _get(_ptr, 'origin');
 
   // String pathname;
-  String get pathname() => _get(_ptr, 'pathname');
+  String get pathname => _get(_ptr, 'pathname');
   void set pathname(String value) => _set(_ptr, 'pathname', value);
 
   // String port;
-  String get port() => _get(_ptr, 'port');
+  String get port => _get(_ptr, 'port');
   void set port(String value) => _set(_ptr, 'port', value);
 
   // String protocol;
-  String get protocol() => _get(_ptr, 'protocol');
+  String get protocol => _get(_ptr, 'protocol');
   void set protocol(String value) => _set(_ptr, 'protocol', value);
 
   // String search;
-  String get search() => _get(_ptr, 'search');
+  String get search => _get(_ptr, 'search');
   void set search(String value) => _set(_ptr, 'search', value);
 
 
@@ -39295,22 +39314,22 @@ class _Device {
    * the user agent.
    * Returns the user agent.
    */
-  static String get userAgent() => window.navigator.userAgent;
+  static String get userAgent => window.navigator.userAgent;
 
   /**
    * Determines if the current device is running Opera.
    */
-  static bool get isOpera() => userAgent.contains("Opera", 0);
+  static bool get isOpera => userAgent.contains("Opera", 0);
 
   /**
    * Determines if the current device is running Internet Explorer.
    */
-  static bool get isIE() => !isOpera && userAgent.contains("MSIE", 0);
+  static bool get isIE => !isOpera && userAgent.contains("MSIE", 0);
 
   /**
    * Determines if the current device is running Firefox.
    */
-  static bool get isFirefox() => userAgent.contains("Firefox", 0);
+  static bool get isFirefox => userAgent.contains("Firefox", 0);
 }
 // Copyright (c) 2011, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a

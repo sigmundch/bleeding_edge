@@ -1714,33 +1714,31 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
   }
 
   void generateConstant(Constant constant) {
-    ConstantHandler handler = compiler.constantHandler;
-    String name = handler.getNameForConstant(constant);
-    if (name === null) {
-      assert(!constant.isObject());
+    Namer namer = backend.namer;
+    // TODO(floitsch): should we use the ConstantVisitor here?
+    if (!constant.isObject()) {
       if (constant.isBool()) {
         push(new js.LiteralBool((constant as BoolConstant).value));
       } else if (constant.isNum()) {
         // TODO(floitsch): get rid of the code buffer.
         CodeBuffer buffer = new CodeBuffer();
-        handler.writeConstant(buffer, constant);
+        backend.emitter.writeConstantToBuffer(constant, buffer);
         push(new js.LiteralNumber(buffer.toString()));
       } else if (constant.isNull()) {
         push(new js.LiteralNull());
       } else if (constant.isString()) {
         // TODO(floitsch): get rid of the code buffer.
         CodeBuffer buffer = new CodeBuffer();
-        handler.writeConstant(buffer, constant);
+        backend.emitter.writeConstantToBuffer(constant, buffer);
         push(new js.LiteralString(buffer.toString()));
       } else if (constant.isFunction()) {
         FunctionConstant function = constant;
         world.registerStaticUse(function.element);
-        push(new js.VariableUse(
-            backend.namer.isolateAccess(function.element)));
+        push(new js.VariableUse(namer.isolateAccess(function.element)));
       } else if (constant.isSentinel()) {
         // TODO(floitsch): get rid of the code buffer.
         CodeBuffer buffer = new CodeBuffer();
-        handler.writeConstant(buffer, constant);
+        backend.emitter.writeConstantToBuffer(constant, buffer);
         push(new js.VariableUse(buffer.toString()));
       } else {
         compiler.internalError(
@@ -1748,6 +1746,7 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
             "constant $constant");
       }
     } else {
+      String name = namer.constantName(constant);
       js.VariableUse currentIsolateUse =
           new js.VariableUse(backend.namer.CURRENT_ISOLATE);
       push(new js.PropertyAccess.field(currentIsolateUse, name));
@@ -2150,6 +2149,16 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
     push(new js.Binary(cmp, left, or0));
   }
 
+  void checkBigInt(HInstruction input, String cmp) {
+    use(input);
+    js.Expression left = pop();
+    use(input);
+    js.Expression right = pop();
+    // TODO(4984): Deal with infinity.
+    push(new js.LiteralExpression.withData('Math.floor(#) === #',
+                                           <js.Expression>[left, right]));
+  }
+
   void checkTypeOf(HInstruction input, String cmp, String typeName) {
     use(input);
     js.Expression typeOf = new js.Prefix("typeof", pop());
@@ -2243,11 +2252,26 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
     }
   }
 
-  void handleStringSupertypeCheck(HInstruction input, DartType type) {
-    // Make sure List and String don't share supertypes, otherwise we
-    // would need to check for List too.
+  void handleNumberOrStringSupertypeCheck(HInstruction input, DartType type) {
     assert(type.element !== compiler.listClass
-           && !Elements.isListSupertype(type.element, compiler));
+           && !Elements.isListSupertype(type.element, compiler)
+           && !Elements.isStringOnlySupertype(type.element, compiler));
+    checkNum(input, '===');
+    js.Expression numberTest = pop();
+    checkString(input, '===');
+    js.Expression stringTest = pop();
+    checkObject(input, '===');
+    js.Expression objectTest = pop();
+    checkType(input, type);
+    push(new js.Binary('||',
+                       new js.Binary('||', numberTest, stringTest),
+                       new js.Binary('&&', objectTest, pop())));
+  }
+
+  void handleStringSupertypeCheck(HInstruction input, DartType type) {
+    assert(type.element !== compiler.listClass
+           && !Elements.isListSupertype(type.element, compiler)
+           && !Elements.isNumberOrStringSupertype(type.element, compiler));
     checkString(input, '===');
     js.Expression stringTest = pop();
     checkObject(input, '===');
@@ -2259,10 +2283,9 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
   }
 
   void handleListOrSupertypeCheck(HInstruction input, DartType type) {
-    // Make sure List and String don't share supertypes, otherwise we
-    // would need to check for String too.
     assert(type.element !== compiler.stringClass
-           && !Elements.isStringSupertype(type.element, compiler));
+           && !Elements.isStringOnlySupertype(type.element, compiler)
+           && !Elements.isNumberOrStringSupertype(type.element, compiler));
     checkObject(input, '===');
     js.Expression objectTest = pop();
     checkArray(input, '===');
@@ -2305,11 +2328,17 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
       checkFunction(input, type);
       attachLocationToLast(node);
     } else if (element == compiler.intClass) {
+      // The is check in the code tells us that it might not be an
+      // int. So we do a typeof first to avoid possible
+      // deoptimizations on the JS engine due to the Math.floor check.
       checkNum(input, '===');
       js.Expression numTest = pop();
-      checkInt(input, '===');
+      checkBigInt(input, '===');
       push(new js.Binary('&&', numTest, pop()), node);
-    } else if (Elements.isStringSupertype(element, compiler)) {
+    } else if (Elements.isNumberOrStringSupertype(element, compiler)) {
+      handleNumberOrStringSupertypeCheck(input, type);
+      attachLocationToLast(node);
+    } else if (Elements.isStringOnlySupertype(element, compiler)) {
       handleStringSupertypeCheck(input, type);
       attachLocationToLast(node);
     } else if (element === compiler.listClass
@@ -2363,6 +2392,10 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
           const SourceString("functionTypeCast"),
       "intTypeCheck":
           const SourceString("intTypeCast"),
+      "numberOrStringSuperNativeTypeCheck":
+          const SourceString("numberOrStringSuperNativeTypeCast"),
+      "numberOrStringSuperTypeCheck":
+          const SourceString("numberOrStringSuperTypeCast"),
       "stringSuperNativeTypeCheck":
           const SourceString("stringSuperNativeTypeCast"),
       "stringSuperTypeCheck":

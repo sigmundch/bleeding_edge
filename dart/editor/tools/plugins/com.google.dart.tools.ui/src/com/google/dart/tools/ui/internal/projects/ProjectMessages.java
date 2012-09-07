@@ -36,6 +36,7 @@ public class ProjectMessages extends NLS {
   public static String NewApplicationWizardPage_directory_tooltip;
   public static String NewApplicationWizardPage_project_name_label;
   public static String NewApplicationWizardPage_project_name_tooltip;
+  public static String NewApplicationWizardPage_webAppCheckbox_name_label;
   public static String NewProjectCreationPage_invalid_loc;
   public static String NewProjectCreationPage_NewProjectCreationPage_title;
   public static String NewApplicationWizardPage_open_existing;
@@ -46,7 +47,8 @@ public class ProjectMessages extends NLS {
   public static String OpenNewApplicationWizardAction_text;
   public static String OpenNewApplicationWizardAction_tooltip;
   public static String OpenExistingFolderWizardAction_nesting_title;
-  public static String OpenExistingFolderWizardAction_nesting_msg;
+  public static String OpenExistingFolderWizardAction_nesting_msg1;
+  public static String OpenExistingFolderWizardAction_nesting_msg2;
 
   static {
     // initialize resource bundle
