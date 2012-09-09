@@ -2,9 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-Window get window => _dummy();
+#library("metadata.dart");
 
-// TODO(vsm): Remove when prefixes are supported.
-Window get dom_window => _dummy();
+class Alien {
+  final String qwrrkz;
+  const Alien(this.qwrrkz);
+  const Alien.unknown() : qwrrkz = "???";
+}
 
-Document get document => _dummy();
+const Klingon = const Alien("Klingon");

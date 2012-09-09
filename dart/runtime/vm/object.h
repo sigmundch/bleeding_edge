@@ -1840,6 +1840,8 @@ class TokenStream : public Object {
   intptr_t ComputeSourcePosition(intptr_t tok_pos) const;
   intptr_t ComputeTokenPosition(intptr_t src_pos) const;
 
+  RawString* PrivateKey() const;
+
   static const intptr_t kBytesPerElement = 1;
   static const intptr_t kMaxElements = kSmiMax / kBytesPerElement;
 
@@ -1894,7 +1896,6 @@ class TokenStream : public Object {
   };
 
  private:
-  RawString* PrivateKey() const;
   void SetPrivateKey(const String& value) const;
 
   static RawTokenStream* New();
@@ -2275,6 +2276,7 @@ class PcDescriptors : public Object {
     kDeoptAfter,       // Deoptimization continuation point after instruction.
     kDeoptIndex,       // Index into deopt info array.
     kPatchCode,        // Buffer for patching code entry.
+    kLazyDeoptJump,    // Lazy deoptimization trampoline.
     kIcCall,           // IC call.
     kFuncCall,         // Call to known target, e.g. static call, closure call.
     kReturn,           // Return from function.
@@ -2321,6 +2323,9 @@ class PcDescriptors : public Object {
   }
 
   static RawPcDescriptors* New(intptr_t num_descriptors);
+
+  // Returns 0 if not found.
+  uword GetPcForKind(Kind kind) const;
 
   // Verify (assert) assumptions about pc descriptors in debug mode.
   void Verify(bool check_ids) const;
@@ -2655,8 +2660,9 @@ class Code : public Object {
   }
   intptr_t GetTokenIndexOfPC(uword pc) const;
 
-  // Find pc of patch code buffer. Return 0 if not found.
+  // Find pc, return 0 if not found.
   uword GetPatchCodePc() const;
+  uword GetLazyDeoptPc() const;
 
   uword GetDeoptBeforePcAtDeoptId(intptr_t deopt_id) const;
   uword GetDeoptAfterPcAtDeoptId(intptr_t deopt_id) const;
@@ -3524,7 +3530,7 @@ class String : public Instance {
                    intptr_t src_offset,
                    intptr_t len);
 
-  static RawString* EscapeDoubleQuotes(const String& str);
+  static RawString* EscapeSpecialCharacters(const String& str, bool raw_str);
 
   static RawString* Concat(const String& str1,
                            const String& str2,
@@ -3593,7 +3599,7 @@ class OneByteString : public String {
     return kOneByteChar;
   }
 
-  RawOneByteString* EscapeDoubleQuotes() const;
+  RawOneByteString* EscapeSpecialCharacters(bool raw_str) const;
 
   bool EqualsIgnoringPrivateKey(const OneByteString& str) const;
 
@@ -3669,7 +3675,7 @@ class TwoByteString : public String {
     return kTwoByteChar;
   }
 
-  RawTwoByteString* EscapeDoubleQuotes() const;
+  RawTwoByteString* EscapeSpecialCharacters(bool raw_str) const;
 
   // We use the same maximum elements for all strings.
   static const intptr_t kBytesPerElement = 2;
@@ -3731,7 +3737,7 @@ class FourByteString : public String {
     return kFourByteChar;
   }
 
-  RawFourByteString* EscapeDoubleQuotes() const;
+  RawFourByteString* EscapeSpecialCharacters(bool raw_str) const;
 
   static const intptr_t kBytesPerElement = 4;
   static const intptr_t kMaxElements = String::kMaxElements;
