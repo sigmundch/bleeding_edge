@@ -1,0 +1,4 @@
+name: todomvc_nowrappers
+dependencies:
+  dart-web-components:
+    git: https://github.com/dart-lang/dart-web-components
