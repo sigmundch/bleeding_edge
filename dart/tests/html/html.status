@@ -2,6 +2,8 @@
 # for details. All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
 
+window_open_test: Fail, Pass # http://dartbug.com/5151
+
 event_test: Skip  # Issue 1996
 webgl_1_test: Skip  # Issue 1495
 xmldocument_test: Skip  # XML in dart:html is incomplete
@@ -22,6 +24,9 @@ audiocontext_test: Skip
 
 [ $compiler == none && ($runtime == drt || $runtime == dartium) && $system == windows]
 websql_test: Skip # Issue 4941: stderr contains a backtrace.
+
+[ $compiler == none && ($runtime == drt || $runtime == dartium) && $mode == debug]
+websql_test: Fail, Pass # Issue 4941: stderr contains a backtrace.
 
 [ $compiler == dart2js && $runtime == drt && $system == windows]
 audiocontext_test: Fail # Issue 4517
@@ -82,7 +87,6 @@ indexeddb_1_test: Fail
 indexeddb_2_test: Fail
 indexeddb_3_test: Fail
 indexeddb_4_test: Fail
-js_interop_1_test: Fail
 js_interop_2_test: Fail
 js_interop_3_test: Fail
 js_interop_4_test: Fail
@@ -101,7 +105,6 @@ xsltprocessor_test: Skip    # BUG(4016)
 isolates_test: Skip         # BUG(4016)
 xhr_test: Skip              # BUG(4016)
 xhr_cross_origin_test: Skip # TODO(vsm): Triage XHR on IE.
-js_interop_1_test: Pass, Fail # BUG(4631)
 subclass_dom_elements_2_test: Fail # BUG(4501)
 
 
@@ -186,7 +189,7 @@ typed_arrays_1_test: Fail # dart2js doesn't support is checks with generic types
 indexeddb_3_test: Fail  # Caught Error: DATA_ERR: DOM IDBDatabase Exception 5 Error: The data provided does not meet the requirements of the function.
 
 [ $compiler == dart2js && $runtime == ff ]
-cache_test: Fail # Expectation: ApplicationCache. Caught NoSuchMethodException : method not found: 'get$status'
+cache_test: Fail # Expectation: ApplicationCache. Caught NoSuchMethodError : method not found: 'get$status'
 xhr_test: Skip # Timeout
 inner_frame_test: Skip # Timeout
 svg_3_test: Skip # Timeout
@@ -200,5 +203,5 @@ js_interop_2_test: Fail # Issue 4658.
 
 [ $compiler == dart2js && $checked && $browser]
 fileapi_test: Fail # TypeError: Object #<DirectoryEntry> has no method 'get$name'
-cross_frame_test: Fail # Caught NoSuchMethodException : method not found: 'is$_WindowImpl'
-window_open_test: Fail # Caught NoSuchMethodException : method not found: 'is$_WindowImpl'
+cross_frame_test: Fail # Caught NoSuchMethodError : method not found: 'is$_WindowImpl'
+window_open_test: Fail # Caught NoSuchMethodError : method not found: 'is$_WindowImpl'

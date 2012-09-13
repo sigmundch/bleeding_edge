@@ -25,13 +25,6 @@ DocumentImpl get _document() native "return document;";
 Element query(String selector) => _document.query(selector);
 ElementList queryAll(String selector) => _document.queryAll(selector);
 
-/// Marker for defaulted arguments.
-class _Default {
-  const _Default();
-}
-
-final _default = const _Default();
-
 // Workaround for tags like <cite> that lack their own Element subclass --
 // Dart issue 1990.
 class HTMLElementImpl extends ElementImpl native "*HTMLElement" {
@@ -55,7 +48,7 @@ spawnDomFunction(f) => spawnFunction(f);
 
 class AbstractWorkerImpl extends EventTargetImpl implements AbstractWorker native "*AbstractWorker" {
 
-  AbstractWorkerEventsImpl get on() =>
+  AbstractWorkerEventsImpl get on =>
     new AbstractWorkerEventsImpl(this);
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
@@ -68,7 +61,7 @@ class AbstractWorkerImpl extends EventTargetImpl implements AbstractWorker nativ
 class AbstractWorkerEventsImpl extends EventsImpl implements AbstractWorkerEvents {
   AbstractWorkerEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 }
 
 class AnchorElementImpl extends ElementImpl implements AnchorElement native "*HTMLAnchorElement" {
@@ -304,7 +297,7 @@ class AudioChannelSplitterImpl extends AudioNodeImpl implements AudioChannelSpli
 
 class AudioContextImpl extends EventTargetImpl implements AudioContext native "*AudioContext" {
 
-  AudioContextEventsImpl get on() =>
+  AudioContextEventsImpl get on =>
     new AudioContextEventsImpl(this);
 
   final int activeSourceCount;
@@ -359,7 +352,7 @@ class AudioContextImpl extends EventTargetImpl implements AudioContext native "*
 class AudioContextEventsImpl extends EventsImpl implements AudioContextEvents {
   AudioContextEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get complete() => this['complete'];
+  EventListenerList get complete => this['complete'];
 }
 
 class AudioDestinationNodeImpl extends AudioNodeImpl implements AudioDestinationNode native "*AudioDestinationNode" {
@@ -510,7 +503,7 @@ class BaseFontElementImpl extends ElementImpl implements BaseFontElement native 
 
 class BatteryManagerImpl extends EventTargetImpl implements BatteryManager native "*BatteryManager" {
 
-  BatteryManagerEventsImpl get on() =>
+  BatteryManagerEventsImpl get on =>
     new BatteryManagerEventsImpl(this);
 
   final bool charging;
@@ -523,7 +516,7 @@ class BatteryManagerImpl extends EventTargetImpl implements BatteryManager nativ
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
+  bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 }
@@ -531,13 +524,13 @@ class BatteryManagerImpl extends EventTargetImpl implements BatteryManager nativ
 class BatteryManagerEventsImpl extends EventsImpl implements BatteryManagerEvents {
   BatteryManagerEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get chargingChange() => this['chargingchange'];
+  EventListenerList get chargingChange => this['chargingchange'];
 
-  EventListenerList get chargingTimeChange() => this['chargingtimechange'];
+  EventListenerList get chargingTimeChange => this['chargingtimechange'];
 
-  EventListenerList get dischargingTimeChange() => this['dischargingtimechange'];
+  EventListenerList get dischargingTimeChange => this['dischargingtimechange'];
 
-  EventListenerList get levelChange() => this['levelchange'];
+  EventListenerList get levelChange => this['levelchange'];
 }
 
 class BeforeLoadEventImpl extends EventImpl implements BeforeLoadEvent native "*BeforeLoadEvent" {
@@ -587,7 +580,7 @@ class BlobImpl implements Blob native "*Blob" {
 
 class BodyElementImpl extends ElementImpl implements BodyElement native "*HTMLBodyElement" {
 
-  BodyElementEventsImpl get on() =>
+  BodyElementEventsImpl get on =>
     new BodyElementEventsImpl(this);
 
   String aLink;
@@ -604,31 +597,31 @@ class BodyElementImpl extends ElementImpl implements BodyElement native "*HTMLBo
 class BodyElementEventsImpl extends ElementEventsImpl implements BodyElementEvents {
   BodyElementEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get beforeUnload() => this['beforeunload'];
+  EventListenerList get beforeUnload => this['beforeunload'];
 
-  EventListenerList get blur() => this['blur'];
+  EventListenerList get blur => this['blur'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get focus() => this['focus'];
+  EventListenerList get focus => this['focus'];
 
-  EventListenerList get hashChange() => this['hashchange'];
+  EventListenerList get hashChange => this['hashchange'];
 
-  EventListenerList get load() => this['load'];
+  EventListenerList get load => this['load'];
 
-  EventListenerList get message() => this['message'];
+  EventListenerList get message => this['message'];
 
-  EventListenerList get offline() => this['offline'];
+  EventListenerList get offline => this['offline'];
 
-  EventListenerList get online() => this['online'];
+  EventListenerList get online => this['online'];
 
-  EventListenerList get popState() => this['popstate'];
+  EventListenerList get popState => this['popstate'];
 
-  EventListenerList get resize() => this['resize'];
+  EventListenerList get resize => this['resize'];
 
-  EventListenerList get storage() => this['storage'];
+  EventListenerList get storage => this['storage'];
 
-  EventListenerList get unload() => this['unload'];
+  EventListenerList get unload => this['unload'];
 }
 
 class ButtonElementImpl extends ElementImpl implements ButtonElement native "*HTMLButtonElement" {
@@ -913,7 +906,7 @@ class CSSRuleListImpl implements CSSRuleList native "*CSSRuleList" {
 
 String _cachedBrowserPrefix;
 
-String get _browserPrefix() {
+String get _browserPrefix {
   if (_cachedBrowserPrefix === null) {
     if (_Device.isFirefox) {
       _cachedBrowserPrefix = '-moz-';
@@ -956,7 +949,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
 
   // TODO(jacobr): generate this list of properties using the existing script.
     /** Gets the value of "animation" */
-  String get animation() =>
+  String get animation =>
     getPropertyValue('${_browserPrefix}animation');
 
   /** Sets the value of "animation" */
@@ -965,7 +958,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "animation-delay" */
-  String get animationDelay() =>
+  String get animationDelay =>
     getPropertyValue('${_browserPrefix}animation-delay');
 
   /** Sets the value of "animation-delay" */
@@ -974,7 +967,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "animation-direction" */
-  String get animationDirection() =>
+  String get animationDirection =>
     getPropertyValue('${_browserPrefix}animation-direction');
 
   /** Sets the value of "animation-direction" */
@@ -983,7 +976,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "animation-duration" */
-  String get animationDuration() =>
+  String get animationDuration =>
     getPropertyValue('${_browserPrefix}animation-duration');
 
   /** Sets the value of "animation-duration" */
@@ -992,7 +985,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "animation-fill-mode" */
-  String get animationFillMode() =>
+  String get animationFillMode =>
     getPropertyValue('${_browserPrefix}animation-fill-mode');
 
   /** Sets the value of "animation-fill-mode" */
@@ -1001,7 +994,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "animation-iteration-count" */
-  String get animationIterationCount() =>
+  String get animationIterationCount =>
     getPropertyValue('${_browserPrefix}animation-iteration-count');
 
   /** Sets the value of "animation-iteration-count" */
@@ -1010,7 +1003,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "animation-name" */
-  String get animationName() =>
+  String get animationName =>
     getPropertyValue('${_browserPrefix}animation-name');
 
   /** Sets the value of "animation-name" */
@@ -1019,7 +1012,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "animation-play-state" */
-  String get animationPlayState() =>
+  String get animationPlayState =>
     getPropertyValue('${_browserPrefix}animation-play-state');
 
   /** Sets the value of "animation-play-state" */
@@ -1028,7 +1021,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "animation-timing-function" */
-  String get animationTimingFunction() =>
+  String get animationTimingFunction =>
     getPropertyValue('${_browserPrefix}animation-timing-function');
 
   /** Sets the value of "animation-timing-function" */
@@ -1037,7 +1030,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "appearance" */
-  String get appearance() =>
+  String get appearance =>
     getPropertyValue('${_browserPrefix}appearance');
 
   /** Sets the value of "appearance" */
@@ -1046,7 +1039,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "backface-visibility" */
-  String get backfaceVisibility() =>
+  String get backfaceVisibility =>
     getPropertyValue('${_browserPrefix}backface-visibility');
 
   /** Sets the value of "backface-visibility" */
@@ -1055,7 +1048,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background" */
-  String get background() =>
+  String get background =>
     getPropertyValue('background');
 
   /** Sets the value of "background" */
@@ -1064,7 +1057,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-attachment" */
-  String get backgroundAttachment() =>
+  String get backgroundAttachment =>
     getPropertyValue('background-attachment');
 
   /** Sets the value of "background-attachment" */
@@ -1073,7 +1066,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-clip" */
-  String get backgroundClip() =>
+  String get backgroundClip =>
     getPropertyValue('background-clip');
 
   /** Sets the value of "background-clip" */
@@ -1082,7 +1075,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-color" */
-  String get backgroundColor() =>
+  String get backgroundColor =>
     getPropertyValue('background-color');
 
   /** Sets the value of "background-color" */
@@ -1091,7 +1084,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-composite" */
-  String get backgroundComposite() =>
+  String get backgroundComposite =>
     getPropertyValue('${_browserPrefix}background-composite');
 
   /** Sets the value of "background-composite" */
@@ -1100,7 +1093,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-image" */
-  String get backgroundImage() =>
+  String get backgroundImage =>
     getPropertyValue('background-image');
 
   /** Sets the value of "background-image" */
@@ -1109,7 +1102,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-origin" */
-  String get backgroundOrigin() =>
+  String get backgroundOrigin =>
     getPropertyValue('background-origin');
 
   /** Sets the value of "background-origin" */
@@ -1118,7 +1111,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-position" */
-  String get backgroundPosition() =>
+  String get backgroundPosition =>
     getPropertyValue('background-position');
 
   /** Sets the value of "background-position" */
@@ -1127,7 +1120,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-position-x" */
-  String get backgroundPositionX() =>
+  String get backgroundPositionX =>
     getPropertyValue('background-position-x');
 
   /** Sets the value of "background-position-x" */
@@ -1136,7 +1129,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-position-y" */
-  String get backgroundPositionY() =>
+  String get backgroundPositionY =>
     getPropertyValue('background-position-y');
 
   /** Sets the value of "background-position-y" */
@@ -1145,7 +1138,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-repeat" */
-  String get backgroundRepeat() =>
+  String get backgroundRepeat =>
     getPropertyValue('background-repeat');
 
   /** Sets the value of "background-repeat" */
@@ -1154,7 +1147,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-repeat-x" */
-  String get backgroundRepeatX() =>
+  String get backgroundRepeatX =>
     getPropertyValue('background-repeat-x');
 
   /** Sets the value of "background-repeat-x" */
@@ -1163,7 +1156,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-repeat-y" */
-  String get backgroundRepeatY() =>
+  String get backgroundRepeatY =>
     getPropertyValue('background-repeat-y');
 
   /** Sets the value of "background-repeat-y" */
@@ -1172,7 +1165,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "background-size" */
-  String get backgroundSize() =>
+  String get backgroundSize =>
     getPropertyValue('background-size');
 
   /** Sets the value of "background-size" */
@@ -1181,7 +1174,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border" */
-  String get border() =>
+  String get border =>
     getPropertyValue('border');
 
   /** Sets the value of "border" */
@@ -1190,7 +1183,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-after" */
-  String get borderAfter() =>
+  String get borderAfter =>
     getPropertyValue('${_browserPrefix}border-after');
 
   /** Sets the value of "border-after" */
@@ -1199,7 +1192,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-after-color" */
-  String get borderAfterColor() =>
+  String get borderAfterColor =>
     getPropertyValue('${_browserPrefix}border-after-color');
 
   /** Sets the value of "border-after-color" */
@@ -1208,7 +1201,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-after-style" */
-  String get borderAfterStyle() =>
+  String get borderAfterStyle =>
     getPropertyValue('${_browserPrefix}border-after-style');
 
   /** Sets the value of "border-after-style" */
@@ -1217,7 +1210,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-after-width" */
-  String get borderAfterWidth() =>
+  String get borderAfterWidth =>
     getPropertyValue('${_browserPrefix}border-after-width');
 
   /** Sets the value of "border-after-width" */
@@ -1226,7 +1219,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-before" */
-  String get borderBefore() =>
+  String get borderBefore =>
     getPropertyValue('${_browserPrefix}border-before');
 
   /** Sets the value of "border-before" */
@@ -1235,7 +1228,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-before-color" */
-  String get borderBeforeColor() =>
+  String get borderBeforeColor =>
     getPropertyValue('${_browserPrefix}border-before-color');
 
   /** Sets the value of "border-before-color" */
@@ -1244,7 +1237,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-before-style" */
-  String get borderBeforeStyle() =>
+  String get borderBeforeStyle =>
     getPropertyValue('${_browserPrefix}border-before-style');
 
   /** Sets the value of "border-before-style" */
@@ -1253,7 +1246,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-before-width" */
-  String get borderBeforeWidth() =>
+  String get borderBeforeWidth =>
     getPropertyValue('${_browserPrefix}border-before-width');
 
   /** Sets the value of "border-before-width" */
@@ -1262,7 +1255,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-bottom" */
-  String get borderBottom() =>
+  String get borderBottom =>
     getPropertyValue('border-bottom');
 
   /** Sets the value of "border-bottom" */
@@ -1271,7 +1264,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-bottom-color" */
-  String get borderBottomColor() =>
+  String get borderBottomColor =>
     getPropertyValue('border-bottom-color');
 
   /** Sets the value of "border-bottom-color" */
@@ -1280,7 +1273,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-bottom-left-radius" */
-  String get borderBottomLeftRadius() =>
+  String get borderBottomLeftRadius =>
     getPropertyValue('border-bottom-left-radius');
 
   /** Sets the value of "border-bottom-left-radius" */
@@ -1289,7 +1282,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-bottom-right-radius" */
-  String get borderBottomRightRadius() =>
+  String get borderBottomRightRadius =>
     getPropertyValue('border-bottom-right-radius');
 
   /** Sets the value of "border-bottom-right-radius" */
@@ -1298,7 +1291,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-bottom-style" */
-  String get borderBottomStyle() =>
+  String get borderBottomStyle =>
     getPropertyValue('border-bottom-style');
 
   /** Sets the value of "border-bottom-style" */
@@ -1307,7 +1300,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-bottom-width" */
-  String get borderBottomWidth() =>
+  String get borderBottomWidth =>
     getPropertyValue('border-bottom-width');
 
   /** Sets the value of "border-bottom-width" */
@@ -1316,7 +1309,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-collapse" */
-  String get borderCollapse() =>
+  String get borderCollapse =>
     getPropertyValue('border-collapse');
 
   /** Sets the value of "border-collapse" */
@@ -1325,7 +1318,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-color" */
-  String get borderColor() =>
+  String get borderColor =>
     getPropertyValue('border-color');
 
   /** Sets the value of "border-color" */
@@ -1334,7 +1327,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-end" */
-  String get borderEnd() =>
+  String get borderEnd =>
     getPropertyValue('${_browserPrefix}border-end');
 
   /** Sets the value of "border-end" */
@@ -1343,7 +1336,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-end-color" */
-  String get borderEndColor() =>
+  String get borderEndColor =>
     getPropertyValue('${_browserPrefix}border-end-color');
 
   /** Sets the value of "border-end-color" */
@@ -1352,7 +1345,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-end-style" */
-  String get borderEndStyle() =>
+  String get borderEndStyle =>
     getPropertyValue('${_browserPrefix}border-end-style');
 
   /** Sets the value of "border-end-style" */
@@ -1361,7 +1354,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-end-width" */
-  String get borderEndWidth() =>
+  String get borderEndWidth =>
     getPropertyValue('${_browserPrefix}border-end-width');
 
   /** Sets the value of "border-end-width" */
@@ -1370,7 +1363,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-fit" */
-  String get borderFit() =>
+  String get borderFit =>
     getPropertyValue('${_browserPrefix}border-fit');
 
   /** Sets the value of "border-fit" */
@@ -1379,7 +1372,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-horizontal-spacing" */
-  String get borderHorizontalSpacing() =>
+  String get borderHorizontalSpacing =>
     getPropertyValue('${_browserPrefix}border-horizontal-spacing');
 
   /** Sets the value of "border-horizontal-spacing" */
@@ -1388,7 +1381,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-image" */
-  String get borderImage() =>
+  String get borderImage =>
     getPropertyValue('border-image');
 
   /** Sets the value of "border-image" */
@@ -1397,7 +1390,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-image-outset" */
-  String get borderImageOutset() =>
+  String get borderImageOutset =>
     getPropertyValue('border-image-outset');
 
   /** Sets the value of "border-image-outset" */
@@ -1406,7 +1399,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-image-repeat" */
-  String get borderImageRepeat() =>
+  String get borderImageRepeat =>
     getPropertyValue('border-image-repeat');
 
   /** Sets the value of "border-image-repeat" */
@@ -1415,7 +1408,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-image-slice" */
-  String get borderImageSlice() =>
+  String get borderImageSlice =>
     getPropertyValue('border-image-slice');
 
   /** Sets the value of "border-image-slice" */
@@ -1424,7 +1417,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-image-source" */
-  String get borderImageSource() =>
+  String get borderImageSource =>
     getPropertyValue('border-image-source');
 
   /** Sets the value of "border-image-source" */
@@ -1433,7 +1426,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-image-width" */
-  String get borderImageWidth() =>
+  String get borderImageWidth =>
     getPropertyValue('border-image-width');
 
   /** Sets the value of "border-image-width" */
@@ -1442,7 +1435,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-left" */
-  String get borderLeft() =>
+  String get borderLeft =>
     getPropertyValue('border-left');
 
   /** Sets the value of "border-left" */
@@ -1451,7 +1444,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-left-color" */
-  String get borderLeftColor() =>
+  String get borderLeftColor =>
     getPropertyValue('border-left-color');
 
   /** Sets the value of "border-left-color" */
@@ -1460,7 +1453,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-left-style" */
-  String get borderLeftStyle() =>
+  String get borderLeftStyle =>
     getPropertyValue('border-left-style');
 
   /** Sets the value of "border-left-style" */
@@ -1469,7 +1462,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-left-width" */
-  String get borderLeftWidth() =>
+  String get borderLeftWidth =>
     getPropertyValue('border-left-width');
 
   /** Sets the value of "border-left-width" */
@@ -1478,7 +1471,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-radius" */
-  String get borderRadius() =>
+  String get borderRadius =>
     getPropertyValue('border-radius');
 
   /** Sets the value of "border-radius" */
@@ -1487,7 +1480,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-right" */
-  String get borderRight() =>
+  String get borderRight =>
     getPropertyValue('border-right');
 
   /** Sets the value of "border-right" */
@@ -1496,7 +1489,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-right-color" */
-  String get borderRightColor() =>
+  String get borderRightColor =>
     getPropertyValue('border-right-color');
 
   /** Sets the value of "border-right-color" */
@@ -1505,7 +1498,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-right-style" */
-  String get borderRightStyle() =>
+  String get borderRightStyle =>
     getPropertyValue('border-right-style');
 
   /** Sets the value of "border-right-style" */
@@ -1514,7 +1507,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-right-width" */
-  String get borderRightWidth() =>
+  String get borderRightWidth =>
     getPropertyValue('border-right-width');
 
   /** Sets the value of "border-right-width" */
@@ -1523,7 +1516,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-spacing" */
-  String get borderSpacing() =>
+  String get borderSpacing =>
     getPropertyValue('border-spacing');
 
   /** Sets the value of "border-spacing" */
@@ -1532,7 +1525,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-start" */
-  String get borderStart() =>
+  String get borderStart =>
     getPropertyValue('${_browserPrefix}border-start');
 
   /** Sets the value of "border-start" */
@@ -1541,7 +1534,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-start-color" */
-  String get borderStartColor() =>
+  String get borderStartColor =>
     getPropertyValue('${_browserPrefix}border-start-color');
 
   /** Sets the value of "border-start-color" */
@@ -1550,7 +1543,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-start-style" */
-  String get borderStartStyle() =>
+  String get borderStartStyle =>
     getPropertyValue('${_browserPrefix}border-start-style');
 
   /** Sets the value of "border-start-style" */
@@ -1559,7 +1552,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-start-width" */
-  String get borderStartWidth() =>
+  String get borderStartWidth =>
     getPropertyValue('${_browserPrefix}border-start-width');
 
   /** Sets the value of "border-start-width" */
@@ -1568,7 +1561,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-style" */
-  String get borderStyle() =>
+  String get borderStyle =>
     getPropertyValue('border-style');
 
   /** Sets the value of "border-style" */
@@ -1577,7 +1570,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-top" */
-  String get borderTop() =>
+  String get borderTop =>
     getPropertyValue('border-top');
 
   /** Sets the value of "border-top" */
@@ -1586,7 +1579,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-top-color" */
-  String get borderTopColor() =>
+  String get borderTopColor =>
     getPropertyValue('border-top-color');
 
   /** Sets the value of "border-top-color" */
@@ -1595,7 +1588,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-top-left-radius" */
-  String get borderTopLeftRadius() =>
+  String get borderTopLeftRadius =>
     getPropertyValue('border-top-left-radius');
 
   /** Sets the value of "border-top-left-radius" */
@@ -1604,7 +1597,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-top-right-radius" */
-  String get borderTopRightRadius() =>
+  String get borderTopRightRadius =>
     getPropertyValue('border-top-right-radius');
 
   /** Sets the value of "border-top-right-radius" */
@@ -1613,7 +1606,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-top-style" */
-  String get borderTopStyle() =>
+  String get borderTopStyle =>
     getPropertyValue('border-top-style');
 
   /** Sets the value of "border-top-style" */
@@ -1622,7 +1615,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-top-width" */
-  String get borderTopWidth() =>
+  String get borderTopWidth =>
     getPropertyValue('border-top-width');
 
   /** Sets the value of "border-top-width" */
@@ -1631,7 +1624,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-vertical-spacing" */
-  String get borderVerticalSpacing() =>
+  String get borderVerticalSpacing =>
     getPropertyValue('${_browserPrefix}border-vertical-spacing');
 
   /** Sets the value of "border-vertical-spacing" */
@@ -1640,7 +1633,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "border-width" */
-  String get borderWidth() =>
+  String get borderWidth =>
     getPropertyValue('border-width');
 
   /** Sets the value of "border-width" */
@@ -1649,7 +1642,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "bottom" */
-  String get bottom() =>
+  String get bottom =>
     getPropertyValue('bottom');
 
   /** Sets the value of "bottom" */
@@ -1658,7 +1651,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "box-align" */
-  String get boxAlign() =>
+  String get boxAlign =>
     getPropertyValue('${_browserPrefix}box-align');
 
   /** Sets the value of "box-align" */
@@ -1667,7 +1660,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "box-direction" */
-  String get boxDirection() =>
+  String get boxDirection =>
     getPropertyValue('${_browserPrefix}box-direction');
 
   /** Sets the value of "box-direction" */
@@ -1676,7 +1669,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "box-flex" */
-  String get boxFlex() =>
+  String get boxFlex =>
     getPropertyValue('${_browserPrefix}box-flex');
 
   /** Sets the value of "box-flex" */
@@ -1685,7 +1678,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "box-flex-group" */
-  String get boxFlexGroup() =>
+  String get boxFlexGroup =>
     getPropertyValue('${_browserPrefix}box-flex-group');
 
   /** Sets the value of "box-flex-group" */
@@ -1694,7 +1687,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "box-lines" */
-  String get boxLines() =>
+  String get boxLines =>
     getPropertyValue('${_browserPrefix}box-lines');
 
   /** Sets the value of "box-lines" */
@@ -1703,7 +1696,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "box-ordinal-group" */
-  String get boxOrdinalGroup() =>
+  String get boxOrdinalGroup =>
     getPropertyValue('${_browserPrefix}box-ordinal-group');
 
   /** Sets the value of "box-ordinal-group" */
@@ -1712,7 +1705,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "box-orient" */
-  String get boxOrient() =>
+  String get boxOrient =>
     getPropertyValue('${_browserPrefix}box-orient');
 
   /** Sets the value of "box-orient" */
@@ -1721,7 +1714,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "box-pack" */
-  String get boxPack() =>
+  String get boxPack =>
     getPropertyValue('${_browserPrefix}box-pack');
 
   /** Sets the value of "box-pack" */
@@ -1730,7 +1723,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "box-reflect" */
-  String get boxReflect() =>
+  String get boxReflect =>
     getPropertyValue('${_browserPrefix}box-reflect');
 
   /** Sets the value of "box-reflect" */
@@ -1739,7 +1732,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "box-shadow" */
-  String get boxShadow() =>
+  String get boxShadow =>
     getPropertyValue('box-shadow');
 
   /** Sets the value of "box-shadow" */
@@ -1748,7 +1741,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "box-sizing" */
-  String get boxSizing() =>
+  String get boxSizing =>
     getPropertyValue('box-sizing');
 
   /** Sets the value of "box-sizing" */
@@ -1757,7 +1750,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "caption-side" */
-  String get captionSide() =>
+  String get captionSide =>
     getPropertyValue('caption-side');
 
   /** Sets the value of "caption-side" */
@@ -1766,7 +1759,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "clear" */
-  String get clear() =>
+  String get clear =>
     getPropertyValue('clear');
 
   /** Sets the value of "clear" */
@@ -1775,7 +1768,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "clip" */
-  String get clip() =>
+  String get clip =>
     getPropertyValue('clip');
 
   /** Sets the value of "clip" */
@@ -1784,7 +1777,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "color" */
-  String get color() =>
+  String get color =>
     getPropertyValue('color');
 
   /** Sets the value of "color" */
@@ -1793,7 +1786,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "color-correction" */
-  String get colorCorrection() =>
+  String get colorCorrection =>
     getPropertyValue('${_browserPrefix}color-correction');
 
   /** Sets the value of "color-correction" */
@@ -1802,7 +1795,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "column-break-after" */
-  String get columnBreakAfter() =>
+  String get columnBreakAfter =>
     getPropertyValue('${_browserPrefix}column-break-after');
 
   /** Sets the value of "column-break-after" */
@@ -1811,7 +1804,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "column-break-before" */
-  String get columnBreakBefore() =>
+  String get columnBreakBefore =>
     getPropertyValue('${_browserPrefix}column-break-before');
 
   /** Sets the value of "column-break-before" */
@@ -1820,7 +1813,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "column-break-inside" */
-  String get columnBreakInside() =>
+  String get columnBreakInside =>
     getPropertyValue('${_browserPrefix}column-break-inside');
 
   /** Sets the value of "column-break-inside" */
@@ -1829,7 +1822,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "column-count" */
-  String get columnCount() =>
+  String get columnCount =>
     getPropertyValue('${_browserPrefix}column-count');
 
   /** Sets the value of "column-count" */
@@ -1838,7 +1831,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "column-gap" */
-  String get columnGap() =>
+  String get columnGap =>
     getPropertyValue('${_browserPrefix}column-gap');
 
   /** Sets the value of "column-gap" */
@@ -1847,7 +1840,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "column-rule" */
-  String get columnRule() =>
+  String get columnRule =>
     getPropertyValue('${_browserPrefix}column-rule');
 
   /** Sets the value of "column-rule" */
@@ -1856,7 +1849,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "column-rule-color" */
-  String get columnRuleColor() =>
+  String get columnRuleColor =>
     getPropertyValue('${_browserPrefix}column-rule-color');
 
   /** Sets the value of "column-rule-color" */
@@ -1865,7 +1858,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "column-rule-style" */
-  String get columnRuleStyle() =>
+  String get columnRuleStyle =>
     getPropertyValue('${_browserPrefix}column-rule-style');
 
   /** Sets the value of "column-rule-style" */
@@ -1874,7 +1867,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "column-rule-width" */
-  String get columnRuleWidth() =>
+  String get columnRuleWidth =>
     getPropertyValue('${_browserPrefix}column-rule-width');
 
   /** Sets the value of "column-rule-width" */
@@ -1883,7 +1876,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "column-span" */
-  String get columnSpan() =>
+  String get columnSpan =>
     getPropertyValue('${_browserPrefix}column-span');
 
   /** Sets the value of "column-span" */
@@ -1892,7 +1885,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "column-width" */
-  String get columnWidth() =>
+  String get columnWidth =>
     getPropertyValue('${_browserPrefix}column-width');
 
   /** Sets the value of "column-width" */
@@ -1901,7 +1894,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "columns" */
-  String get columns() =>
+  String get columns =>
     getPropertyValue('${_browserPrefix}columns');
 
   /** Sets the value of "columns" */
@@ -1910,7 +1903,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "content" */
-  String get content() =>
+  String get content =>
     getPropertyValue('content');
 
   /** Sets the value of "content" */
@@ -1919,7 +1912,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "counter-increment" */
-  String get counterIncrement() =>
+  String get counterIncrement =>
     getPropertyValue('counter-increment');
 
   /** Sets the value of "counter-increment" */
@@ -1928,7 +1921,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "counter-reset" */
-  String get counterReset() =>
+  String get counterReset =>
     getPropertyValue('counter-reset');
 
   /** Sets the value of "counter-reset" */
@@ -1937,7 +1930,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "cursor" */
-  String get cursor() =>
+  String get cursor =>
     getPropertyValue('cursor');
 
   /** Sets the value of "cursor" */
@@ -1946,7 +1939,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "direction" */
-  String get direction() =>
+  String get direction =>
     getPropertyValue('direction');
 
   /** Sets the value of "direction" */
@@ -1955,7 +1948,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "display" */
-  String get display() =>
+  String get display =>
     getPropertyValue('display');
 
   /** Sets the value of "display" */
@@ -1964,7 +1957,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "empty-cells" */
-  String get emptyCells() =>
+  String get emptyCells =>
     getPropertyValue('empty-cells');
 
   /** Sets the value of "empty-cells" */
@@ -1973,7 +1966,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "filter" */
-  String get filter() =>
+  String get filter =>
     getPropertyValue('${_browserPrefix}filter');
 
   /** Sets the value of "filter" */
@@ -1982,7 +1975,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "flex-align" */
-  String get flexAlign() =>
+  String get flexAlign =>
     getPropertyValue('${_browserPrefix}flex-align');
 
   /** Sets the value of "flex-align" */
@@ -1991,7 +1984,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "flex-flow" */
-  String get flexFlow() =>
+  String get flexFlow =>
     getPropertyValue('${_browserPrefix}flex-flow');
 
   /** Sets the value of "flex-flow" */
@@ -2000,7 +1993,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "flex-order" */
-  String get flexOrder() =>
+  String get flexOrder =>
     getPropertyValue('${_browserPrefix}flex-order');
 
   /** Sets the value of "flex-order" */
@@ -2009,7 +2002,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "flex-pack" */
-  String get flexPack() =>
+  String get flexPack =>
     getPropertyValue('${_browserPrefix}flex-pack');
 
   /** Sets the value of "flex-pack" */
@@ -2018,7 +2011,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "float" */
-  String get float() =>
+  String get float =>
     getPropertyValue('float');
 
   /** Sets the value of "float" */
@@ -2027,7 +2020,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "flow-from" */
-  String get flowFrom() =>
+  String get flowFrom =>
     getPropertyValue('${_browserPrefix}flow-from');
 
   /** Sets the value of "flow-from" */
@@ -2036,7 +2029,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "flow-into" */
-  String get flowInto() =>
+  String get flowInto =>
     getPropertyValue('${_browserPrefix}flow-into');
 
   /** Sets the value of "flow-into" */
@@ -2045,7 +2038,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "font" */
-  String get font() =>
+  String get font =>
     getPropertyValue('font');
 
   /** Sets the value of "font" */
@@ -2054,7 +2047,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "font-family" */
-  String get fontFamily() =>
+  String get fontFamily =>
     getPropertyValue('font-family');
 
   /** Sets the value of "font-family" */
@@ -2063,7 +2056,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "font-feature-settings" */
-  String get fontFeatureSettings() =>
+  String get fontFeatureSettings =>
     getPropertyValue('${_browserPrefix}font-feature-settings');
 
   /** Sets the value of "font-feature-settings" */
@@ -2072,7 +2065,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "font-size" */
-  String get fontSize() =>
+  String get fontSize =>
     getPropertyValue('font-size');
 
   /** Sets the value of "font-size" */
@@ -2081,7 +2074,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "font-size-delta" */
-  String get fontSizeDelta() =>
+  String get fontSizeDelta =>
     getPropertyValue('${_browserPrefix}font-size-delta');
 
   /** Sets the value of "font-size-delta" */
@@ -2090,7 +2083,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "font-smoothing" */
-  String get fontSmoothing() =>
+  String get fontSmoothing =>
     getPropertyValue('${_browserPrefix}font-smoothing');
 
   /** Sets the value of "font-smoothing" */
@@ -2099,7 +2092,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "font-stretch" */
-  String get fontStretch() =>
+  String get fontStretch =>
     getPropertyValue('font-stretch');
 
   /** Sets the value of "font-stretch" */
@@ -2108,7 +2101,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "font-style" */
-  String get fontStyle() =>
+  String get fontStyle =>
     getPropertyValue('font-style');
 
   /** Sets the value of "font-style" */
@@ -2117,7 +2110,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "font-variant" */
-  String get fontVariant() =>
+  String get fontVariant =>
     getPropertyValue('font-variant');
 
   /** Sets the value of "font-variant" */
@@ -2126,7 +2119,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "font-weight" */
-  String get fontWeight() =>
+  String get fontWeight =>
     getPropertyValue('font-weight');
 
   /** Sets the value of "font-weight" */
@@ -2135,7 +2128,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "height" */
-  String get height() =>
+  String get height =>
     getPropertyValue('height');
 
   /** Sets the value of "height" */
@@ -2144,7 +2137,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "highlight" */
-  String get highlight() =>
+  String get highlight =>
     getPropertyValue('${_browserPrefix}highlight');
 
   /** Sets the value of "highlight" */
@@ -2153,7 +2146,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "hyphenate-character" */
-  String get hyphenateCharacter() =>
+  String get hyphenateCharacter =>
     getPropertyValue('${_browserPrefix}hyphenate-character');
 
   /** Sets the value of "hyphenate-character" */
@@ -2162,7 +2155,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "hyphenate-limit-after" */
-  String get hyphenateLimitAfter() =>
+  String get hyphenateLimitAfter =>
     getPropertyValue('${_browserPrefix}hyphenate-limit-after');
 
   /** Sets the value of "hyphenate-limit-after" */
@@ -2171,7 +2164,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "hyphenate-limit-before" */
-  String get hyphenateLimitBefore() =>
+  String get hyphenateLimitBefore =>
     getPropertyValue('${_browserPrefix}hyphenate-limit-before');
 
   /** Sets the value of "hyphenate-limit-before" */
@@ -2180,7 +2173,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "hyphenate-limit-lines" */
-  String get hyphenateLimitLines() =>
+  String get hyphenateLimitLines =>
     getPropertyValue('${_browserPrefix}hyphenate-limit-lines');
 
   /** Sets the value of "hyphenate-limit-lines" */
@@ -2189,7 +2182,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "hyphens" */
-  String get hyphens() =>
+  String get hyphens =>
     getPropertyValue('${_browserPrefix}hyphens');
 
   /** Sets the value of "hyphens" */
@@ -2198,7 +2191,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "image-rendering" */
-  String get imageRendering() =>
+  String get imageRendering =>
     getPropertyValue('image-rendering');
 
   /** Sets the value of "image-rendering" */
@@ -2207,7 +2200,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "left" */
-  String get left() =>
+  String get left =>
     getPropertyValue('left');
 
   /** Sets the value of "left" */
@@ -2216,7 +2209,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "letter-spacing" */
-  String get letterSpacing() =>
+  String get letterSpacing =>
     getPropertyValue('letter-spacing');
 
   /** Sets the value of "letter-spacing" */
@@ -2225,7 +2218,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "line-box-contain" */
-  String get lineBoxContain() =>
+  String get lineBoxContain =>
     getPropertyValue('${_browserPrefix}line-box-contain');
 
   /** Sets the value of "line-box-contain" */
@@ -2234,7 +2227,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "line-break" */
-  String get lineBreak() =>
+  String get lineBreak =>
     getPropertyValue('${_browserPrefix}line-break');
 
   /** Sets the value of "line-break" */
@@ -2243,7 +2236,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "line-clamp" */
-  String get lineClamp() =>
+  String get lineClamp =>
     getPropertyValue('${_browserPrefix}line-clamp');
 
   /** Sets the value of "line-clamp" */
@@ -2252,7 +2245,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "line-height" */
-  String get lineHeight() =>
+  String get lineHeight =>
     getPropertyValue('line-height');
 
   /** Sets the value of "line-height" */
@@ -2261,7 +2254,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "list-style" */
-  String get listStyle() =>
+  String get listStyle =>
     getPropertyValue('list-style');
 
   /** Sets the value of "list-style" */
@@ -2270,7 +2263,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "list-style-image" */
-  String get listStyleImage() =>
+  String get listStyleImage =>
     getPropertyValue('list-style-image');
 
   /** Sets the value of "list-style-image" */
@@ -2279,7 +2272,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "list-style-position" */
-  String get listStylePosition() =>
+  String get listStylePosition =>
     getPropertyValue('list-style-position');
 
   /** Sets the value of "list-style-position" */
@@ -2288,7 +2281,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "list-style-type" */
-  String get listStyleType() =>
+  String get listStyleType =>
     getPropertyValue('list-style-type');
 
   /** Sets the value of "list-style-type" */
@@ -2297,7 +2290,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "locale" */
-  String get locale() =>
+  String get locale =>
     getPropertyValue('${_browserPrefix}locale');
 
   /** Sets the value of "locale" */
@@ -2306,7 +2299,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "logical-height" */
-  String get logicalHeight() =>
+  String get logicalHeight =>
     getPropertyValue('${_browserPrefix}logical-height');
 
   /** Sets the value of "logical-height" */
@@ -2315,7 +2308,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "logical-width" */
-  String get logicalWidth() =>
+  String get logicalWidth =>
     getPropertyValue('${_browserPrefix}logical-width');
 
   /** Sets the value of "logical-width" */
@@ -2324,7 +2317,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin" */
-  String get margin() =>
+  String get margin =>
     getPropertyValue('margin');
 
   /** Sets the value of "margin" */
@@ -2333,7 +2326,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-after" */
-  String get marginAfter() =>
+  String get marginAfter =>
     getPropertyValue('${_browserPrefix}margin-after');
 
   /** Sets the value of "margin-after" */
@@ -2342,7 +2335,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-after-collapse" */
-  String get marginAfterCollapse() =>
+  String get marginAfterCollapse =>
     getPropertyValue('${_browserPrefix}margin-after-collapse');
 
   /** Sets the value of "margin-after-collapse" */
@@ -2351,7 +2344,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-before" */
-  String get marginBefore() =>
+  String get marginBefore =>
     getPropertyValue('${_browserPrefix}margin-before');
 
   /** Sets the value of "margin-before" */
@@ -2360,7 +2353,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-before-collapse" */
-  String get marginBeforeCollapse() =>
+  String get marginBeforeCollapse =>
     getPropertyValue('${_browserPrefix}margin-before-collapse');
 
   /** Sets the value of "margin-before-collapse" */
@@ -2369,7 +2362,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-bottom" */
-  String get marginBottom() =>
+  String get marginBottom =>
     getPropertyValue('margin-bottom');
 
   /** Sets the value of "margin-bottom" */
@@ -2378,7 +2371,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-bottom-collapse" */
-  String get marginBottomCollapse() =>
+  String get marginBottomCollapse =>
     getPropertyValue('${_browserPrefix}margin-bottom-collapse');
 
   /** Sets the value of "margin-bottom-collapse" */
@@ -2387,7 +2380,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-collapse" */
-  String get marginCollapse() =>
+  String get marginCollapse =>
     getPropertyValue('${_browserPrefix}margin-collapse');
 
   /** Sets the value of "margin-collapse" */
@@ -2396,7 +2389,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-end" */
-  String get marginEnd() =>
+  String get marginEnd =>
     getPropertyValue('${_browserPrefix}margin-end');
 
   /** Sets the value of "margin-end" */
@@ -2405,7 +2398,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-left" */
-  String get marginLeft() =>
+  String get marginLeft =>
     getPropertyValue('margin-left');
 
   /** Sets the value of "margin-left" */
@@ -2414,7 +2407,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-right" */
-  String get marginRight() =>
+  String get marginRight =>
     getPropertyValue('margin-right');
 
   /** Sets the value of "margin-right" */
@@ -2423,7 +2416,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-start" */
-  String get marginStart() =>
+  String get marginStart =>
     getPropertyValue('${_browserPrefix}margin-start');
 
   /** Sets the value of "margin-start" */
@@ -2432,7 +2425,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-top" */
-  String get marginTop() =>
+  String get marginTop =>
     getPropertyValue('margin-top');
 
   /** Sets the value of "margin-top" */
@@ -2441,7 +2434,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "margin-top-collapse" */
-  String get marginTopCollapse() =>
+  String get marginTopCollapse =>
     getPropertyValue('${_browserPrefix}margin-top-collapse');
 
   /** Sets the value of "margin-top-collapse" */
@@ -2450,7 +2443,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "marquee" */
-  String get marquee() =>
+  String get marquee =>
     getPropertyValue('${_browserPrefix}marquee');
 
   /** Sets the value of "marquee" */
@@ -2459,7 +2452,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "marquee-direction" */
-  String get marqueeDirection() =>
+  String get marqueeDirection =>
     getPropertyValue('${_browserPrefix}marquee-direction');
 
   /** Sets the value of "marquee-direction" */
@@ -2468,7 +2461,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "marquee-increment" */
-  String get marqueeIncrement() =>
+  String get marqueeIncrement =>
     getPropertyValue('${_browserPrefix}marquee-increment');
 
   /** Sets the value of "marquee-increment" */
@@ -2477,7 +2470,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "marquee-repetition" */
-  String get marqueeRepetition() =>
+  String get marqueeRepetition =>
     getPropertyValue('${_browserPrefix}marquee-repetition');
 
   /** Sets the value of "marquee-repetition" */
@@ -2486,7 +2479,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "marquee-speed" */
-  String get marqueeSpeed() =>
+  String get marqueeSpeed =>
     getPropertyValue('${_browserPrefix}marquee-speed');
 
   /** Sets the value of "marquee-speed" */
@@ -2495,7 +2488,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "marquee-style" */
-  String get marqueeStyle() =>
+  String get marqueeStyle =>
     getPropertyValue('${_browserPrefix}marquee-style');
 
   /** Sets the value of "marquee-style" */
@@ -2504,7 +2497,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask" */
-  String get mask() =>
+  String get mask =>
     getPropertyValue('${_browserPrefix}mask');
 
   /** Sets the value of "mask" */
@@ -2513,7 +2506,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-attachment" */
-  String get maskAttachment() =>
+  String get maskAttachment =>
     getPropertyValue('${_browserPrefix}mask-attachment');
 
   /** Sets the value of "mask-attachment" */
@@ -2522,7 +2515,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-box-image" */
-  String get maskBoxImage() =>
+  String get maskBoxImage =>
     getPropertyValue('${_browserPrefix}mask-box-image');
 
   /** Sets the value of "mask-box-image" */
@@ -2531,7 +2524,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-box-image-outset" */
-  String get maskBoxImageOutset() =>
+  String get maskBoxImageOutset =>
     getPropertyValue('${_browserPrefix}mask-box-image-outset');
 
   /** Sets the value of "mask-box-image-outset" */
@@ -2540,7 +2533,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-box-image-repeat" */
-  String get maskBoxImageRepeat() =>
+  String get maskBoxImageRepeat =>
     getPropertyValue('${_browserPrefix}mask-box-image-repeat');
 
   /** Sets the value of "mask-box-image-repeat" */
@@ -2549,7 +2542,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-box-image-slice" */
-  String get maskBoxImageSlice() =>
+  String get maskBoxImageSlice =>
     getPropertyValue('${_browserPrefix}mask-box-image-slice');
 
   /** Sets the value of "mask-box-image-slice" */
@@ -2558,7 +2551,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-box-image-source" */
-  String get maskBoxImageSource() =>
+  String get maskBoxImageSource =>
     getPropertyValue('${_browserPrefix}mask-box-image-source');
 
   /** Sets the value of "mask-box-image-source" */
@@ -2567,7 +2560,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-box-image-width" */
-  String get maskBoxImageWidth() =>
+  String get maskBoxImageWidth =>
     getPropertyValue('${_browserPrefix}mask-box-image-width');
 
   /** Sets the value of "mask-box-image-width" */
@@ -2576,7 +2569,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-clip" */
-  String get maskClip() =>
+  String get maskClip =>
     getPropertyValue('${_browserPrefix}mask-clip');
 
   /** Sets the value of "mask-clip" */
@@ -2585,7 +2578,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-composite" */
-  String get maskComposite() =>
+  String get maskComposite =>
     getPropertyValue('${_browserPrefix}mask-composite');
 
   /** Sets the value of "mask-composite" */
@@ -2594,7 +2587,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-image" */
-  String get maskImage() =>
+  String get maskImage =>
     getPropertyValue('${_browserPrefix}mask-image');
 
   /** Sets the value of "mask-image" */
@@ -2603,7 +2596,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-origin" */
-  String get maskOrigin() =>
+  String get maskOrigin =>
     getPropertyValue('${_browserPrefix}mask-origin');
 
   /** Sets the value of "mask-origin" */
@@ -2612,7 +2605,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-position" */
-  String get maskPosition() =>
+  String get maskPosition =>
     getPropertyValue('${_browserPrefix}mask-position');
 
   /** Sets the value of "mask-position" */
@@ -2621,7 +2614,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-position-x" */
-  String get maskPositionX() =>
+  String get maskPositionX =>
     getPropertyValue('${_browserPrefix}mask-position-x');
 
   /** Sets the value of "mask-position-x" */
@@ -2630,7 +2623,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-position-y" */
-  String get maskPositionY() =>
+  String get maskPositionY =>
     getPropertyValue('${_browserPrefix}mask-position-y');
 
   /** Sets the value of "mask-position-y" */
@@ -2639,7 +2632,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-repeat" */
-  String get maskRepeat() =>
+  String get maskRepeat =>
     getPropertyValue('${_browserPrefix}mask-repeat');
 
   /** Sets the value of "mask-repeat" */
@@ -2648,7 +2641,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-repeat-x" */
-  String get maskRepeatX() =>
+  String get maskRepeatX =>
     getPropertyValue('${_browserPrefix}mask-repeat-x');
 
   /** Sets the value of "mask-repeat-x" */
@@ -2657,7 +2650,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-repeat-y" */
-  String get maskRepeatY() =>
+  String get maskRepeatY =>
     getPropertyValue('${_browserPrefix}mask-repeat-y');
 
   /** Sets the value of "mask-repeat-y" */
@@ -2666,7 +2659,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "mask-size" */
-  String get maskSize() =>
+  String get maskSize =>
     getPropertyValue('${_browserPrefix}mask-size');
 
   /** Sets the value of "mask-size" */
@@ -2675,7 +2668,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "match-nearest-mail-blockquote-color" */
-  String get matchNearestMailBlockquoteColor() =>
+  String get matchNearestMailBlockquoteColor =>
     getPropertyValue('${_browserPrefix}match-nearest-mail-blockquote-color');
 
   /** Sets the value of "match-nearest-mail-blockquote-color" */
@@ -2684,7 +2677,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "max-height" */
-  String get maxHeight() =>
+  String get maxHeight =>
     getPropertyValue('max-height');
 
   /** Sets the value of "max-height" */
@@ -2693,7 +2686,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "max-logical-height" */
-  String get maxLogicalHeight() =>
+  String get maxLogicalHeight =>
     getPropertyValue('${_browserPrefix}max-logical-height');
 
   /** Sets the value of "max-logical-height" */
@@ -2702,7 +2695,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "max-logical-width" */
-  String get maxLogicalWidth() =>
+  String get maxLogicalWidth =>
     getPropertyValue('${_browserPrefix}max-logical-width');
 
   /** Sets the value of "max-logical-width" */
@@ -2711,7 +2704,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "max-width" */
-  String get maxWidth() =>
+  String get maxWidth =>
     getPropertyValue('max-width');
 
   /** Sets the value of "max-width" */
@@ -2720,7 +2713,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "min-height" */
-  String get minHeight() =>
+  String get minHeight =>
     getPropertyValue('min-height');
 
   /** Sets the value of "min-height" */
@@ -2729,7 +2722,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "min-logical-height" */
-  String get minLogicalHeight() =>
+  String get minLogicalHeight =>
     getPropertyValue('${_browserPrefix}min-logical-height');
 
   /** Sets the value of "min-logical-height" */
@@ -2738,7 +2731,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "min-logical-width" */
-  String get minLogicalWidth() =>
+  String get minLogicalWidth =>
     getPropertyValue('${_browserPrefix}min-logical-width');
 
   /** Sets the value of "min-logical-width" */
@@ -2747,7 +2740,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "min-width" */
-  String get minWidth() =>
+  String get minWidth =>
     getPropertyValue('min-width');
 
   /** Sets the value of "min-width" */
@@ -2756,7 +2749,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "nbsp-mode" */
-  String get nbspMode() =>
+  String get nbspMode =>
     getPropertyValue('${_browserPrefix}nbsp-mode');
 
   /** Sets the value of "nbsp-mode" */
@@ -2765,7 +2758,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "opacity" */
-  String get opacity() =>
+  String get opacity =>
     getPropertyValue('opacity');
 
   /** Sets the value of "opacity" */
@@ -2774,7 +2767,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "orphans" */
-  String get orphans() =>
+  String get orphans =>
     getPropertyValue('orphans');
 
   /** Sets the value of "orphans" */
@@ -2783,7 +2776,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "outline" */
-  String get outline() =>
+  String get outline =>
     getPropertyValue('outline');
 
   /** Sets the value of "outline" */
@@ -2792,7 +2785,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "outline-color" */
-  String get outlineColor() =>
+  String get outlineColor =>
     getPropertyValue('outline-color');
 
   /** Sets the value of "outline-color" */
@@ -2801,7 +2794,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "outline-offset" */
-  String get outlineOffset() =>
+  String get outlineOffset =>
     getPropertyValue('outline-offset');
 
   /** Sets the value of "outline-offset" */
@@ -2810,7 +2803,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "outline-style" */
-  String get outlineStyle() =>
+  String get outlineStyle =>
     getPropertyValue('outline-style');
 
   /** Sets the value of "outline-style" */
@@ -2819,7 +2812,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "outline-width" */
-  String get outlineWidth() =>
+  String get outlineWidth =>
     getPropertyValue('outline-width');
 
   /** Sets the value of "outline-width" */
@@ -2828,7 +2821,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "overflow" */
-  String get overflow() =>
+  String get overflow =>
     getPropertyValue('overflow');
 
   /** Sets the value of "overflow" */
@@ -2837,7 +2830,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "overflow-x" */
-  String get overflowX() =>
+  String get overflowX =>
     getPropertyValue('overflow-x');
 
   /** Sets the value of "overflow-x" */
@@ -2846,7 +2839,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "overflow-y" */
-  String get overflowY() =>
+  String get overflowY =>
     getPropertyValue('overflow-y');
 
   /** Sets the value of "overflow-y" */
@@ -2855,7 +2848,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "padding" */
-  String get padding() =>
+  String get padding =>
     getPropertyValue('padding');
 
   /** Sets the value of "padding" */
@@ -2864,7 +2857,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "padding-after" */
-  String get paddingAfter() =>
+  String get paddingAfter =>
     getPropertyValue('${_browserPrefix}padding-after');
 
   /** Sets the value of "padding-after" */
@@ -2873,7 +2866,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "padding-before" */
-  String get paddingBefore() =>
+  String get paddingBefore =>
     getPropertyValue('${_browserPrefix}padding-before');
 
   /** Sets the value of "padding-before" */
@@ -2882,7 +2875,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "padding-bottom" */
-  String get paddingBottom() =>
+  String get paddingBottom =>
     getPropertyValue('padding-bottom');
 
   /** Sets the value of "padding-bottom" */
@@ -2891,7 +2884,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "padding-end" */
-  String get paddingEnd() =>
+  String get paddingEnd =>
     getPropertyValue('${_browserPrefix}padding-end');
 
   /** Sets the value of "padding-end" */
@@ -2900,7 +2893,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "padding-left" */
-  String get paddingLeft() =>
+  String get paddingLeft =>
     getPropertyValue('padding-left');
 
   /** Sets the value of "padding-left" */
@@ -2909,7 +2902,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "padding-right" */
-  String get paddingRight() =>
+  String get paddingRight =>
     getPropertyValue('padding-right');
 
   /** Sets the value of "padding-right" */
@@ -2918,7 +2911,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "padding-start" */
-  String get paddingStart() =>
+  String get paddingStart =>
     getPropertyValue('${_browserPrefix}padding-start');
 
   /** Sets the value of "padding-start" */
@@ -2927,7 +2920,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "padding-top" */
-  String get paddingTop() =>
+  String get paddingTop =>
     getPropertyValue('padding-top');
 
   /** Sets the value of "padding-top" */
@@ -2936,7 +2929,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "page" */
-  String get page() =>
+  String get page =>
     getPropertyValue('page');
 
   /** Sets the value of "page" */
@@ -2945,7 +2938,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "page-break-after" */
-  String get pageBreakAfter() =>
+  String get pageBreakAfter =>
     getPropertyValue('page-break-after');
 
   /** Sets the value of "page-break-after" */
@@ -2954,7 +2947,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "page-break-before" */
-  String get pageBreakBefore() =>
+  String get pageBreakBefore =>
     getPropertyValue('page-break-before');
 
   /** Sets the value of "page-break-before" */
@@ -2963,7 +2956,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "page-break-inside" */
-  String get pageBreakInside() =>
+  String get pageBreakInside =>
     getPropertyValue('page-break-inside');
 
   /** Sets the value of "page-break-inside" */
@@ -2972,7 +2965,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "perspective" */
-  String get perspective() =>
+  String get perspective =>
     getPropertyValue('${_browserPrefix}perspective');
 
   /** Sets the value of "perspective" */
@@ -2981,7 +2974,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "perspective-origin" */
-  String get perspectiveOrigin() =>
+  String get perspectiveOrigin =>
     getPropertyValue('${_browserPrefix}perspective-origin');
 
   /** Sets the value of "perspective-origin" */
@@ -2990,7 +2983,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "perspective-origin-x" */
-  String get perspectiveOriginX() =>
+  String get perspectiveOriginX =>
     getPropertyValue('${_browserPrefix}perspective-origin-x');
 
   /** Sets the value of "perspective-origin-x" */
@@ -2999,7 +2992,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "perspective-origin-y" */
-  String get perspectiveOriginY() =>
+  String get perspectiveOriginY =>
     getPropertyValue('${_browserPrefix}perspective-origin-y');
 
   /** Sets the value of "perspective-origin-y" */
@@ -3008,7 +3001,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "pointer-events" */
-  String get pointerEvents() =>
+  String get pointerEvents =>
     getPropertyValue('pointer-events');
 
   /** Sets the value of "pointer-events" */
@@ -3017,7 +3010,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "position" */
-  String get position() =>
+  String get position =>
     getPropertyValue('position');
 
   /** Sets the value of "position" */
@@ -3026,7 +3019,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "quotes" */
-  String get quotes() =>
+  String get quotes =>
     getPropertyValue('quotes');
 
   /** Sets the value of "quotes" */
@@ -3035,7 +3028,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "region-break-after" */
-  String get regionBreakAfter() =>
+  String get regionBreakAfter =>
     getPropertyValue('${_browserPrefix}region-break-after');
 
   /** Sets the value of "region-break-after" */
@@ -3044,7 +3037,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "region-break-before" */
-  String get regionBreakBefore() =>
+  String get regionBreakBefore =>
     getPropertyValue('${_browserPrefix}region-break-before');
 
   /** Sets the value of "region-break-before" */
@@ -3053,7 +3046,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "region-break-inside" */
-  String get regionBreakInside() =>
+  String get regionBreakInside =>
     getPropertyValue('${_browserPrefix}region-break-inside');
 
   /** Sets the value of "region-break-inside" */
@@ -3062,7 +3055,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "region-overflow" */
-  String get regionOverflow() =>
+  String get regionOverflow =>
     getPropertyValue('${_browserPrefix}region-overflow');
 
   /** Sets the value of "region-overflow" */
@@ -3071,7 +3064,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "resize" */
-  String get resize() =>
+  String get resize =>
     getPropertyValue('resize');
 
   /** Sets the value of "resize" */
@@ -3080,7 +3073,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "right" */
-  String get right() =>
+  String get right =>
     getPropertyValue('right');
 
   /** Sets the value of "right" */
@@ -3089,7 +3082,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "rtl-ordering" */
-  String get rtlOrdering() =>
+  String get rtlOrdering =>
     getPropertyValue('${_browserPrefix}rtl-ordering');
 
   /** Sets the value of "rtl-ordering" */
@@ -3098,7 +3091,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "size" */
-  String get size() =>
+  String get size =>
     getPropertyValue('size');
 
   /** Sets the value of "size" */
@@ -3107,7 +3100,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "speak" */
-  String get speak() =>
+  String get speak =>
     getPropertyValue('speak');
 
   /** Sets the value of "speak" */
@@ -3116,7 +3109,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "src" */
-  String get src() =>
+  String get src =>
     getPropertyValue('src');
 
   /** Sets the value of "src" */
@@ -3125,7 +3118,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "table-layout" */
-  String get tableLayout() =>
+  String get tableLayout =>
     getPropertyValue('table-layout');
 
   /** Sets the value of "table-layout" */
@@ -3134,7 +3127,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "tap-highlight-color" */
-  String get tapHighlightColor() =>
+  String get tapHighlightColor =>
     getPropertyValue('${_browserPrefix}tap-highlight-color');
 
   /** Sets the value of "tap-highlight-color" */
@@ -3143,7 +3136,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-align" */
-  String get textAlign() =>
+  String get textAlign =>
     getPropertyValue('text-align');
 
   /** Sets the value of "text-align" */
@@ -3152,7 +3145,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-combine" */
-  String get textCombine() =>
+  String get textCombine =>
     getPropertyValue('${_browserPrefix}text-combine');
 
   /** Sets the value of "text-combine" */
@@ -3161,7 +3154,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-decoration" */
-  String get textDecoration() =>
+  String get textDecoration =>
     getPropertyValue('text-decoration');
 
   /** Sets the value of "text-decoration" */
@@ -3170,7 +3163,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-decorations-in-effect" */
-  String get textDecorationsInEffect() =>
+  String get textDecorationsInEffect =>
     getPropertyValue('${_browserPrefix}text-decorations-in-effect');
 
   /** Sets the value of "text-decorations-in-effect" */
@@ -3179,7 +3172,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-emphasis" */
-  String get textEmphasis() =>
+  String get textEmphasis =>
     getPropertyValue('${_browserPrefix}text-emphasis');
 
   /** Sets the value of "text-emphasis" */
@@ -3188,7 +3181,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-emphasis-color" */
-  String get textEmphasisColor() =>
+  String get textEmphasisColor =>
     getPropertyValue('${_browserPrefix}text-emphasis-color');
 
   /** Sets the value of "text-emphasis-color" */
@@ -3197,7 +3190,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-emphasis-position" */
-  String get textEmphasisPosition() =>
+  String get textEmphasisPosition =>
     getPropertyValue('${_browserPrefix}text-emphasis-position');
 
   /** Sets the value of "text-emphasis-position" */
@@ -3206,7 +3199,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-emphasis-style" */
-  String get textEmphasisStyle() =>
+  String get textEmphasisStyle =>
     getPropertyValue('${_browserPrefix}text-emphasis-style');
 
   /** Sets the value of "text-emphasis-style" */
@@ -3215,7 +3208,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-fill-color" */
-  String get textFillColor() =>
+  String get textFillColor =>
     getPropertyValue('${_browserPrefix}text-fill-color');
 
   /** Sets the value of "text-fill-color" */
@@ -3224,7 +3217,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-indent" */
-  String get textIndent() =>
+  String get textIndent =>
     getPropertyValue('text-indent');
 
   /** Sets the value of "text-indent" */
@@ -3233,7 +3226,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-line-through" */
-  String get textLineThrough() =>
+  String get textLineThrough =>
     getPropertyValue('text-line-through');
 
   /** Sets the value of "text-line-through" */
@@ -3242,7 +3235,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-line-through-color" */
-  String get textLineThroughColor() =>
+  String get textLineThroughColor =>
     getPropertyValue('text-line-through-color');
 
   /** Sets the value of "text-line-through-color" */
@@ -3251,7 +3244,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-line-through-mode" */
-  String get textLineThroughMode() =>
+  String get textLineThroughMode =>
     getPropertyValue('text-line-through-mode');
 
   /** Sets the value of "text-line-through-mode" */
@@ -3260,7 +3253,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-line-through-style" */
-  String get textLineThroughStyle() =>
+  String get textLineThroughStyle =>
     getPropertyValue('text-line-through-style');
 
   /** Sets the value of "text-line-through-style" */
@@ -3269,7 +3262,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-line-through-width" */
-  String get textLineThroughWidth() =>
+  String get textLineThroughWidth =>
     getPropertyValue('text-line-through-width');
 
   /** Sets the value of "text-line-through-width" */
@@ -3278,7 +3271,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-orientation" */
-  String get textOrientation() =>
+  String get textOrientation =>
     getPropertyValue('${_browserPrefix}text-orientation');
 
   /** Sets the value of "text-orientation" */
@@ -3287,7 +3280,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-overflow" */
-  String get textOverflow() =>
+  String get textOverflow =>
     getPropertyValue('text-overflow');
 
   /** Sets the value of "text-overflow" */
@@ -3296,7 +3289,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-overline" */
-  String get textOverline() =>
+  String get textOverline =>
     getPropertyValue('text-overline');
 
   /** Sets the value of "text-overline" */
@@ -3305,7 +3298,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-overline-color" */
-  String get textOverlineColor() =>
+  String get textOverlineColor =>
     getPropertyValue('text-overline-color');
 
   /** Sets the value of "text-overline-color" */
@@ -3314,7 +3307,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-overline-mode" */
-  String get textOverlineMode() =>
+  String get textOverlineMode =>
     getPropertyValue('text-overline-mode');
 
   /** Sets the value of "text-overline-mode" */
@@ -3323,7 +3316,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-overline-style" */
-  String get textOverlineStyle() =>
+  String get textOverlineStyle =>
     getPropertyValue('text-overline-style');
 
   /** Sets the value of "text-overline-style" */
@@ -3332,7 +3325,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-overline-width" */
-  String get textOverlineWidth() =>
+  String get textOverlineWidth =>
     getPropertyValue('text-overline-width');
 
   /** Sets the value of "text-overline-width" */
@@ -3341,7 +3334,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-rendering" */
-  String get textRendering() =>
+  String get textRendering =>
     getPropertyValue('text-rendering');
 
   /** Sets the value of "text-rendering" */
@@ -3350,7 +3343,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-security" */
-  String get textSecurity() =>
+  String get textSecurity =>
     getPropertyValue('${_browserPrefix}text-security');
 
   /** Sets the value of "text-security" */
@@ -3359,7 +3352,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-shadow" */
-  String get textShadow() =>
+  String get textShadow =>
     getPropertyValue('text-shadow');
 
   /** Sets the value of "text-shadow" */
@@ -3368,7 +3361,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-size-adjust" */
-  String get textSizeAdjust() =>
+  String get textSizeAdjust =>
     getPropertyValue('${_browserPrefix}text-size-adjust');
 
   /** Sets the value of "text-size-adjust" */
@@ -3377,7 +3370,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-stroke" */
-  String get textStroke() =>
+  String get textStroke =>
     getPropertyValue('${_browserPrefix}text-stroke');
 
   /** Sets the value of "text-stroke" */
@@ -3386,7 +3379,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-stroke-color" */
-  String get textStrokeColor() =>
+  String get textStrokeColor =>
     getPropertyValue('${_browserPrefix}text-stroke-color');
 
   /** Sets the value of "text-stroke-color" */
@@ -3395,7 +3388,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-stroke-width" */
-  String get textStrokeWidth() =>
+  String get textStrokeWidth =>
     getPropertyValue('${_browserPrefix}text-stroke-width');
 
   /** Sets the value of "text-stroke-width" */
@@ -3404,7 +3397,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-transform" */
-  String get textTransform() =>
+  String get textTransform =>
     getPropertyValue('text-transform');
 
   /** Sets the value of "text-transform" */
@@ -3413,7 +3406,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-underline" */
-  String get textUnderline() =>
+  String get textUnderline =>
     getPropertyValue('text-underline');
 
   /** Sets the value of "text-underline" */
@@ -3422,7 +3415,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-underline-color" */
-  String get textUnderlineColor() =>
+  String get textUnderlineColor =>
     getPropertyValue('text-underline-color');
 
   /** Sets the value of "text-underline-color" */
@@ -3431,7 +3424,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-underline-mode" */
-  String get textUnderlineMode() =>
+  String get textUnderlineMode =>
     getPropertyValue('text-underline-mode');
 
   /** Sets the value of "text-underline-mode" */
@@ -3440,7 +3433,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-underline-style" */
-  String get textUnderlineStyle() =>
+  String get textUnderlineStyle =>
     getPropertyValue('text-underline-style');
 
   /** Sets the value of "text-underline-style" */
@@ -3449,7 +3442,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "text-underline-width" */
-  String get textUnderlineWidth() =>
+  String get textUnderlineWidth =>
     getPropertyValue('text-underline-width');
 
   /** Sets the value of "text-underline-width" */
@@ -3458,7 +3451,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "top" */
-  String get top() =>
+  String get top =>
     getPropertyValue('top');
 
   /** Sets the value of "top" */
@@ -3467,7 +3460,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "transform" */
-  String get transform() =>
+  String get transform =>
     getPropertyValue('${_browserPrefix}transform');
 
   /** Sets the value of "transform" */
@@ -3476,7 +3469,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "transform-origin" */
-  String get transformOrigin() =>
+  String get transformOrigin =>
     getPropertyValue('${_browserPrefix}transform-origin');
 
   /** Sets the value of "transform-origin" */
@@ -3485,7 +3478,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "transform-origin-x" */
-  String get transformOriginX() =>
+  String get transformOriginX =>
     getPropertyValue('${_browserPrefix}transform-origin-x');
 
   /** Sets the value of "transform-origin-x" */
@@ -3494,7 +3487,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "transform-origin-y" */
-  String get transformOriginY() =>
+  String get transformOriginY =>
     getPropertyValue('${_browserPrefix}transform-origin-y');
 
   /** Sets the value of "transform-origin-y" */
@@ -3503,7 +3496,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "transform-origin-z" */
-  String get transformOriginZ() =>
+  String get transformOriginZ =>
     getPropertyValue('${_browserPrefix}transform-origin-z');
 
   /** Sets the value of "transform-origin-z" */
@@ -3512,7 +3505,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "transform-style" */
-  String get transformStyle() =>
+  String get transformStyle =>
     getPropertyValue('${_browserPrefix}transform-style');
 
   /** Sets the value of "transform-style" */
@@ -3521,7 +3514,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "transition" */
-  String get transition() =>
+  String get transition =>
     getPropertyValue('${_browserPrefix}transition');
 
   /** Sets the value of "transition" */
@@ -3530,7 +3523,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "transition-delay" */
-  String get transitionDelay() =>
+  String get transitionDelay =>
     getPropertyValue('${_browserPrefix}transition-delay');
 
   /** Sets the value of "transition-delay" */
@@ -3539,7 +3532,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "transition-duration" */
-  String get transitionDuration() =>
+  String get transitionDuration =>
     getPropertyValue('${_browserPrefix}transition-duration');
 
   /** Sets the value of "transition-duration" */
@@ -3548,7 +3541,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "transition-property" */
-  String get transitionProperty() =>
+  String get transitionProperty =>
     getPropertyValue('${_browserPrefix}transition-property');
 
   /** Sets the value of "transition-property" */
@@ -3557,7 +3550,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "transition-timing-function" */
-  String get transitionTimingFunction() =>
+  String get transitionTimingFunction =>
     getPropertyValue('${_browserPrefix}transition-timing-function');
 
   /** Sets the value of "transition-timing-function" */
@@ -3566,7 +3559,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "unicode-bidi" */
-  String get unicodeBidi() =>
+  String get unicodeBidi =>
     getPropertyValue('unicode-bidi');
 
   /** Sets the value of "unicode-bidi" */
@@ -3575,7 +3568,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "unicode-range" */
-  String get unicodeRange() =>
+  String get unicodeRange =>
     getPropertyValue('unicode-range');
 
   /** Sets the value of "unicode-range" */
@@ -3584,7 +3577,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "user-drag" */
-  String get userDrag() =>
+  String get userDrag =>
     getPropertyValue('${_browserPrefix}user-drag');
 
   /** Sets the value of "user-drag" */
@@ -3593,7 +3586,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "user-modify" */
-  String get userModify() =>
+  String get userModify =>
     getPropertyValue('${_browserPrefix}user-modify');
 
   /** Sets the value of "user-modify" */
@@ -3602,7 +3595,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "user-select" */
-  String get userSelect() =>
+  String get userSelect =>
     getPropertyValue('${_browserPrefix}user-select');
 
   /** Sets the value of "user-select" */
@@ -3611,7 +3604,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "vertical-align" */
-  String get verticalAlign() =>
+  String get verticalAlign =>
     getPropertyValue('vertical-align');
 
   /** Sets the value of "vertical-align" */
@@ -3620,7 +3613,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "visibility" */
-  String get visibility() =>
+  String get visibility =>
     getPropertyValue('visibility');
 
   /** Sets the value of "visibility" */
@@ -3629,7 +3622,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "white-space" */
-  String get whiteSpace() =>
+  String get whiteSpace =>
     getPropertyValue('white-space');
 
   /** Sets the value of "white-space" */
@@ -3638,7 +3631,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "widows" */
-  String get widows() =>
+  String get widows =>
     getPropertyValue('widows');
 
   /** Sets the value of "widows" */
@@ -3647,7 +3640,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "width" */
-  String get width() =>
+  String get width =>
     getPropertyValue('width');
 
   /** Sets the value of "width" */
@@ -3656,7 +3649,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "word-break" */
-  String get wordBreak() =>
+  String get wordBreak =>
     getPropertyValue('word-break');
 
   /** Sets the value of "word-break" */
@@ -3665,7 +3658,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "word-spacing" */
-  String get wordSpacing() =>
+  String get wordSpacing =>
     getPropertyValue('word-spacing');
 
   /** Sets the value of "word-spacing" */
@@ -3674,7 +3667,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "word-wrap" */
-  String get wordWrap() =>
+  String get wordWrap =>
     getPropertyValue('word-wrap');
 
   /** Sets the value of "word-wrap" */
@@ -3683,7 +3676,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "wrap-shape" */
-  String get wrapShape() =>
+  String get wrapShape =>
     getPropertyValue('${_browserPrefix}wrap-shape');
 
   /** Sets the value of "wrap-shape" */
@@ -3692,7 +3685,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "writing-mode" */
-  String get writingMode() =>
+  String get writingMode =>
     getPropertyValue('${_browserPrefix}writing-mode');
 
   /** Sets the value of "writing-mode" */
@@ -3701,7 +3694,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "z-index" */
-  String get zIndex() =>
+  String get zIndex =>
     getPropertyValue('z-index');
 
   /** Sets the value of "z-index" */
@@ -3710,7 +3703,7 @@ class CSSStyleDeclarationImpl implements CSSStyleDeclaration native "*CSSStyleDe
   }
 
   /** Gets the value of "zoom" */
-  String get zoom() =>
+  String get zoom =>
     getPropertyValue('zoom');
 
   /** Sets the value of "zoom" */
@@ -3829,7 +3822,7 @@ class CanvasElementImpl extends ElementImpl implements CanvasElement native "*HT
   String toDataURL(String type, [num quality]) native;
 
 
-  CanvasRenderingContext2DImpl get context2d() => getContext('2d');
+  CanvasRenderingContext2DImpl get context2d => getContext('2d');
 }
 
 class CanvasGradientImpl implements CanvasGradient native "*CanvasGradient" {
@@ -3901,14 +3894,14 @@ class CanvasRenderingContext2DImpl extends CanvasRenderingContextImpl implements
 
   void closePath() native;
 
-  ImageData createImageData(imagedata_OR_sw, [sh = _default]) {
-    if ((imagedata_OR_sw is ImageData || imagedata_OR_sw == null) &&
-        _default == sh) {
+  ImageData createImageData(imagedata_OR_sw, [sh]) {
+    if ((imagedata_OR_sw is ImageData || imagedata_OR_sw === null) &&
+        !?sh) {
       var imagedata_1 = _convertDartToNative_ImageData(imagedata_OR_sw);
       return _convertNativeToDart_ImageData(_createImageData_1(imagedata_1));
     }
-    if ((imagedata_OR_sw is num || imagedata_OR_sw == null) &&
-        (sh is num || sh == null)) {
+    if ((imagedata_OR_sw is num || imagedata_OR_sw === null) &&
+        (sh is num || sh === null)) {
       return _convertNativeToDart_ImageData(_createImageData_2(imagedata_OR_sw, sh));
     }
     throw const Exception("Incorrect number or type of arguments");
@@ -3945,19 +3938,19 @@ class CanvasRenderingContext2DImpl extends CanvasRenderingContextImpl implements
 
   void moveTo(num x, num y) native;
 
-  void putImageData(ImageData imagedata, num dx, num dy, [dirtyX = _default, dirtyY = _default, dirtyWidth = _default, dirtyHeight = _default]) {
-    if (_default == dirtyX &&
-        _default == dirtyY &&
-        _default == dirtyWidth &&
-        _default == dirtyHeight) {
+  void putImageData(ImageData imagedata, num dx, num dy, [dirtyX, dirtyY, dirtyWidth, dirtyHeight]) {
+    if (!?dirtyX &&
+        !?dirtyY &&
+        !?dirtyWidth &&
+        !?dirtyHeight) {
       var imagedata_1 = _convertDartToNative_ImageData(imagedata);
       _putImageData_1(imagedata_1, dx, dy);
       return;
     }
-    if ((dirtyX is num || dirtyX == null) &&
-        (dirtyY is num || dirtyY == null) &&
-        (dirtyWidth is num || dirtyWidth == null) &&
-        (dirtyHeight is num || dirtyHeight == null)) {
+    if ((dirtyX is num || dirtyX === null) &&
+        (dirtyY is num || dirtyY === null) &&
+        (dirtyWidth is num || dirtyWidth === null) &&
+        (dirtyHeight is num || dirtyHeight === null)) {
       var imagedata_2 = _convertDartToNative_ImageData(imagedata);
       _putImageData_2(imagedata_2, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
       return;
@@ -4014,19 +4007,19 @@ class CanvasRenderingContext2DImpl extends CanvasRenderingContextImpl implements
   }
   _webkitGetImageDataHD_1(sx, sy, sw, sh) native "webkitGetImageDataHD";
 
-  void webkitPutImageDataHD(ImageData imagedata, num dx, num dy, [dirtyX = _default, dirtyY = _default, dirtyWidth = _default, dirtyHeight = _default]) {
-    if (_default == dirtyX &&
-        _default == dirtyY &&
-        _default == dirtyWidth &&
-        _default == dirtyHeight) {
+  void webkitPutImageDataHD(ImageData imagedata, num dx, num dy, [dirtyX, dirtyY, dirtyWidth, dirtyHeight]) {
+    if (!?dirtyX &&
+        !?dirtyY &&
+        !?dirtyWidth &&
+        !?dirtyHeight) {
       var imagedata_1 = _convertDartToNative_ImageData(imagedata);
       _webkitPutImageDataHD_1(imagedata_1, dx, dy);
       return;
     }
-    if ((dirtyX is num || dirtyX == null) &&
-        (dirtyY is num || dirtyY == null) &&
-        (dirtyWidth is num || dirtyWidth == null) &&
-        (dirtyHeight is num || dirtyHeight == null)) {
+    if ((dirtyX is num || dirtyX === null) &&
+        (dirtyY is num || dirtyY === null) &&
+        (dirtyWidth is num || dirtyWidth === null) &&
+        (dirtyHeight is num || dirtyHeight === null)) {
       var imagedata_2 = _convertDartToNative_ImageData(imagedata);
       _webkitPutImageDataHD_2(imagedata_2, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
       return;
@@ -4225,7 +4218,7 @@ class DListElementImpl extends ElementImpl implements DListElement native "*HTML
 
 class DOMApplicationCacheImpl extends EventTargetImpl implements DOMApplicationCache native "*DOMApplicationCache" {
 
-  DOMApplicationCacheEventsImpl get on() =>
+  DOMApplicationCacheEventsImpl get on =>
     new DOMApplicationCacheEventsImpl(this);
 
   static const int CHECKING = 2;
@@ -4258,21 +4251,21 @@ class DOMApplicationCacheImpl extends EventTargetImpl implements DOMApplicationC
 class DOMApplicationCacheEventsImpl extends EventsImpl implements DOMApplicationCacheEvents {
   DOMApplicationCacheEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get cached() => this['cached'];
+  EventListenerList get cached => this['cached'];
 
-  EventListenerList get checking() => this['checking'];
+  EventListenerList get checking => this['checking'];
 
-  EventListenerList get downloading() => this['downloading'];
+  EventListenerList get downloading => this['downloading'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get noUpdate() => this['noupdate'];
+  EventListenerList get noUpdate => this['noupdate'];
 
-  EventListenerList get obsolete() => this['obsolete'];
+  EventListenerList get obsolete => this['obsolete'];
 
-  EventListenerList get progress() => this['progress'];
+  EventListenerList get progress => this['progress'];
 
-  EventListenerList get updateReady() => this['updateready'];
+  EventListenerList get updateReady => this['updateready'];
 }
 
 class DOMErrorImpl implements DOMError native "*DOMError" {
@@ -4680,7 +4673,7 @@ class DatabaseSyncImpl implements DatabaseSync native "*DatabaseSync" {
 
 class DedicatedWorkerContextImpl extends WorkerContextImpl implements DedicatedWorkerContext native "*DedicatedWorkerContext" {
 
-  DedicatedWorkerContextEventsImpl get on() =>
+  DedicatedWorkerContextEventsImpl get on =>
     new DedicatedWorkerContextEventsImpl(this);
 
   void postMessage(Object message, [List messagePorts]) native;
@@ -4691,7 +4684,7 @@ class DedicatedWorkerContextImpl extends WorkerContextImpl implements DedicatedW
 class DedicatedWorkerContextEventsImpl extends WorkerContextEventsImpl implements DedicatedWorkerContextEvents {
   DedicatedWorkerContextEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get message() => this['message'];
+  EventListenerList get message => this['message'];
 }
 
 class DelayNodeImpl extends AudioNodeImpl implements DelayNode native "*DelayNode" {
@@ -4731,18 +4724,18 @@ class DirectoryEntryImpl extends EntryImpl implements DirectoryEntry native "*Di
 
   DirectoryReaderImpl createReader() native;
 
-  void getDirectory(String path, [options = _default, successCallback = _default, errorCallback = _default]) {
-    if (_default != errorCallback) {
+  void getDirectory(String path, [options, successCallback, errorCallback]) {
+    if (?errorCallback) {
       var options_1 = _convertDartToNative_Dictionary(options);
       _getDirectory_1(path, options_1, successCallback, errorCallback);
       return;
     }
-    if (_default != successCallback) {
+    if (?successCallback) {
       var options_2 = _convertDartToNative_Dictionary(options);
       _getDirectory_2(path, options_2, successCallback);
       return;
     }
-    if (_default != options) {
+    if (?options) {
       var options_3 = _convertDartToNative_Dictionary(options);
       _getDirectory_3(path, options_3);
       return;
@@ -4755,18 +4748,18 @@ class DirectoryEntryImpl extends EntryImpl implements DirectoryEntry native "*Di
   void _getDirectory_3(path, options) native "getDirectory";
   void _getDirectory_4(path) native "getDirectory";
 
-  void getFile(String path, [options = _default, successCallback = _default, errorCallback = _default]) {
-    if (_default != errorCallback) {
+  void getFile(String path, [options, successCallback, errorCallback]) {
+    if (?errorCallback) {
       var options_1 = _convertDartToNative_Dictionary(options);
       _getFile_1(path, options_1, successCallback, errorCallback);
       return;
     }
-    if (_default != successCallback) {
+    if (?successCallback) {
       var options_2 = _convertDartToNative_Dictionary(options);
       _getFile_2(path, options_2, successCallback);
       return;
     }
-    if (_default != options) {
+    if (?options) {
       var options_3 = _convertDartToNative_Dictionary(options);
       _getFile_3(path, options_3);
       return;
@@ -4824,7 +4817,7 @@ class DocumentImpl extends NodeImpl implements Document
 {
 
 
-  DocumentEventsImpl get on() =>
+  DocumentEventsImpl get on =>
     new DocumentEventsImpl(this);
 
   final ElementImpl activeElement;
@@ -4965,103 +4958,103 @@ class DocumentImpl extends NodeImpl implements Document
 class DocumentEventsImpl extends ElementEventsImpl implements DocumentEvents {
   DocumentEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get abort() => this['abort'];
+  EventListenerList get abort => this['abort'];
 
-  EventListenerList get beforeCopy() => this['beforecopy'];
+  EventListenerList get beforeCopy => this['beforecopy'];
 
-  EventListenerList get beforeCut() => this['beforecut'];
+  EventListenerList get beforeCut => this['beforecut'];
 
-  EventListenerList get beforePaste() => this['beforepaste'];
+  EventListenerList get beforePaste => this['beforepaste'];
 
-  EventListenerList get blur() => this['blur'];
+  EventListenerList get blur => this['blur'];
 
-  EventListenerList get change() => this['change'];
+  EventListenerList get change => this['change'];
 
-  EventListenerList get click() => this['click'];
+  EventListenerList get click => this['click'];
 
-  EventListenerList get contextMenu() => this['contextmenu'];
+  EventListenerList get contextMenu => this['contextmenu'];
 
-  EventListenerList get copy() => this['copy'];
+  EventListenerList get copy => this['copy'];
 
-  EventListenerList get cut() => this['cut'];
+  EventListenerList get cut => this['cut'];
 
-  EventListenerList get doubleClick() => this['dblclick'];
+  EventListenerList get doubleClick => this['dblclick'];
 
-  EventListenerList get drag() => this['drag'];
+  EventListenerList get drag => this['drag'];
 
-  EventListenerList get dragEnd() => this['dragend'];
+  EventListenerList get dragEnd => this['dragend'];
 
-  EventListenerList get dragEnter() => this['dragenter'];
+  EventListenerList get dragEnter => this['dragenter'];
 
-  EventListenerList get dragLeave() => this['dragleave'];
+  EventListenerList get dragLeave => this['dragleave'];
 
-  EventListenerList get dragOver() => this['dragover'];
+  EventListenerList get dragOver => this['dragover'];
 
-  EventListenerList get dragStart() => this['dragstart'];
+  EventListenerList get dragStart => this['dragstart'];
 
-  EventListenerList get drop() => this['drop'];
+  EventListenerList get drop => this['drop'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get focus() => this['focus'];
+  EventListenerList get focus => this['focus'];
 
-  EventListenerList get fullscreenChange() => this['webkitfullscreenchange'];
+  EventListenerList get fullscreenChange => this['webkitfullscreenchange'];
 
-  EventListenerList get fullscreenError() => this['webkitfullscreenerror'];
+  EventListenerList get fullscreenError => this['webkitfullscreenerror'];
 
-  EventListenerList get input() => this['input'];
+  EventListenerList get input => this['input'];
 
-  EventListenerList get invalid() => this['invalid'];
+  EventListenerList get invalid => this['invalid'];
 
-  EventListenerList get keyDown() => this['keydown'];
+  EventListenerList get keyDown => this['keydown'];
 
-  EventListenerList get keyPress() => this['keypress'];
+  EventListenerList get keyPress => this['keypress'];
 
-  EventListenerList get keyUp() => this['keyup'];
+  EventListenerList get keyUp => this['keyup'];
 
-  EventListenerList get load() => this['load'];
+  EventListenerList get load => this['load'];
 
-  EventListenerList get mouseDown() => this['mousedown'];
+  EventListenerList get mouseDown => this['mousedown'];
 
-  EventListenerList get mouseMove() => this['mousemove'];
+  EventListenerList get mouseMove => this['mousemove'];
 
-  EventListenerList get mouseOut() => this['mouseout'];
+  EventListenerList get mouseOut => this['mouseout'];
 
-  EventListenerList get mouseOver() => this['mouseover'];
+  EventListenerList get mouseOver => this['mouseover'];
 
-  EventListenerList get mouseUp() => this['mouseup'];
+  EventListenerList get mouseUp => this['mouseup'];
 
-  EventListenerList get mouseWheel() => this['mousewheel'];
+  EventListenerList get mouseWheel => this['mousewheel'];
 
-  EventListenerList get paste() => this['paste'];
+  EventListenerList get paste => this['paste'];
 
-  EventListenerList get pointerLockChange() => this['webkitpointerlockchange'];
+  EventListenerList get pointerLockChange => this['webkitpointerlockchange'];
 
-  EventListenerList get pointerLockError() => this['webkitpointerlockerror'];
+  EventListenerList get pointerLockError => this['webkitpointerlockerror'];
 
-  EventListenerList get readyStateChange() => this['readystatechange'];
+  EventListenerList get readyStateChange => this['readystatechange'];
 
-  EventListenerList get reset() => this['reset'];
+  EventListenerList get reset => this['reset'];
 
-  EventListenerList get scroll() => this['scroll'];
+  EventListenerList get scroll => this['scroll'];
 
-  EventListenerList get search() => this['search'];
+  EventListenerList get search => this['search'];
 
-  EventListenerList get select() => this['select'];
+  EventListenerList get select => this['select'];
 
-  EventListenerList get selectStart() => this['selectstart'];
+  EventListenerList get selectStart => this['selectstart'];
 
-  EventListenerList get selectionChange() => this['selectionchange'];
+  EventListenerList get selectionChange => this['selectionchange'];
 
-  EventListenerList get submit() => this['submit'];
+  EventListenerList get submit => this['submit'];
 
-  EventListenerList get touchCancel() => this['touchcancel'];
+  EventListenerList get touchCancel => this['touchcancel'];
 
-  EventListenerList get touchEnd() => this['touchend'];
+  EventListenerList get touchEnd => this['touchend'];
 
-  EventListenerList get touchMove() => this['touchmove'];
+  EventListenerList get touchMove => this['touchmove'];
 
-  EventListenerList get touchStart() => this['touchstart'];
+  EventListenerList get touchStart => this['touchstart'];
 }
 // Copyright (c) 2011, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -5077,11 +5070,11 @@ class FilteredElementList implements ElementList {
   // with externally to this class.
   //
   // TODO(nweiz): Do we really need to copy the list to make the types work out?
-  List<Element> get _filtered() =>
+  List<Element> get _filtered =>
     new List.from(_childNodes.filter((n) => n is Element));
 
   // Don't use _filtered.first so we can short-circuit once we find an element.
-  Element get first() {
+  Element get first {
     for (final node in _childNodes) {
       if (node is Element) {
         return node;
@@ -5156,7 +5149,7 @@ class FilteredElementList implements ElementList {
   bool every(bool f(Element element)) => _filtered.every(f);
   bool some(bool f(Element element)) => _filtered.some(f);
   bool isEmpty() => _filtered.isEmpty();
-  int get length() => _filtered.length;
+  int get length => _filtered.length;
   Element operator [](int index) => _filtered[index];
   Iterator<Element> iterator() => _filtered.iterator();
   List<Element> getRange(int start, int rangeLength) =>
@@ -5196,13 +5189,13 @@ class _FrozenCSSClassSet extends _CssClassSet {
   }
   Set<String> _read() => new Set<String>();
 
-  bool get isFrozen() => true;
+  bool get isFrozen => true;
 }
 
 class DocumentFragmentImpl extends NodeImpl implements DocumentFragment native "*DocumentFragment" {
   ElementList _elements;
 
-  ElementList get elements() {
+  ElementList get elements {
     if (_elements == null) {
       _elements = new FilteredElementList(this);
     }
@@ -5223,13 +5216,13 @@ class DocumentFragmentImpl extends NodeImpl implements DocumentFragment native "
   List<Element> queryAll(String selectors) =>
     new _FrozenElementList._wrap($dom_querySelectorAll(selectors));
 
-  String get innerHTML() {
+  String get innerHTML {
     final e = new Element.tag("div");
     e.nodes.add(this.clone(true));
     return e.innerHTML;
   }
 
-  String get outerHTML() => innerHTML;
+  String get outerHTML => innerHTML;
 
   // TODO(nweiz): Do we want to support some variant of innerHTML for XML and/or
   // SVG strings?
@@ -5278,7 +5271,7 @@ class DocumentFragmentImpl extends NodeImpl implements DocumentFragment native "
     this.insertAdjacentHTML('beforeend', text);
   }
 
-  Future<ElementRect> get rect() {
+  Future<ElementRect> get rect {
     return _createMeasurementFuture(() => const EmptyElementRect(),
                                     new Completer<ElementRect>());
   }
@@ -5286,29 +5279,29 @@ class DocumentFragmentImpl extends NodeImpl implements DocumentFragment native "
   // If we can come up with a semi-reasonable default value for an Element
   // getter, we'll use it. In general, these return the same values as an
   // element that has no parent.
-  String get contentEditable() => "false";
-  bool get isContentEditable() => false;
-  bool get draggable() => false;
-  bool get hidden() => false;
-  bool get spellcheck() => false;
-  bool get translate() => false;
-  int get tabIndex() => -1;
-  String get id() => "";
-  String get title() => "";
-  String get tagName() => "";
-  String get webkitdropzone() => "";
-  String get webkitRegionOverflow() => "";
-  Element get $dom_firstElementChild() => elements.first();
-  Element get $dom_lastElementChild() => elements.last();
-  Element get nextElementSibling() => null;
-  Element get previousElementSibling() => null;
-  Element get offsetParent() => null;
-  Element get parent() => null;
-  Map<String, String> get attributes() => const {};
-  CSSClassSet get classes() => new _FrozenCSSClassSet();
-  Map<String, String> get dataAttributes() => const {};
-  CSSStyleDeclaration get style() => new Element.tag('div').style;
-  Future<CSSStyleDeclaration> get computedStyle() =>
+  String get contentEditable => "false";
+  bool get isContentEditable => false;
+  bool get draggable => false;
+  bool get hidden => false;
+  bool get spellcheck => false;
+  bool get translate => false;
+  int get tabIndex => -1;
+  String get id => "";
+  String get title => "";
+  String get tagName => "";
+  String get webkitdropzone => "";
+  String get webkitRegionOverflow => "";
+  Element get $m_firstElementChild() => elements.first();
+  Element get $m_lastElementChild() => elements.last();
+  Element get nextElementSibling => null;
+  Element get previousElementSibling => null;
+  Element get offsetParent => null;
+  Element get parent => null;
+  Map<String, String> get attributes => const {};
+  CSSClassSet get classes => new _FrozenCSSClassSet();
+  Map<String, String> get dataAttributes => const {};
+  CSSStyleDeclaration get style => new Element.tag('div').style;
+  Future<CSSStyleDeclaration> get computedStyle =>
       _emptyStyleFuture();
   Future<CSSStyleDeclaration> getComputedStyle(String pseudoElement) =>
       _emptyStyleFuture();
@@ -5347,7 +5340,7 @@ class DocumentFragmentImpl extends NodeImpl implements DocumentFragment native "
       "Content editable can't be set for document fragments.");
   }
 
-  String get dir() {
+  String get dir {
     throw new UnsupportedOperationException(
       "Document fragments don't support text direction.");
   }
@@ -5372,7 +5365,7 @@ class DocumentFragmentImpl extends NodeImpl implements DocumentFragment native "
       "ID can't be set for document fragments.");
   }
 
-  String get lang() {
+  String get lang {
     throw new UnsupportedOperationException(
       "Document fragments don't support language.");
   }
@@ -5423,7 +5416,7 @@ class DocumentFragmentImpl extends NodeImpl implements DocumentFragment native "
   }
 
 
-  ElementEventsImpl get on() =>
+  ElementEventsImpl get on =>
     new ElementEventsImpl(this);
 
   ElementImpl $dom_querySelector(String selectors) native "querySelector";
@@ -5491,7 +5484,7 @@ class _ChildrenElementList implements ElementList {
     return output;
   }
 
-  ElementImpl get first() {
+  ElementImpl get first {
     return _element.$dom_firstElementChild;
   }
 
@@ -5541,7 +5534,7 @@ class _ChildrenElementList implements ElementList {
     return _element.$dom_firstElementChild == null;
   }
 
-  int get length() {
+  int get length {
     return _childElements.length;
   }
 
@@ -5629,7 +5622,7 @@ class _FrozenElementList implements ElementList {
 
   _FrozenElementList._wrap(this._nodeList);
 
-  Element get first() {
+  Element get first {
     return _nodeList[0];
   }
 
@@ -5675,7 +5668,7 @@ class _FrozenElementList implements ElementList {
 
   bool isEmpty() => _nodeList.isEmpty();
 
-  int get length() => _nodeList.length;
+  int get length => _nodeList.length;
 
   Element operator [](int index) => _nodeList[index];
 
@@ -5850,7 +5843,7 @@ class _ElementAttributeMap implements AttributeMap {
   /**
    * The number of {key, value} pairs in the map.
    */
-  int get length() {
+  int get length {
     return _element.$dom_attributes.length;
   }
 
@@ -5925,7 +5918,7 @@ class _DataAttributeMap implements AttributeMap {
     return values;
   }
 
-  int get length() => getKeys().length;
+  int get length => getKeys().length;
 
   // TODO: Use lazy iterator when it is available on Map.
   bool isEmpty() => length == 0;
@@ -5963,9 +5956,9 @@ class _CssClassSet implements CSSClassSet {
 
   bool isEmpty() => _read().isEmpty();
 
-  bool get isFrozen() => false;
+  bool get isFrozen => false;
 
-  int get length() =>_read().length;
+  int get length =>_read().length;
 
   // interface Collection - END
 
@@ -6078,8 +6071,8 @@ class _SimpleClientRect implements ClientRect {
   final num top;
   final num width;
   final num height;
-  num get right() => left + width;
-  num get bottom() => top + height;
+  num get right => left + width;
+  num get bottom => top + height;
 
   const _SimpleClientRect(this.left, this.top, this.width, this.height);
 
@@ -6124,10 +6117,10 @@ class ElementRectImpl implements ElementRect {
     _boundingClientRect = element.$dom_getBoundingClientRect(),
     _clientRects = element.$dom_getClientRects();
 
-  ClientRectImpl get bounding() => _boundingClientRect;
+  ClientRectImpl get bounding => _boundingClientRect;
 
   // TODO(jacobr): cleanup.
-  List<ClientRect> get clientRects() {
+  List<ClientRect> get clientRects {
     final out = new List(_clientRects.length);
     for (num i = 0; i < _clientRects.length; i++) {
       out[i] = _clientRects.item(i);
@@ -6142,7 +6135,7 @@ class ElementImpl extends NodeImpl implements Element native "*Element" {
    * @domName Element.hasAttribute, Element.getAttribute, Element.setAttribute,
    *   Element.removeAttribute
    */
-  _ElementAttributeMap get attributes() => new _ElementAttributeMap(this);
+  _ElementAttributeMap get attributes => new _ElementAttributeMap(this);
 
   void set attributes(Map<String, String> value) {
     Map<String, String> attributes = this.attributes;
@@ -6158,14 +6151,14 @@ class ElementImpl extends NodeImpl implements Element native "*Element" {
     elements.addAll(value);
   }
 
-  ElementList get elements() => new _ChildrenElementList._wrap(this);
+  ElementList get elements => new _ChildrenElementList._wrap(this);
 
   ElementImpl query(String selectors) => $dom_querySelector(selectors);
 
   List<Element> queryAll(String selectors) =>
     new _FrozenElementList._wrap($dom_querySelectorAll(selectors));
 
-  _CssClassSet get classes() => new _CssClassSet(this);
+  _CssClassSet get classes => new _CssClassSet(this);
 
   void set classes(Collection<String> value) {
     _CssClassSet classSet = classes;
@@ -6173,7 +6166,7 @@ class ElementImpl extends NodeImpl implements Element native "*Element" {
     classSet.addAll(value);
   }
 
-  Map<String, String> get dataAttributes() =>
+  Map<String, String> get dataAttributes =>
     new _DataAttributeMap(attributes);
 
   void set dataAttributes(Map<String, String> value) {
@@ -6184,13 +6177,13 @@ class ElementImpl extends NodeImpl implements Element native "*Element" {
     }
   }
 
-  Future<ElementRect> get rect() {
+  Future<ElementRect> get rect {
     return _createMeasurementFuture(
         () => new ElementRectImpl(this),
         new Completer<ElementRect>());
   }
 
-  Future<CSSStyleDeclaration> get computedStyle() {
+  Future<CSSStyleDeclaration> get computedStyle {
      // TODO(jacobr): last param should be null, see b/5045788
      return getComputedStyle('');
   }
@@ -6271,7 +6264,7 @@ class ElementImpl extends NodeImpl implements Element native "*Element" {
   }
 
 
-  ElementEventsImpl get on() =>
+  ElementEventsImpl get on =>
     new ElementEventsImpl(this);
 
   HTMLCollectionImpl get $dom_children() native "return this.children;";
@@ -6464,101 +6457,101 @@ class _ElementFactoryProvider {
 class ElementEventsImpl extends EventsImpl implements ElementEvents {
   ElementEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get abort() => this['abort'];
+  EventListenerList get abort => this['abort'];
 
-  EventListenerList get beforeCopy() => this['beforecopy'];
+  EventListenerList get beforeCopy => this['beforecopy'];
 
-  EventListenerList get beforeCut() => this['beforecut'];
+  EventListenerList get beforeCut => this['beforecut'];
 
-  EventListenerList get beforePaste() => this['beforepaste'];
+  EventListenerList get beforePaste => this['beforepaste'];
 
-  EventListenerList get blur() => this['blur'];
+  EventListenerList get blur => this['blur'];
 
-  EventListenerList get change() => this['change'];
+  EventListenerList get change => this['change'];
 
-  EventListenerList get click() => this['click'];
+  EventListenerList get click => this['click'];
 
-  EventListenerList get contextMenu() => this['contextmenu'];
+  EventListenerList get contextMenu => this['contextmenu'];
 
-  EventListenerList get copy() => this['copy'];
+  EventListenerList get copy => this['copy'];
 
-  EventListenerList get cut() => this['cut'];
+  EventListenerList get cut => this['cut'];
 
-  EventListenerList get doubleClick() => this['dblclick'];
+  EventListenerList get doubleClick => this['dblclick'];
 
-  EventListenerList get drag() => this['drag'];
+  EventListenerList get drag => this['drag'];
 
-  EventListenerList get dragEnd() => this['dragend'];
+  EventListenerList get dragEnd => this['dragend'];
 
-  EventListenerList get dragEnter() => this['dragenter'];
+  EventListenerList get dragEnter => this['dragenter'];
 
-  EventListenerList get dragLeave() => this['dragleave'];
+  EventListenerList get dragLeave => this['dragleave'];
 
-  EventListenerList get dragOver() => this['dragover'];
+  EventListenerList get dragOver => this['dragover'];
 
-  EventListenerList get dragStart() => this['dragstart'];
+  EventListenerList get dragStart => this['dragstart'];
 
-  EventListenerList get drop() => this['drop'];
+  EventListenerList get drop => this['drop'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get focus() => this['focus'];
+  EventListenerList get focus => this['focus'];
 
-  EventListenerList get fullscreenChange() => this['webkitfullscreenchange'];
+  EventListenerList get fullscreenChange => this['webkitfullscreenchange'];
 
-  EventListenerList get fullscreenError() => this['webkitfullscreenerror'];
+  EventListenerList get fullscreenError => this['webkitfullscreenerror'];
 
-  EventListenerList get input() => this['input'];
+  EventListenerList get input => this['input'];
 
-  EventListenerList get invalid() => this['invalid'];
+  EventListenerList get invalid => this['invalid'];
 
-  EventListenerList get keyDown() => this['keydown'];
+  EventListenerList get keyDown => this['keydown'];
 
-  EventListenerList get keyPress() => this['keypress'];
+  EventListenerList get keyPress => this['keypress'];
 
-  EventListenerList get keyUp() => this['keyup'];
+  EventListenerList get keyUp => this['keyup'];
 
-  EventListenerList get load() => this['load'];
+  EventListenerList get load => this['load'];
 
-  EventListenerList get mouseDown() => this['mousedown'];
+  EventListenerList get mouseDown => this['mousedown'];
 
-  EventListenerList get mouseMove() => this['mousemove'];
+  EventListenerList get mouseMove => this['mousemove'];
 
-  EventListenerList get mouseOut() => this['mouseout'];
+  EventListenerList get mouseOut => this['mouseout'];
 
-  EventListenerList get mouseOver() => this['mouseover'];
+  EventListenerList get mouseOver => this['mouseover'];
 
-  EventListenerList get mouseUp() => this['mouseup'];
+  EventListenerList get mouseUp => this['mouseup'];
 
-  EventListenerList get mouseWheel() => this['mousewheel'];
+  EventListenerList get mouseWheel => this['mousewheel'];
 
-  EventListenerList get paste() => this['paste'];
+  EventListenerList get paste => this['paste'];
 
-  EventListenerList get reset() => this['reset'];
+  EventListenerList get reset => this['reset'];
 
-  EventListenerList get scroll() => this['scroll'];
+  EventListenerList get scroll => this['scroll'];
 
-  EventListenerList get search() => this['search'];
+  EventListenerList get search => this['search'];
 
-  EventListenerList get select() => this['select'];
+  EventListenerList get select => this['select'];
 
-  EventListenerList get selectStart() => this['selectstart'];
+  EventListenerList get selectStart => this['selectstart'];
 
-  EventListenerList get submit() => this['submit'];
+  EventListenerList get submit => this['submit'];
 
-  EventListenerList get touchCancel() => this['touchcancel'];
+  EventListenerList get touchCancel => this['touchcancel'];
 
-  EventListenerList get touchEnd() => this['touchend'];
+  EventListenerList get touchEnd => this['touchend'];
 
-  EventListenerList get touchEnter() => this['touchenter'];
+  EventListenerList get touchEnter => this['touchenter'];
 
-  EventListenerList get touchLeave() => this['touchleave'];
+  EventListenerList get touchLeave => this['touchleave'];
 
-  EventListenerList get touchMove() => this['touchmove'];
+  EventListenerList get touchMove => this['touchmove'];
 
-  EventListenerList get touchStart() => this['touchstart'];
+  EventListenerList get touchStart => this['touchstart'];
 
-  EventListenerList get transitionEnd() => this['webkitTransitionEnd'];
+  EventListenerList get transitionEnd => this['webkitTransitionEnd'];
 }
 
 class EmbedElementImpl extends ElementImpl implements EmbedElement native "*HTMLEmbedElement" {
@@ -6753,7 +6746,7 @@ class EventExceptionImpl implements EventException native "*EventException" {
 
 class EventSourceImpl extends EventTargetImpl implements EventSource native "*EventSource" {
 
-  EventSourceEventsImpl get on() =>
+  EventSourceEventsImpl get on =>
     new EventSourceEventsImpl(this);
 
   static const int CLOSED = 2;
@@ -6780,11 +6773,11 @@ class EventSourceImpl extends EventTargetImpl implements EventSource native "*Ev
 class EventSourceEventsImpl extends EventsImpl implements EventSourceEvents {
   EventSourceEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get message() => this['message'];
+  EventListenerList get message => this['message'];
 
-  EventListenerList get open() => this['open'];
+  EventListenerList get open => this['open'];
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -6844,7 +6837,7 @@ class EventListenerListImpl implements EventListenerList {
 
 class EventTargetImpl implements EventTarget native "*EventTarget" {
 
-  Events get on() => new EventsImpl(this);
+  Events get on => new EventsImpl(this);
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
@@ -7055,7 +7048,7 @@ class FileListImpl implements FileList, JavaScriptIndexingBehavior native "*File
 
 class FileReaderImpl extends EventTargetImpl implements FileReader native "*FileReader" {
 
-  FileReaderEventsImpl get on() =>
+  FileReaderEventsImpl get on =>
     new FileReaderEventsImpl(this);
 
   static const int DONE = 2;
@@ -7090,17 +7083,17 @@ class FileReaderImpl extends EventTargetImpl implements FileReader native "*File
 class FileReaderEventsImpl extends EventsImpl implements FileReaderEvents {
   FileReaderEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get abort() => this['abort'];
+  EventListenerList get abort => this['abort'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get load() => this['load'];
+  EventListenerList get load => this['load'];
 
-  EventListenerList get loadEnd() => this['loadend'];
+  EventListenerList get loadEnd => this['loadend'];
 
-  EventListenerList get loadStart() => this['loadstart'];
+  EventListenerList get loadStart => this['loadstart'];
 
-  EventListenerList get progress() => this['progress'];
+  EventListenerList get progress => this['progress'];
 }
 
 class FileReaderSyncImpl implements FileReaderSync native "*FileReaderSync" {
@@ -7116,7 +7109,7 @@ class FileReaderSyncImpl implements FileReaderSync native "*FileReaderSync" {
 
 class FileWriterImpl extends EventTargetImpl implements FileWriter native "*FileWriter" {
 
-  FileWriterEventsImpl get on() =>
+  FileWriterEventsImpl get on =>
     new FileWriterEventsImpl(this);
 
   static const int DONE = 2;
@@ -7151,17 +7144,17 @@ class FileWriterImpl extends EventTargetImpl implements FileWriter native "*File
 class FileWriterEventsImpl extends EventsImpl implements FileWriterEvents {
   FileWriterEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get abort() => this['abort'];
+  EventListenerList get abort => this['abort'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get progress() => this['progress'];
+  EventListenerList get progress => this['progress'];
 
-  EventListenerList get write() => this['write'];
+  EventListenerList get write => this['write'];
 
-  EventListenerList get writeEnd() => this['writeend'];
+  EventListenerList get writeEnd => this['writeend'];
 
-  EventListenerList get writeStart() => this['writestart'];
+  EventListenerList get writeStart => this['writestart'];
 }
 
 class FileWriterSyncImpl implements FileWriterSync native "*FileWriterSync" {
@@ -7435,7 +7428,7 @@ class FrameElementImpl extends ElementImpl implements FrameElement native "*HTML
 
 class FrameSetElementImpl extends ElementImpl implements FrameSetElement native "*HTMLFrameSetElement" {
 
-  FrameSetElementEventsImpl get on() =>
+  FrameSetElementEventsImpl get on =>
     new FrameSetElementEventsImpl(this);
 
   String cols;
@@ -7446,31 +7439,31 @@ class FrameSetElementImpl extends ElementImpl implements FrameSetElement native 
 class FrameSetElementEventsImpl extends ElementEventsImpl implements FrameSetElementEvents {
   FrameSetElementEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get beforeUnload() => this['beforeunload'];
+  EventListenerList get beforeUnload => this['beforeunload'];
 
-  EventListenerList get blur() => this['blur'];
+  EventListenerList get blur => this['blur'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get focus() => this['focus'];
+  EventListenerList get focus => this['focus'];
 
-  EventListenerList get hashChange() => this['hashchange'];
+  EventListenerList get hashChange => this['hashchange'];
 
-  EventListenerList get load() => this['load'];
+  EventListenerList get load => this['load'];
 
-  EventListenerList get message() => this['message'];
+  EventListenerList get message => this['message'];
 
-  EventListenerList get offline() => this['offline'];
+  EventListenerList get offline => this['offline'];
 
-  EventListenerList get online() => this['online'];
+  EventListenerList get online => this['online'];
 
-  EventListenerList get popState() => this['popstate'];
+  EventListenerList get popState => this['popstate'];
 
-  EventListenerList get resize() => this['resize'];
+  EventListenerList get resize => this['resize'];
 
-  EventListenerList get storage() => this['storage'];
+  EventListenerList get storage => this['storage'];
 
-  EventListenerList get unload() => this['unload'];
+  EventListenerList get unload => this['unload'];
 }
 
 class GamepadImpl implements Gamepad native "*Gamepad" {
@@ -7675,7 +7668,7 @@ class HtmlElementImpl extends ElementImpl implements HtmlElement native "*HTMLHt
 
 class HttpRequestImpl extends EventTargetImpl implements HttpRequest native "*XMLHttpRequest" {
 
-  HttpRequestEventsImpl get on() =>
+  HttpRequestEventsImpl get on =>
     new HttpRequestEventsImpl(this);
 
   static const int DONE = 4;
@@ -7730,19 +7723,19 @@ class HttpRequestImpl extends EventTargetImpl implements HttpRequest native "*XM
 class HttpRequestEventsImpl extends EventsImpl implements HttpRequestEvents {
   HttpRequestEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get abort() => this['abort'];
+  EventListenerList get abort => this['abort'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get load() => this['load'];
+  EventListenerList get load => this['load'];
 
-  EventListenerList get loadEnd() => this['loadend'];
+  EventListenerList get loadEnd => this['loadend'];
 
-  EventListenerList get loadStart() => this['loadstart'];
+  EventListenerList get loadStart => this['loadstart'];
 
-  EventListenerList get progress() => this['progress'];
+  EventListenerList get progress => this['progress'];
 
-  EventListenerList get readyStateChange() => this['readystatechange'];
+  EventListenerList get readyStateChange => this['readystatechange'];
 }
 
 class HttpRequestExceptionImpl implements HttpRequestException native "*XMLHttpRequestException" {
@@ -7769,7 +7762,7 @@ class HttpRequestProgressEventImpl extends ProgressEventImpl implements HttpRequ
 
 class HttpRequestUploadImpl extends EventTargetImpl implements HttpRequestUpload native "*XMLHttpRequestUpload" {
 
-  HttpRequestUploadEventsImpl get on() =>
+  HttpRequestUploadEventsImpl get on =>
     new HttpRequestUploadEventsImpl(this);
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
@@ -7782,17 +7775,17 @@ class HttpRequestUploadImpl extends EventTargetImpl implements HttpRequestUpload
 class HttpRequestUploadEventsImpl extends EventsImpl implements HttpRequestUploadEvents {
   HttpRequestUploadEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get abort() => this['abort'];
+  EventListenerList get abort => this['abort'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get load() => this['load'];
+  EventListenerList get load => this['load'];
 
-  EventListenerList get loadEnd() => this['loadend'];
+  EventListenerList get loadEnd => this['loadend'];
 
-  EventListenerList get loadStart() => this['loadstart'];
+  EventListenerList get loadStart => this['loadstart'];
 
-  EventListenerList get progress() => this['progress'];
+  EventListenerList get progress => this['progress'];
 }
 
 class IDBAnyImpl implements IDBAny native "*IDBAny" {
@@ -7810,18 +7803,18 @@ class IDBCursorImpl implements IDBCursor native "*IDBCursor" {
 
   final String direction;
 
-  Dynamic get key() => _convertNativeToDart_IDBKey(this._key);
+  Dynamic get key => _convertNativeToDart_IDBKey(this._key);
   Dynamic get _key() native "return this.key;";
 
-  Dynamic get primaryKey() => _convertNativeToDart_IDBKey(this._primaryKey);
+  Dynamic get primaryKey => _convertNativeToDart_IDBKey(this._primaryKey);
   Dynamic get _primaryKey() native "return this.primaryKey;";
 
   final Dynamic source;
 
   void advance(int count) native;
 
-  void continueFunction([key = _default]) {
-    if (_default != key) {
+  void continueFunction([key]) {
+    if (?key) {
       var key_1 = _convertDartToNative_IDBKey(key);
       _continueFunction_1(key_1);
       return;
@@ -7843,7 +7836,7 @@ class IDBCursorImpl implements IDBCursor native "*IDBCursor" {
 
 class IDBCursorWithValueImpl extends IDBCursorImpl implements IDBCursorWithValue native "*IDBCursorWithValue" {
 
-  Dynamic get value() => _convertNativeToDart_IDBAny(this._value);
+  Dynamic get value => _convertNativeToDart_IDBAny(this._value);
   Dynamic get _value() native "return this.value;";
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
@@ -7893,7 +7886,7 @@ class IDBDatabaseImpl extends EventTargetImpl implements IDBDatabase native "*ID
   static bool _hasNumericMode(txn) native 'return typeof(txn.mode) === "number"';
 
 
-  IDBDatabaseEventsImpl get on() =>
+  IDBDatabaseEventsImpl get on =>
     new IDBDatabaseEventsImpl(this);
 
   final String name;
@@ -7906,8 +7899,8 @@ class IDBDatabaseImpl extends EventTargetImpl implements IDBDatabase native "*ID
 
   void close() native;
 
-  IDBObjectStoreImpl createObjectStore(String name, [options = _default]) {
-    if (_default != options) {
+  IDBObjectStoreImpl createObjectStore(String name, [options]) {
+    if (?options) {
       var options_1 = _convertDartToNative_Dictionary(options);
       return _createObjectStore_1(name, options_1);
     }
@@ -7932,11 +7925,11 @@ var _transaction_fn;  // Assigned one of the static methods.
 class IDBDatabaseEventsImpl extends EventsImpl implements IDBDatabaseEvents {
   IDBDatabaseEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get abort() => this['abort'];
+  EventListenerList get abort => this['abort'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get versionChange() => this['versionchange'];
+  EventListenerList get versionChange => this['versionchange'];
 }
 
 class IDBDatabaseExceptionImpl implements IDBDatabaseException native "*IDBDatabaseException" {
@@ -8004,14 +7997,14 @@ class IDBIndexImpl implements IDBIndex native "*IDBIndex" {
 
   final bool unique;
 
-  IDBRequestImpl count([key_OR_range = _default]) {
-    if (_default == key_OR_range) {
+  IDBRequestImpl count([key_OR_range]) {
+    if (!?key_OR_range) {
       return _count_1();
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null)) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null)) {
       return _count_2(key_OR_range);
     }
-    if (_default != key_OR_range) {
+    if (?key_OR_range) {
       var key_1 = _convertDartToNative_IDBKey(key_OR_range);
       return _count_3(key_1);
     }
@@ -8022,10 +8015,10 @@ class IDBIndexImpl implements IDBIndex native "*IDBIndex" {
   IDBRequestImpl _count_3(key) native "count";
 
   IDBRequestImpl get(key) {
-    if ((key is IDBKeyRange || key == null)) {
+    if ((key is IDBKeyRange || key === null)) {
       return _get_1(key);
     }
-    if (_default != key) {
+    if (?key) {
       var key_1 = _convertDartToNative_IDBKey(key);
       return _get_2(key_1);
     }
@@ -8035,10 +8028,10 @@ class IDBIndexImpl implements IDBIndex native "*IDBIndex" {
   IDBRequestImpl _get_2(key) native "get";
 
   IDBRequestImpl getKey(key) {
-    if ((key is IDBKeyRange || key == null)) {
+    if ((key is IDBKeyRange || key === null)) {
       return _getKey_1(key);
     }
-    if (_default != key) {
+    if (?key) {
       var key_1 = _convertDartToNative_IDBKey(key);
       return _getKey_2(key_1);
     }
@@ -8047,43 +8040,43 @@ class IDBIndexImpl implements IDBIndex native "*IDBIndex" {
   IDBRequestImpl _getKey_1(IDBKeyRangeImpl key) native "getKey";
   IDBRequestImpl _getKey_2(key) native "getKey";
 
-  IDBRequestImpl openCursor([key_OR_range = _default, direction = _default]) {
-    if (_default == key_OR_range &&
-        _default == direction) {
+  IDBRequestImpl openCursor([key_OR_range, direction]) {
+    if (!?key_OR_range &&
+        !?direction) {
       return _openCursor_1();
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        _default == direction) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        !?direction) {
       return _openCursor_2(key_OR_range);
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        (direction is String || direction == null)) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        (direction is String || direction === null)) {
       return _openCursor_3(key_OR_range, direction);
     }
-    if (_default != key_OR_range &&
-        _default == direction) {
+    if (?key_OR_range &&
+        !?direction) {
       var key_1 = _convertDartToNative_IDBKey(key_OR_range);
       return _openCursor_4(key_1);
     }
-    if (_default != key_OR_range &&
-        (direction is String || direction == null)) {
+    if (?key_OR_range &&
+        (direction is String || direction === null)) {
       var key_2 = _convertDartToNative_IDBKey(key_OR_range);
       return _openCursor_5(key_2, direction);
     }
-    if (_default == key_OR_range &&
-        _default == direction) {
+    if (!?key_OR_range &&
+        !?direction) {
       return _openCursor_6();
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        _default == direction) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        !?direction) {
       return _openCursor_7(key_OR_range);
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        (direction is int || direction == null)) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        (direction is int || direction === null)) {
       return _openCursor_8(key_OR_range, direction);
     }
-    if (_default != key_OR_range &&
-        (direction is int || direction == null)) {
+    if (?key_OR_range &&
+        (direction is int || direction === null)) {
       var key_3 = _convertDartToNative_IDBKey(key_OR_range);
       return _openCursor_9(key_3, direction);
     }
@@ -8099,43 +8092,43 @@ class IDBIndexImpl implements IDBIndex native "*IDBIndex" {
   IDBRequestImpl _openCursor_8(IDBKeyRangeImpl range, int direction) native "openCursor";
   IDBRequestImpl _openCursor_9(key, int direction) native "openCursor";
 
-  IDBRequestImpl openKeyCursor([key_OR_range = _default, direction = _default]) {
-    if (_default == key_OR_range &&
-        _default == direction) {
+  IDBRequestImpl openKeyCursor([key_OR_range, direction]) {
+    if (!?key_OR_range &&
+        !?direction) {
       return _openKeyCursor_1();
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        _default == direction) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        !?direction) {
       return _openKeyCursor_2(key_OR_range);
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        (direction is String || direction == null)) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        (direction is String || direction === null)) {
       return _openKeyCursor_3(key_OR_range, direction);
     }
-    if (_default != key_OR_range &&
-        _default == direction) {
+    if (?key_OR_range &&
+        !?direction) {
       var key_1 = _convertDartToNative_IDBKey(key_OR_range);
       return _openKeyCursor_4(key_1);
     }
-    if (_default != key_OR_range &&
-        (direction is String || direction == null)) {
+    if (?key_OR_range &&
+        (direction is String || direction === null)) {
       var key_2 = _convertDartToNative_IDBKey(key_OR_range);
       return _openKeyCursor_5(key_2, direction);
     }
-    if (_default == key_OR_range &&
-        _default == direction) {
+    if (!?key_OR_range &&
+        !?direction) {
       return _openKeyCursor_6();
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        _default == direction) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        !?direction) {
       return _openKeyCursor_7(key_OR_range);
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        (direction is int || direction == null)) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        (direction is int || direction === null)) {
       return _openKeyCursor_8(key_OR_range, direction);
     }
-    if (_default != key_OR_range &&
-        (direction is int || direction == null)) {
+    if (?key_OR_range &&
+        (direction is int || direction === null)) {
       var key_3 = _convertDartToNative_IDBKey(key_OR_range);
       return _openKeyCursor_9(key_3, direction);
     }
@@ -8157,12 +8150,12 @@ class IDBKeyImpl implements IDBKey native "*IDBKey" {
 
 class IDBKeyRangeImpl implements IDBKeyRange native "*IDBKeyRange" {
 
-  Dynamic get lower() => _convertNativeToDart_IDBKey(this._lower);
+  Dynamic get lower => _convertNativeToDart_IDBKey(this._lower);
   Dynamic get _lower() native "return this.lower;";
 
   final bool lowerOpen;
 
-  Dynamic get upper() => _convertNativeToDart_IDBKey(this._upper);
+  Dynamic get upper => _convertNativeToDart_IDBKey(this._upper);
   Dynamic get _upper() native "return this.upper;";
 
   final bool upperOpen;
@@ -8180,8 +8173,8 @@ class IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
 
   final IDBTransactionImpl transaction;
 
-  IDBRequestImpl add(value, [key = _default]) {
-    if (_default != key) {
+  IDBRequestImpl add(value, [key]) {
+    if (?key) {
       var value_1 = _convertDartToNative_SerializedScriptValue(value);
       var key_2 = _convertDartToNative_IDBKey(key);
       return _add_1(value_1, key_2);
@@ -8194,14 +8187,14 @@ class IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
 
   IDBRequestImpl clear() native;
 
-  IDBRequestImpl count([key_OR_range = _default]) {
-    if (_default == key_OR_range) {
+  IDBRequestImpl count([key_OR_range]) {
+    if (!?key_OR_range) {
       return _count_1();
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null)) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null)) {
       return _count_2(key_OR_range);
     }
-    if (_default != key_OR_range) {
+    if (?key_OR_range) {
       var key_1 = _convertDartToNative_IDBKey(key_OR_range);
       return _count_3(key_1);
     }
@@ -8211,24 +8204,24 @@ class IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
   IDBRequestImpl _count_2(IDBKeyRangeImpl range) native "count";
   IDBRequestImpl _count_3(key) native "count";
 
-  IDBIndexImpl createIndex(String name, keyPath, [options = _default]) {
-    if ((keyPath is List<String> || keyPath == null) &&
-        _default == options) {
+  IDBIndexImpl createIndex(String name, keyPath, [options]) {
+    if ((keyPath is List<String> || keyPath === null) &&
+        !?options) {
       List keyPath_1 = _convertDartToNative_StringArray(keyPath);
       return _createIndex_1(name, keyPath_1);
     }
-    if ((keyPath is List<String> || keyPath == null) &&
-        (options is Map || options == null)) {
+    if ((keyPath is List<String> || keyPath === null) &&
+        (options is Map || options === null)) {
       List keyPath_2 = _convertDartToNative_StringArray(keyPath);
       var options_3 = _convertDartToNative_Dictionary(options);
       return _createIndex_2(name, keyPath_2, options_3);
     }
-    if ((keyPath is String || keyPath == null) &&
-        _default == options) {
+    if ((keyPath is String || keyPath === null) &&
+        !?options) {
       return _createIndex_3(name, keyPath);
     }
-    if ((keyPath is String || keyPath == null) &&
-        (options is Map || options == null)) {
+    if ((keyPath is String || keyPath === null) &&
+        (options is Map || options === null)) {
       var options_4 = _convertDartToNative_Dictionary(options);
       return _createIndex_4(name, keyPath, options_4);
     }
@@ -8240,10 +8233,10 @@ class IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
   IDBIndexImpl _createIndex_4(name, String keyPath, options) native "createIndex";
 
   IDBRequestImpl delete(key_OR_keyRange) {
-    if ((key_OR_keyRange is IDBKeyRange || key_OR_keyRange == null)) {
+    if ((key_OR_keyRange is IDBKeyRange || key_OR_keyRange === null)) {
       return _delete_1(key_OR_keyRange);
     }
-    if (_default != key_OR_keyRange) {
+    if (?key_OR_keyRange) {
       var key_1 = _convertDartToNative_IDBKey(key_OR_keyRange);
       return _delete_2(key_1);
     }
@@ -8255,10 +8248,10 @@ class IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
   void deleteIndex(String name) native;
 
   IDBRequestImpl getObject(key) {
-    if ((key is IDBKeyRange || key == null)) {
+    if ((key is IDBKeyRange || key === null)) {
       return _getObject_1(key);
     }
-    if (_default != key) {
+    if (?key) {
       var key_1 = _convertDartToNative_IDBKey(key);
       return _getObject_2(key_1);
     }
@@ -8269,43 +8262,43 @@ class IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
 
   IDBIndexImpl index(String name) native;
 
-  IDBRequestImpl openCursor([key_OR_range = _default, direction = _default]) {
-    if (_default == key_OR_range &&
-        _default == direction) {
+  IDBRequestImpl openCursor([key_OR_range, direction]) {
+    if (!?key_OR_range &&
+        !?direction) {
       return _openCursor_1();
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        _default == direction) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        !?direction) {
       return _openCursor_2(key_OR_range);
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        (direction is String || direction == null)) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        (direction is String || direction === null)) {
       return _openCursor_3(key_OR_range, direction);
     }
-    if (_default != key_OR_range &&
-        _default == direction) {
+    if (?key_OR_range &&
+        !?direction) {
       var key_1 = _convertDartToNative_IDBKey(key_OR_range);
       return _openCursor_4(key_1);
     }
-    if (_default != key_OR_range &&
-        (direction is String || direction == null)) {
+    if (?key_OR_range &&
+        (direction is String || direction === null)) {
       var key_2 = _convertDartToNative_IDBKey(key_OR_range);
       return _openCursor_5(key_2, direction);
     }
-    if (_default == key_OR_range &&
-        _default == direction) {
+    if (!?key_OR_range &&
+        !?direction) {
       return _openCursor_6();
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        _default == direction) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        !?direction) {
       return _openCursor_7(key_OR_range);
     }
-    if ((key_OR_range is IDBKeyRange || key_OR_range == null) &&
-        (direction is int || direction == null)) {
+    if ((key_OR_range is IDBKeyRange || key_OR_range === null) &&
+        (direction is int || direction === null)) {
       return _openCursor_8(key_OR_range, direction);
     }
-    if (_default != key_OR_range &&
-        (direction is int || direction == null)) {
+    if (?key_OR_range &&
+        (direction is int || direction === null)) {
       var key_3 = _convertDartToNative_IDBKey(key_OR_range);
       return _openCursor_9(key_3, direction);
     }
@@ -8321,8 +8314,8 @@ class IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
   IDBRequestImpl _openCursor_8(IDBKeyRangeImpl range, int direction) native "openCursor";
   IDBRequestImpl _openCursor_9(key, int direction) native "openCursor";
 
-  IDBRequestImpl put(value, [key = _default]) {
-    if (_default != key) {
+  IDBRequestImpl put(value, [key]) {
+    if (?key) {
       var value_1 = _convertDartToNative_SerializedScriptValue(value);
       var key_2 = _convertDartToNative_IDBKey(key);
       return _put_1(value_1, key_2);
@@ -8336,7 +8329,7 @@ class IDBObjectStoreImpl implements IDBObjectStore native "*IDBObjectStore" {
 
 class IDBOpenDBRequestImpl extends IDBRequestImpl implements IDBOpenDBRequest native "*IDBOpenDBRequest" {
 
-  IDBOpenDBRequestEventsImpl get on() =>
+  IDBOpenDBRequestEventsImpl get on =>
     new IDBOpenDBRequestEventsImpl(this);
 
   // From EventTarget
@@ -8351,14 +8344,14 @@ class IDBOpenDBRequestImpl extends IDBRequestImpl implements IDBOpenDBRequest na
 class IDBOpenDBRequestEventsImpl extends IDBRequestEventsImpl implements IDBOpenDBRequestEvents {
   IDBOpenDBRequestEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get blocked() => this['blocked'];
+  EventListenerList get blocked => this['blocked'];
 
-  EventListenerList get upgradeNeeded() => this['upgradeneeded'];
+  EventListenerList get upgradeNeeded => this['upgradeneeded'];
 }
 
 class IDBRequestImpl extends EventTargetImpl implements IDBRequest native "*IDBRequest" {
 
-  IDBRequestEventsImpl get on() =>
+  IDBRequestEventsImpl get on =>
     new IDBRequestEventsImpl(this);
 
   final DOMErrorImpl error;
@@ -8367,7 +8360,7 @@ class IDBRequestImpl extends EventTargetImpl implements IDBRequest native "*IDBR
 
   final String readyState;
 
-  Dynamic get result() => _convertNativeToDart_IDBAny(this._result);
+  Dynamic get result => _convertNativeToDart_IDBAny(this._result);
   Dynamic get _result() native "return this.result;";
 
   final Dynamic source;
@@ -8386,14 +8379,14 @@ class IDBRequestImpl extends EventTargetImpl implements IDBRequest native "*IDBR
 class IDBRequestEventsImpl extends EventsImpl implements IDBRequestEvents {
   IDBRequestEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get success() => this['success'];
+  EventListenerList get success => this['success'];
 }
 
 class IDBTransactionImpl extends EventTargetImpl implements IDBTransaction native "*IDBTransaction" {
 
-  IDBTransactionEventsImpl get on() =>
+  IDBTransactionEventsImpl get on =>
     new IDBTransactionEventsImpl(this);
 
   static const int READ_ONLY = 0;
@@ -8422,11 +8415,11 @@ class IDBTransactionImpl extends EventTargetImpl implements IDBTransaction nativ
 class IDBTransactionEventsImpl extends EventsImpl implements IDBTransactionEvents {
   IDBTransactionEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get abort() => this['abort'];
+  EventListenerList get abort => this['abort'];
 
-  EventListenerList get complete() => this['complete'];
+  EventListenerList get complete => this['complete'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 }
 
 class IDBUpgradeNeededEventImpl extends EventImpl implements IDBUpgradeNeededEvent native "*IDBUpgradeNeededEvent" {
@@ -8443,7 +8436,7 @@ class IDBVersionChangeEventImpl extends EventImpl implements IDBVersionChangeEve
 
 class IDBVersionChangeRequestImpl extends IDBRequestImpl implements IDBVersionChangeRequest native "*IDBVersionChangeRequest" {
 
-  IDBVersionChangeRequestEventsImpl get on() =>
+  IDBVersionChangeRequestEventsImpl get on =>
     new IDBVersionChangeRequestEventsImpl(this);
 
   // From EventTarget
@@ -8458,7 +8451,7 @@ class IDBVersionChangeRequestImpl extends IDBRequestImpl implements IDBVersionCh
 class IDBVersionChangeRequestEventsImpl extends IDBRequestEventsImpl implements IDBVersionChangeRequestEvents {
   IDBVersionChangeRequestEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get blocked() => this['blocked'];
+  EventListenerList get blocked => this['blocked'];
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -8496,7 +8489,7 @@ class IFrameElementImpl extends ElementImpl implements IFrameElement native "*HT
   Window get _contentWindow() native "return this.contentWindow;";
 
   // Override contentWindow to return secure wrapper.
-  Window get contentWindow() {
+  Window get contentWindow {
     return DOMWindowCrossFrameImpl._createSafe(_contentWindow);
   }
 }
@@ -8560,7 +8553,7 @@ class ImageElementImpl extends ElementImpl implements ImageElement native "*HTML
 
 class InputElementImpl extends ElementImpl implements InputElement native "*HTMLInputElement" {
 
-  InputElementEventsImpl get on() =>
+  InputElementEventsImpl get on =>
     new InputElementEventsImpl(this);
 
   String accept;
@@ -8677,7 +8670,7 @@ class InputElementImpl extends ElementImpl implements InputElement native "*HTML
 class InputElementEventsImpl extends ElementEventsImpl implements InputElementEvents {
   InputElementEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get speechChange() => this['webkitSpeechChange'];
+  EventListenerList get speechChange => this['webkitSpeechChange'];
 }
 
 class Int16ArrayImpl extends ArrayBufferViewImpl implements Int16Array, List<int>, JavaScriptIndexingBehavior native "*Int16Array" {
@@ -8955,7 +8948,7 @@ class Int8ArrayImpl extends ArrayBufferViewImpl implements Int8Array, List<int>,
 
 class JavaScriptAudioNodeImpl extends AudioNodeImpl implements JavaScriptAudioNode native "*JavaScriptAudioNode" {
 
-  JavaScriptAudioNodeEventsImpl get on() =>
+  JavaScriptAudioNodeEventsImpl get on =>
     new JavaScriptAudioNodeEventsImpl(this);
 
   final int bufferSize;
@@ -8972,7 +8965,7 @@ class JavaScriptAudioNodeImpl extends AudioNodeImpl implements JavaScriptAudioNo
 class JavaScriptAudioNodeEventsImpl extends EventsImpl implements JavaScriptAudioNodeEvents {
   JavaScriptAudioNodeEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get audioProcess() => this['audioprocess'];
+  EventListenerList get audioProcess => this['audioprocess'];
 }
 
 class JavaScriptCallFrameImpl implements JavaScriptCallFrame native "*JavaScriptCallFrame" {
@@ -9221,7 +9214,7 @@ class MediaControllerImpl extends EventTargetImpl implements MediaController nat
 
 class MediaElementImpl extends ElementImpl implements MediaElement native "*HTMLMediaElement" {
 
-  MediaElementEventsImpl get on() =>
+  MediaElementEventsImpl get on =>
     new MediaElementEventsImpl(this);
 
   static const int HAVE_CURRENT_DATA = 2;
@@ -9326,55 +9319,55 @@ class MediaElementImpl extends ElementImpl implements MediaElement native "*HTML
 class MediaElementEventsImpl extends ElementEventsImpl implements MediaElementEvents {
   MediaElementEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get canPlay() => this['canplay'];
+  EventListenerList get canPlay => this['canplay'];
 
-  EventListenerList get canPlayThrough() => this['canplaythrough'];
+  EventListenerList get canPlayThrough => this['canplaythrough'];
 
-  EventListenerList get durationChange() => this['durationchange'];
+  EventListenerList get durationChange => this['durationchange'];
 
-  EventListenerList get emptied() => this['emptied'];
+  EventListenerList get emptied => this['emptied'];
 
-  EventListenerList get ended() => this['ended'];
+  EventListenerList get ended => this['ended'];
 
-  EventListenerList get keyAdded() => this['webkitkeyadded'];
+  EventListenerList get keyAdded => this['webkitkeyadded'];
 
-  EventListenerList get keyError() => this['webkitkeyerror'];
+  EventListenerList get keyError => this['webkitkeyerror'];
 
-  EventListenerList get keyMessage() => this['webkitkeymessage'];
+  EventListenerList get keyMessage => this['webkitkeymessage'];
 
-  EventListenerList get loadStart() => this['loadstart'];
+  EventListenerList get loadStart => this['loadstart'];
 
-  EventListenerList get loadedData() => this['loadeddata'];
+  EventListenerList get loadedData => this['loadeddata'];
 
-  EventListenerList get loadedMetadata() => this['loadedmetadata'];
+  EventListenerList get loadedMetadata => this['loadedmetadata'];
 
-  EventListenerList get needKey() => this['webkitneedkey'];
+  EventListenerList get needKey => this['webkitneedkey'];
 
-  EventListenerList get pause() => this['pause'];
+  EventListenerList get pause => this['pause'];
 
-  EventListenerList get play() => this['play'];
+  EventListenerList get play => this['play'];
 
-  EventListenerList get playing() => this['playing'];
+  EventListenerList get playing => this['playing'];
 
-  EventListenerList get progress() => this['progress'];
+  EventListenerList get progress => this['progress'];
 
-  EventListenerList get rateChange() => this['ratechange'];
+  EventListenerList get rateChange => this['ratechange'];
 
-  EventListenerList get seeked() => this['seeked'];
+  EventListenerList get seeked => this['seeked'];
 
-  EventListenerList get seeking() => this['seeking'];
+  EventListenerList get seeking => this['seeking'];
 
-  EventListenerList get show() => this['show'];
+  EventListenerList get show => this['show'];
 
-  EventListenerList get stalled() => this['stalled'];
+  EventListenerList get stalled => this['stalled'];
 
-  EventListenerList get suspend() => this['suspend'];
+  EventListenerList get suspend => this['suspend'];
 
-  EventListenerList get timeUpdate() => this['timeupdate'];
+  EventListenerList get timeUpdate => this['timeupdate'];
 
-  EventListenerList get volumeChange() => this['volumechange'];
+  EventListenerList get volumeChange => this['volumechange'];
 
-  EventListenerList get waiting() => this['waiting'];
+  EventListenerList get waiting => this['waiting'];
 }
 
 class MediaElementAudioSourceNodeImpl extends AudioSourceNodeImpl implements MediaElementAudioSourceNode native "*MediaElementAudioSourceNode" {
@@ -9541,6 +9534,8 @@ class MediaSourceImpl extends EventTargetImpl implements MediaSource native "*Me
 
   final SourceBufferListImpl activeSourceBuffers;
 
+  num duration;
+
   final String readyState;
 
   final SourceBufferListImpl sourceBuffers;
@@ -9560,7 +9555,7 @@ class MediaSourceImpl extends EventTargetImpl implements MediaSource native "*Me
 
 class MediaStreamImpl extends EventTargetImpl implements MediaStream native "*MediaStream" {
 
-  MediaStreamEventsImpl get on() =>
+  MediaStreamEventsImpl get on =>
     new MediaStreamEventsImpl(this);
 
   static const int ENDED = 2;
@@ -9585,7 +9580,7 @@ class MediaStreamImpl extends EventTargetImpl implements MediaStream native "*Me
 class MediaStreamEventsImpl extends EventsImpl implements MediaStreamEvents {
   MediaStreamEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get ended() => this['ended'];
+  EventListenerList get ended => this['ended'];
 }
 
 class MediaStreamAudioSourceNodeImpl extends AudioSourceNodeImpl implements MediaStreamAudioSourceNode native "*MediaStreamAudioSourceNode" {
@@ -9607,7 +9602,7 @@ class MediaStreamListImpl implements MediaStreamList native "*MediaStreamList" {
 
 class MediaStreamTrackImpl extends EventTargetImpl implements MediaStreamTrack native "*MediaStreamTrack" {
 
-  MediaStreamTrackEventsImpl get on() =>
+  MediaStreamTrackEventsImpl get on =>
     new MediaStreamTrackEventsImpl(this);
 
   static const int ENDED = 2;
@@ -9634,11 +9629,11 @@ class MediaStreamTrackImpl extends EventTargetImpl implements MediaStreamTrack n
 class MediaStreamTrackEventsImpl extends EventsImpl implements MediaStreamTrackEvents {
   MediaStreamTrackEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get ended() => this['ended'];
+  EventListenerList get ended => this['ended'];
 
-  EventListenerList get mute() => this['mute'];
+  EventListenerList get mute => this['mute'];
 
-  EventListenerList get unmute() => this['unmute'];
+  EventListenerList get unmute => this['unmute'];
 }
 
 class MediaStreamTrackEventImpl extends EventImpl implements MediaStreamTrackEvent native "*MediaStreamTrackEvent" {
@@ -9648,7 +9643,7 @@ class MediaStreamTrackEventImpl extends EventImpl implements MediaStreamTrackEve
 
 class MediaStreamTrackListImpl extends EventTargetImpl implements MediaStreamTrackList native "*MediaStreamTrackList" {
 
-  MediaStreamTrackListEventsImpl get on() =>
+  MediaStreamTrackListEventsImpl get on =>
     new MediaStreamTrackListEventsImpl(this);
 
   final int length;
@@ -9669,9 +9664,9 @@ class MediaStreamTrackListImpl extends EventTargetImpl implements MediaStreamTra
 class MediaStreamTrackListEventsImpl extends EventsImpl implements MediaStreamTrackListEvents {
   MediaStreamTrackListEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get addTrack() => this['addtrack'];
+  EventListenerList get addTrack => this['addtrack'];
 
-  EventListenerList get removeTrack() => this['removetrack'];
+  EventListenerList get removeTrack => this['removetrack'];
 }
 
 class MemoryInfoImpl implements MemoryInfo native "*MemoryInfo" {
@@ -9714,7 +9709,7 @@ class MessageEventImpl extends EventImpl implements MessageEvent native "*Messag
 
 class MessagePortImpl extends EventTargetImpl implements MessagePort native "*MessagePort" {
 
-  MessagePortEventsImpl get on() =>
+  MessagePortEventsImpl get on =>
     new MessagePortEventsImpl(this);
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
@@ -9723,19 +9718,19 @@ class MessagePortImpl extends EventTargetImpl implements MessagePort native "*Me
 
   bool $dom_dispatchEvent(EventImpl evt) native "dispatchEvent";
 
-  void postMessage(String message, [List messagePorts]) native;
+  void postMessage(Object message, [List messagePorts]) native;
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
 
   void start() native;
 
-  void webkitPostMessage(String message, [List transfer]) native;
+  void webkitPostMessage(Object message, [List transfer]) native;
 }
 
 class MessagePortEventsImpl extends EventsImpl implements MessagePortEvents {
   MessagePortEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get message() => this['message'];
+  EventListenerList get message => this['message'];
 }
 
 class MetaElementImpl extends ElementImpl implements MetaElement native "*HTMLMetaElement" {
@@ -9822,7 +9817,7 @@ class MouseEventImpl extends UIEventImpl implements MouseEvent native "*MouseEve
   void $dom_initMouseEvent(String type, bool canBubble, bool cancelable, WindowImpl view, int detail, int screenX, int screenY, int clientX, int clientY, bool ctrlKey, bool altKey, bool shiftKey, bool metaKey, int button, EventTargetImpl relatedTarget) native "initMouseEvent";
 
 
-  int get offsetX() {
+  int get offsetX {
     if (JS('bool', '!!this.offsetX')) {
       return this._offsetX;
     } else {
@@ -9836,7 +9831,7 @@ class MouseEventImpl extends UIEventImpl implements MouseEvent native "*MouseEve
     }
   }
 
-  int get offsetY() {
+  int get offsetY {
     if (JS('bool', '!!this.offsetY')) {
       return this._offsetY;
     } else {
@@ -10115,8 +10110,8 @@ class NavigatorImpl implements Navigator native "*Navigator" {
 
   GamepadListImpl webkitGetGamepads() native;
 
-  void webkitGetUserMedia(Map options, NavigatorUserMediaSuccessCallback successCallback, [errorCallback = _default]) {
-    if (_default != errorCallback) {
+  void webkitGetUserMedia(Map options, NavigatorUserMediaSuccessCallback successCallback, [errorCallback]) {
+    if (?errorCallback) {
       var options_1 = _convertDartToNative_Dictionary(options);
       _webkitGetUserMedia_1(options_1, successCallback, errorCallback);
       return;
@@ -10150,7 +10145,7 @@ class _ChildNodeListLazy implements NodeList {
   _ChildNodeListLazy(this._this);
 
 
-  NodeImpl get first() => JS('_NodeImpl', '#.firstChild', _this);
+  NodeImpl get first => JS('_NodeImpl', '#.firstChild', _this);
   NodeImpl last() => JS('_NodeImpl', '#.lastChild', _this);
 
   void add(NodeImpl value) {
@@ -10235,13 +10230,13 @@ class _ChildNodeListLazy implements NodeList {
 
   // TODO(jacobr): benchmark whether this is more efficient or whether caching
   // a local copy of $dom_childNodes is more efficient.
-  int get length() => _this.$dom_childNodes.length;
+  int get length => _this.$dom_childNodes.length;
 
   NodeImpl operator[](int index) => _this.$dom_childNodes[index];
 }
 
 class NodeImpl extends EventTargetImpl implements Node native "*Node" {
-  _ChildNodeListLazy get nodes() {
+  _ChildNodeListLazy get nodes {
     return new _ChildNodeListLazy(this);
   }
 
@@ -10437,7 +10432,7 @@ class _ListWrapper<E> implements List<E> {
 
   bool isEmpty() => _list.isEmpty();
 
-  int get length() => _list.length;
+  int get length => _list.length;
 
   E operator [](int index) => _list[index];
 
@@ -10476,7 +10471,7 @@ class _ListWrapper<E> implements List<E> {
   void insertRange(int start, int rangeLength, [E initialValue = null]) =>
     _list.insertRange(start, rangeLength, initialValue);
 
-  E get first() => _list[0];
+  E get first => _list[0];
 }
 
 /**
@@ -10566,7 +10561,7 @@ class NodeListImpl implements NodeList, JavaScriptIndexingBehavior native "*Node
       _Lists.lastIndexOf(this, element, start);
 
   Node last() => this[length - 1];
-  Node get first() => this[0];
+  Node get first => this[0];
 
   // FIXME: implement thesee.
   void setRange(int start, int rangeLength, List<Node> from, [int startFrom]) {
@@ -10601,7 +10596,7 @@ class NotationImpl extends NodeImpl implements Notation native "*Notation" {
 
 class NotificationImpl extends EventTargetImpl implements Notification native "*Notification" {
 
-  NotificationEventsImpl get on() =>
+  NotificationEventsImpl get on =>
     new NotificationEventsImpl(this);
 
   String dir;
@@ -10628,15 +10623,15 @@ class NotificationImpl extends EventTargetImpl implements Notification native "*
 class NotificationEventsImpl extends EventsImpl implements NotificationEvents {
   NotificationEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get click() => this['click'];
+  EventListenerList get click => this['click'];
 
-  EventListenerList get close() => this['close'];
+  EventListenerList get close => this['close'];
 
-  EventListenerList get display() => this['display'];
+  EventListenerList get display => this['display'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get show() => this['show'];
+  EventListenerList get show => this['show'];
 }
 
 class NotificationCenterImpl implements NotificationCenter native "*NotificationCenter" {
@@ -10867,7 +10862,7 @@ class ParamElementImpl extends ElementImpl implements ParamElement native "*HTML
 
 class PeerConnection00Impl extends EventTargetImpl implements PeerConnection00 native "*PeerConnection00" {
 
-  PeerConnection00EventsImpl get on() =>
+  PeerConnection00EventsImpl get on =>
     new PeerConnection00EventsImpl(this);
 
   static const int ACTIVE = 2;
@@ -10912,8 +10907,8 @@ class PeerConnection00Impl extends EventTargetImpl implements PeerConnection00 n
 
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
 
-  void addStream(MediaStreamImpl stream, [mediaStreamHints = _default]) {
-    if (_default != mediaStreamHints) {
+  void addStream(MediaStreamImpl stream, [mediaStreamHints]) {
+    if (?mediaStreamHints) {
       var mediaStreamHints_1 = _convertDartToNative_Dictionary(mediaStreamHints);
       _addStream_1(stream, mediaStreamHints_1);
       return;
@@ -10926,8 +10921,8 @@ class PeerConnection00Impl extends EventTargetImpl implements PeerConnection00 n
 
   void close() native;
 
-  SessionDescriptionImpl createAnswer(String offer, [mediaHints = _default]) {
-    if (_default != mediaHints) {
+  SessionDescriptionImpl createAnswer(String offer, [mediaHints]) {
+    if (?mediaHints) {
       var mediaHints_1 = _convertDartToNative_Dictionary(mediaHints);
       return _createAnswer_1(offer, mediaHints_1);
     }
@@ -10936,8 +10931,8 @@ class PeerConnection00Impl extends EventTargetImpl implements PeerConnection00 n
   SessionDescriptionImpl _createAnswer_1(offer, mediaHints) native "createAnswer";
   SessionDescriptionImpl _createAnswer_2(offer) native "createAnswer";
 
-  SessionDescriptionImpl createOffer([mediaHints = _default]) {
-    if (_default != mediaHints) {
+  SessionDescriptionImpl createOffer([mediaHints]) {
+    if (?mediaHints) {
       var mediaHints_1 = _convertDartToNative_Dictionary(mediaHints);
       return _createOffer_1(mediaHints_1);
     }
@@ -10958,8 +10953,8 @@ class PeerConnection00Impl extends EventTargetImpl implements PeerConnection00 n
 
   void setRemoteDescription(int action, SessionDescriptionImpl desc) native;
 
-  void startIce([iceOptions = _default]) {
-    if (_default != iceOptions) {
+  void startIce([iceOptions]) {
+    if (?iceOptions) {
       var iceOptions_1 = _convertDartToNative_Dictionary(iceOptions);
       _startIce_1(iceOptions_1);
       return;
@@ -10974,15 +10969,15 @@ class PeerConnection00Impl extends EventTargetImpl implements PeerConnection00 n
 class PeerConnection00EventsImpl extends EventsImpl implements PeerConnection00Events {
   PeerConnection00EventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get addStream() => this['addstream'];
+  EventListenerList get addStream => this['addstream'];
 
-  EventListenerList get connecting() => this['connecting'];
+  EventListenerList get connecting => this['connecting'];
 
-  EventListenerList get open() => this['open'];
+  EventListenerList get open => this['open'];
 
-  EventListenerList get removeStream() => this['removestream'];
+  EventListenerList get removeStream => this['removestream'];
 
-  EventListenerList get stateChange() => this['statechange'];
+  EventListenerList get stateChange => this['statechange'];
 }
 
 class PerformanceImpl extends EventTargetImpl implements Performance native "*Performance" {
@@ -11131,13 +11126,104 @@ class RGBColorImpl implements RGBColor native "*RGBColor" {
   final CSSPrimitiveValueImpl red;
 }
 
+class RTCIceCandidateImpl implements RTCIceCandidate native "*RTCIceCandidate" {
+
+  final String candidate;
+
+  final int sdpMLineIndex;
+
+  final String sdpMid;
+}
+
+class RTCIceCandidateEventImpl extends EventImpl implements RTCIceCandidateEvent native "*RTCIceCandidateEvent" {
+
+  final RTCIceCandidateImpl candidate;
+}
+
 class RTCPeerConnectionImpl extends EventTargetImpl implements RTCPeerConnection native "*RTCPeerConnection" {
 
+  RTCPeerConnectionEventsImpl get on =>
+    new RTCPeerConnectionEventsImpl(this);
+
+  final String iceState;
+
+  final RTCSessionDescriptionImpl localDescription;
+
+  final MediaStreamListImpl localStreams;
+
+  final String readyState;
+
+  final RTCSessionDescriptionImpl remoteDescription;
+
+  final MediaStreamListImpl remoteStreams;
+
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]) native "addEventListener";
+
+  void addIceCandidate(RTCIceCandidateImpl candidate) native;
+
+  void addStream(MediaStreamImpl stream, Map mediaConstraints) {
+    var mediaConstraints_1 = _convertDartToNative_Dictionary(mediaConstraints);
+    _addStream_1(stream, mediaConstraints_1);
+    return;
+  }
+  void _addStream_1(MediaStreamImpl stream, mediaConstraints) native "addStream";
+
+  void close() native;
+
+  void createAnswer(RTCSessionDescriptionCallback successCallback, [failureCallback, mediaConstraints]) {
+    var mediaConstraints_1 = _convertDartToNative_Dictionary(mediaConstraints);
+    _createAnswer_1(successCallback, failureCallback, mediaConstraints_1);
+    return;
+  }
+  void _createAnswer_1(RTCSessionDescriptionCallback successCallback, RTCErrorCallback failureCallback, mediaConstraints) native "createAnswer";
+
+  void createOffer(RTCSessionDescriptionCallback successCallback, [failureCallback, mediaConstraints]) {
+    var mediaConstraints_1 = _convertDartToNative_Dictionary(mediaConstraints);
+    _createOffer_1(successCallback, failureCallback, mediaConstraints_1);
+    return;
+  }
+  void _createOffer_1(RTCSessionDescriptionCallback successCallback, RTCErrorCallback failureCallback, mediaConstraints) native "createOffer";
 
   bool $dom_dispatchEvent(EventImpl event) native "dispatchEvent";
 
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]) native "removeEventListener";
+
+  void removeStream(MediaStreamImpl stream) native;
+
+  void setLocalDescription(RTCSessionDescriptionImpl description, [VoidCallback successCallback, RTCErrorCallback failureCallback]) native;
+
+  void setRemoteDescription(RTCSessionDescriptionImpl description, [VoidCallback successCallback, RTCErrorCallback failureCallback]) native;
+
+  void updateIce(Map configuration, Map mediaConstraints) {
+    var configuration_1 = _convertDartToNative_Dictionary(configuration);
+    var mediaConstraints_2 = _convertDartToNative_Dictionary(mediaConstraints);
+    _updateIce_1(configuration_1, mediaConstraints_2);
+    return;
+  }
+  void _updateIce_1(configuration, mediaConstraints) native "updateIce";
+}
+
+class RTCPeerConnectionEventsImpl extends EventsImpl implements RTCPeerConnectionEvents {
+  RTCPeerConnectionEventsImpl(_ptr) : super(_ptr);
+
+  EventListenerList get addStream => this['addstream'];
+
+  EventListenerList get iceCandidate => this['icecandidate'];
+
+  EventListenerList get iceChange => this['icechange'];
+
+  EventListenerList get open => this['open'];
+
+  EventListenerList get removeStream => this['removestream'];
+
+  EventListenerList get stateChange => this['statechange'];
+}
+
+class RTCSessionDescriptionImpl implements RTCSessionDescription native "*RTCSessionDescription" {
+
+  String sdp;
+
+  String type;
 }
 
 class RadioNodeListImpl extends NodeListImpl implements RadioNodeList native "*RadioNodeList" {
@@ -11847,14 +11933,14 @@ class _AttributeClassSet extends _CssClassSet {
 }
 
 class SVGElementImpl extends ElementImpl implements SVGElement native "*SVGElement" {
-  CSSClassSet get classes() {
+  CSSClassSet get classes {
     if (_cssClassSet === null) {
       _cssClassSet = new _AttributeClassSet(_ptr);
     }
     return _cssClassSet;
   }
 
-  ElementList get elements() => new FilteredElementList(this);
+  ElementList get elements => new FilteredElementList(this);
 
   void set elements(Collection<Element> value) {
     final elements = this.elements;
@@ -11862,14 +11948,14 @@ class SVGElementImpl extends ElementImpl implements SVGElement native "*SVGEleme
     elements.addAll(value);
   }
 
-  String get outerHTML() {
+  String get outerHTML {
     final container = new Element.tag("div");
     final SVGElement cloned = this.clone(true);
     container.elements.add(cloned);
     return container.innerHTML;
   }
 
-  String get innerHTML() {
+  String get innerHTML {
     final container = new Element.tag("div");
     final SVGElement cloned = this.clone(true);
     container.elements.addAll(cloned.elements);
@@ -11900,7 +11986,7 @@ class SVGElementImpl extends ElementImpl implements SVGElement native "*SVGEleme
 
 class SVGElementInstanceImpl extends EventTargetImpl implements SVGElementInstance native "*SVGElementInstance" {
 
-  SVGElementInstanceEventsImpl get on() =>
+  SVGElementInstanceEventsImpl get on =>
     new SVGElementInstanceEventsImpl(this);
 
   final SVGElementInstanceListImpl childNodes;
@@ -11923,85 +12009,85 @@ class SVGElementInstanceImpl extends EventTargetImpl implements SVGElementInstan
 class SVGElementInstanceEventsImpl extends EventsImpl implements SVGElementInstanceEvents {
   SVGElementInstanceEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get abort() => this['abort'];
+  EventListenerList get abort => this['abort'];
 
-  EventListenerList get beforeCopy() => this['beforecopy'];
+  EventListenerList get beforeCopy => this['beforecopy'];
 
-  EventListenerList get beforeCut() => this['beforecut'];
+  EventListenerList get beforeCut => this['beforecut'];
 
-  EventListenerList get beforePaste() => this['beforepaste'];
+  EventListenerList get beforePaste => this['beforepaste'];
 
-  EventListenerList get blur() => this['blur'];
+  EventListenerList get blur => this['blur'];
 
-  EventListenerList get change() => this['change'];
+  EventListenerList get change => this['change'];
 
-  EventListenerList get click() => this['click'];
+  EventListenerList get click => this['click'];
 
-  EventListenerList get contextMenu() => this['contextmenu'];
+  EventListenerList get contextMenu => this['contextmenu'];
 
-  EventListenerList get copy() => this['copy'];
+  EventListenerList get copy => this['copy'];
 
-  EventListenerList get cut() => this['cut'];
+  EventListenerList get cut => this['cut'];
 
-  EventListenerList get doubleClick() => this['dblclick'];
+  EventListenerList get doubleClick => this['dblclick'];
 
-  EventListenerList get drag() => this['drag'];
+  EventListenerList get drag => this['drag'];
 
-  EventListenerList get dragEnd() => this['dragend'];
+  EventListenerList get dragEnd => this['dragend'];
 
-  EventListenerList get dragEnter() => this['dragenter'];
+  EventListenerList get dragEnter => this['dragenter'];
 
-  EventListenerList get dragLeave() => this['dragleave'];
+  EventListenerList get dragLeave => this['dragleave'];
 
-  EventListenerList get dragOver() => this['dragover'];
+  EventListenerList get dragOver => this['dragover'];
 
-  EventListenerList get dragStart() => this['dragstart'];
+  EventListenerList get dragStart => this['dragstart'];
 
-  EventListenerList get drop() => this['drop'];
+  EventListenerList get drop => this['drop'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get focus() => this['focus'];
+  EventListenerList get focus => this['focus'];
 
-  EventListenerList get input() => this['input'];
+  EventListenerList get input => this['input'];
 
-  EventListenerList get keyDown() => this['keydown'];
+  EventListenerList get keyDown => this['keydown'];
 
-  EventListenerList get keyPress() => this['keypress'];
+  EventListenerList get keyPress => this['keypress'];
 
-  EventListenerList get keyUp() => this['keyup'];
+  EventListenerList get keyUp => this['keyup'];
 
-  EventListenerList get load() => this['load'];
+  EventListenerList get load => this['load'];
 
-  EventListenerList get mouseDown() => this['mousedown'];
+  EventListenerList get mouseDown => this['mousedown'];
 
-  EventListenerList get mouseMove() => this['mousemove'];
+  EventListenerList get mouseMove => this['mousemove'];
 
-  EventListenerList get mouseOut() => this['mouseout'];
+  EventListenerList get mouseOut => this['mouseout'];
 
-  EventListenerList get mouseOver() => this['mouseover'];
+  EventListenerList get mouseOver => this['mouseover'];
 
-  EventListenerList get mouseUp() => this['mouseup'];
+  EventListenerList get mouseUp => this['mouseup'];
 
-  EventListenerList get mouseWheel() => this['mousewheel'];
+  EventListenerList get mouseWheel => this['mousewheel'];
 
-  EventListenerList get paste() => this['paste'];
+  EventListenerList get paste => this['paste'];
 
-  EventListenerList get reset() => this['reset'];
+  EventListenerList get reset => this['reset'];
 
-  EventListenerList get resize() => this['resize'];
+  EventListenerList get resize => this['resize'];
 
-  EventListenerList get scroll() => this['scroll'];
+  EventListenerList get scroll => this['scroll'];
 
-  EventListenerList get search() => this['search'];
+  EventListenerList get search => this['search'];
 
-  EventListenerList get select() => this['select'];
+  EventListenerList get select => this['select'];
 
-  EventListenerList get selectStart() => this['selectstart'];
+  EventListenerList get selectStart => this['selectstart'];
 
-  EventListenerList get submit() => this['submit'];
+  EventListenerList get submit => this['submit'];
 
-  EventListenerList get unload() => this['unload'];
+  EventListenerList get unload => this['unload'];
 }
 
 class SVGElementInstanceListImpl implements SVGElementInstanceList native "*SVGElementInstanceList" {
@@ -14821,6 +14907,8 @@ class ShadowRootImpl extends DocumentFragmentImpl implements ShadowRoot native "
 
   bool resetStyleInheritance;
 
+  NodeImpl clone(bool deep) native "cloneNode";
+
   ElementImpl getElementById(String elementId) native;
 
   NodeListImpl getElementsByClassName(String className) native;
@@ -14839,7 +14927,7 @@ class SharedWorkerImpl extends AbstractWorkerImpl implements SharedWorker native
 
 class SharedWorkerContextImpl extends WorkerContextImpl implements SharedWorkerContext native "*SharedWorkerContext" {
 
-  SharedWorkerContextEventsImpl get on() =>
+  SharedWorkerContextEventsImpl get on =>
     new SharedWorkerContextEventsImpl(this);
 
   final String name;
@@ -14848,7 +14936,7 @@ class SharedWorkerContextImpl extends WorkerContextImpl implements SharedWorkerC
 class SharedWorkerContextEventsImpl extends WorkerContextEventsImpl implements SharedWorkerContextEvents {
   SharedWorkerContextEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get connect() => this['connect'];
+  EventListenerList get connect => this['connect'];
 }
 
 class SourceBufferImpl implements SourceBuffer native "*SourceBuffer" {
@@ -14926,7 +15014,7 @@ class SpeechInputResultListImpl implements SpeechInputResultList native "*Speech
 
 class SpeechRecognitionImpl extends EventTargetImpl implements SpeechRecognition native "*SpeechRecognition" {
 
-  SpeechRecognitionEventsImpl get on() =>
+  SpeechRecognitionEventsImpl get on =>
     new SpeechRecognitionEventsImpl(this);
 
   bool continuous;
@@ -14953,29 +15041,29 @@ class SpeechRecognitionImpl extends EventTargetImpl implements SpeechRecognition
 class SpeechRecognitionEventsImpl extends EventsImpl implements SpeechRecognitionEvents {
   SpeechRecognitionEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get audioEnd() => this['audioend'];
+  EventListenerList get audioEnd => this['audioend'];
 
-  EventListenerList get audioStart() => this['audiostart'];
+  EventListenerList get audioStart => this['audiostart'];
 
-  EventListenerList get end() => this['end'];
+  EventListenerList get end => this['end'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get noMatch() => this['nomatch'];
+  EventListenerList get noMatch => this['nomatch'];
 
-  EventListenerList get result() => this['result'];
+  EventListenerList get result => this['result'];
 
-  EventListenerList get resultDeleted() => this['resultdeleted'];
+  EventListenerList get resultDeleted => this['resultdeleted'];
 
-  EventListenerList get soundEnd() => this['soundend'];
+  EventListenerList get soundEnd => this['soundend'];
 
-  EventListenerList get soundStart() => this['soundstart'];
+  EventListenerList get soundStart => this['soundstart'];
 
-  EventListenerList get speechEnd() => this['speechend'];
+  EventListenerList get speechEnd => this['speechend'];
 
-  EventListenerList get speechStart() => this['speechstart'];
+  EventListenerList get speechStart => this['speechstart'];
 
-  EventListenerList get start() => this['start'];
+  EventListenerList get start => this['start'];
 }
 
 class SpeechRecognitionAlternativeImpl implements SpeechRecognitionAlternative native "*SpeechRecognitionAlternative" {
@@ -15085,7 +15173,7 @@ class StorageImpl implements Storage native "*Storage" {
     return values;
   }
 
-  int get length() => $dom_length;
+  int get length => $dom_length;
 
   bool isEmpty() => $dom_key(0) == null;
 
@@ -15475,14 +15563,8 @@ class TextMetricsImpl implements TextMetrics native "*TextMetrics" {
 
 class TextTrackImpl extends EventTargetImpl implements TextTrack native "*TextTrack" {
 
-  TextTrackEventsImpl get on() =>
+  TextTrackEventsImpl get on =>
     new TextTrackEventsImpl(this);
-
-  static const int DISABLED = 0;
-
-  static const int HIDDEN = 1;
-
-  static const int SHOWING = 2;
 
   final TextTrackCueListImpl activeCues;
 
@@ -15494,7 +15576,7 @@ class TextTrackImpl extends EventTargetImpl implements TextTrack native "*TextTr
 
   final String language;
 
-  int mode;
+  String mode;
 
   void addCue(TextTrackCueImpl cue) native;
 
@@ -15510,12 +15592,12 @@ class TextTrackImpl extends EventTargetImpl implements TextTrack native "*TextTr
 class TextTrackEventsImpl extends EventsImpl implements TextTrackEvents {
   TextTrackEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get cueChange() => this['cuechange'];
+  EventListenerList get cueChange => this['cuechange'];
 }
 
 class TextTrackCueImpl extends EventTargetImpl implements TextTrackCue native "*TextTrackCue" {
 
-  TextTrackCueEventsImpl get on() =>
+  TextTrackCueEventsImpl get on =>
     new TextTrackCueEventsImpl(this);
 
   String align;
@@ -15554,9 +15636,9 @@ class TextTrackCueImpl extends EventTargetImpl implements TextTrackCue native "*
 class TextTrackCueEventsImpl extends EventsImpl implements TextTrackCueEvents {
   TextTrackCueEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get enter() => this['enter'];
+  EventListenerList get enter => this['enter'];
 
-  EventListenerList get exit() => this['exit'];
+  EventListenerList get exit => this['exit'];
 }
 
 class TextTrackCueListImpl implements TextTrackCueList native "*TextTrackCueList" {
@@ -15570,7 +15652,7 @@ class TextTrackCueListImpl implements TextTrackCueList native "*TextTrackCueList
 
 class TextTrackListImpl extends EventTargetImpl implements TextTrackList native "*TextTrackList" {
 
-  TextTrackListEventsImpl get on() =>
+  TextTrackListEventsImpl get on =>
     new TextTrackListEventsImpl(this);
 
   final int length;
@@ -15587,7 +15669,7 @@ class TextTrackListImpl extends EventTargetImpl implements TextTrackList native 
 class TextTrackListEventsImpl extends EventsImpl implements TextTrackListEvents {
   TextTrackListEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get addTrack() => this['addtrack'];
+  EventListenerList get addTrack => this['addtrack'];
 }
 
 class TimeRangesImpl implements TimeRanges native "*TimeRanges" {
@@ -17053,40 +17135,40 @@ class WebGLRenderingContextImpl extends CanvasRenderingContextImpl implements We
 
   void stencilOpSeparate(int face, int fail, int zfail, int zpass) native;
 
-  void texImage2D(int target, int level, int internalformat, int format_OR_width, int height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video, [format = _default, type = _default, pixels = _default]) {
-    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is int || border_OR_canvas_OR_image_OR_pixels_OR_video == null) &&
-        (format is int || format == null) &&
-        (type is int || type == null) &&
-        (pixels is ArrayBufferView || pixels == null)) {
+  void texImage2D(int target, int level, int internalformat, int format_OR_width, int height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video, [format, type, pixels]) {
+    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is int || border_OR_canvas_OR_image_OR_pixels_OR_video === null) &&
+        (format is int || format === null) &&
+        (type is int || type === null) &&
+        (pixels is ArrayBufferView || pixels === null)) {
       _texImage2D_1(target, level, internalformat, format_OR_width, height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video, format, type, pixels);
       return;
     }
-    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is ImageData || border_OR_canvas_OR_image_OR_pixels_OR_video == null) &&
-        _default == format &&
-        _default == type &&
-        _default == pixels) {
+    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is ImageData || border_OR_canvas_OR_image_OR_pixels_OR_video === null) &&
+        !?format &&
+        !?type &&
+        !?pixels) {
       var pixels_1 = _convertDartToNative_ImageData(border_OR_canvas_OR_image_OR_pixels_OR_video);
       _texImage2D_2(target, level, internalformat, format_OR_width, height_OR_type, pixels_1);
       return;
     }
-    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is ImageElement || border_OR_canvas_OR_image_OR_pixels_OR_video == null) &&
-        _default == format &&
-        _default == type &&
-        _default == pixels) {
+    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is ImageElement || border_OR_canvas_OR_image_OR_pixels_OR_video === null) &&
+        !?format &&
+        !?type &&
+        !?pixels) {
       _texImage2D_3(target, level, internalformat, format_OR_width, height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video);
       return;
     }
-    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is CanvasElement || border_OR_canvas_OR_image_OR_pixels_OR_video == null) &&
-        _default == format &&
-        _default == type &&
-        _default == pixels) {
+    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is CanvasElement || border_OR_canvas_OR_image_OR_pixels_OR_video === null) &&
+        !?format &&
+        !?type &&
+        !?pixels) {
       _texImage2D_4(target, level, internalformat, format_OR_width, height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video);
       return;
     }
-    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is VideoElement || border_OR_canvas_OR_image_OR_pixels_OR_video == null) &&
-        _default == format &&
-        _default == type &&
-        _default == pixels) {
+    if ((border_OR_canvas_OR_image_OR_pixels_OR_video is VideoElement || border_OR_canvas_OR_image_OR_pixels_OR_video === null) &&
+        !?format &&
+        !?type &&
+        !?pixels) {
       _texImage2D_5(target, level, internalformat, format_OR_width, height_OR_type, border_OR_canvas_OR_image_OR_pixels_OR_video);
       return;
     }
@@ -17102,35 +17184,35 @@ class WebGLRenderingContextImpl extends CanvasRenderingContextImpl implements We
 
   void texParameteri(int target, int pname, int param) native;
 
-  void texSubImage2D(int target, int level, int xoffset, int yoffset, int format_OR_width, int height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video, [type = _default, pixels = _default]) {
-    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is int || canvas_OR_format_OR_image_OR_pixels_OR_video == null) &&
-        (type is int || type == null) &&
-        (pixels is ArrayBufferView || pixels == null)) {
+  void texSubImage2D(int target, int level, int xoffset, int yoffset, int format_OR_width, int height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video, [type, pixels]) {
+    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is int || canvas_OR_format_OR_image_OR_pixels_OR_video === null) &&
+        (type is int || type === null) &&
+        (pixels is ArrayBufferView || pixels === null)) {
       _texSubImage2D_1(target, level, xoffset, yoffset, format_OR_width, height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video, type, pixels);
       return;
     }
-    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is ImageData || canvas_OR_format_OR_image_OR_pixels_OR_video == null) &&
-        _default == type &&
-        _default == pixels) {
+    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is ImageData || canvas_OR_format_OR_image_OR_pixels_OR_video === null) &&
+        !?type &&
+        !?pixels) {
       var pixels_1 = _convertDartToNative_ImageData(canvas_OR_format_OR_image_OR_pixels_OR_video);
       _texSubImage2D_2(target, level, xoffset, yoffset, format_OR_width, height_OR_type, pixels_1);
       return;
     }
-    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is ImageElement || canvas_OR_format_OR_image_OR_pixels_OR_video == null) &&
-        _default == type &&
-        _default == pixels) {
+    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is ImageElement || canvas_OR_format_OR_image_OR_pixels_OR_video === null) &&
+        !?type &&
+        !?pixels) {
       _texSubImage2D_3(target, level, xoffset, yoffset, format_OR_width, height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video);
       return;
     }
-    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is CanvasElement || canvas_OR_format_OR_image_OR_pixels_OR_video == null) &&
-        _default == type &&
-        _default == pixels) {
+    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is CanvasElement || canvas_OR_format_OR_image_OR_pixels_OR_video === null) &&
+        !?type &&
+        !?pixels) {
       _texSubImage2D_4(target, level, xoffset, yoffset, format_OR_width, height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video);
       return;
     }
-    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is VideoElement || canvas_OR_format_OR_image_OR_pixels_OR_video == null) &&
-        _default == type &&
-        _default == pixels) {
+    if ((canvas_OR_format_OR_image_OR_pixels_OR_video is VideoElement || canvas_OR_format_OR_image_OR_pixels_OR_video === null) &&
+        !?type &&
+        !?pixels) {
       _texSubImage2D_5(target, level, xoffset, yoffset, format_OR_width, height_OR_type, canvas_OR_format_OR_image_OR_pixels_OR_video);
       return;
     }
@@ -17278,7 +17360,7 @@ class WebKitNamedFlowImpl extends EventTargetImpl implements WebKitNamedFlow nat
 
 class WebSocketImpl extends EventTargetImpl implements WebSocket native "*WebSocket" {
 
-  WebSocketEventsImpl get on() =>
+  WebSocketEventsImpl get on =>
     new WebSocketEventsImpl(this);
 
   static const int CLOSED = 3;
@@ -17317,13 +17399,13 @@ class WebSocketImpl extends EventTargetImpl implements WebSocket native "*WebSoc
 class WebSocketEventsImpl extends EventsImpl implements WebSocketEvents {
   WebSocketEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get close() => this['close'];
+  EventListenerList get close => this['close'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get message() => this['message'];
+  EventListenerList get message => this['message'];
 
-  EventListenerList get open() => this['open'];
+  EventListenerList get open => this['open'];
 }
 
 class WheelEventImpl extends MouseEventImpl implements WheelEvent native "*WheelEvent" {
@@ -17349,7 +17431,7 @@ class WindowImpl extends EventTargetImpl implements Window native "@*DOMWindow" 
   Window get _top() native "return this.top;";
 
   // Override top to return secure wrapper.
-  Window get top() => DOMWindowCrossFrameImpl._createSafe(_top);
+  Window get top => DOMWindowCrossFrameImpl._createSafe(_top);
 
   Window _open2(url, name) native "return this.open(url, name);";
 
@@ -17366,7 +17448,7 @@ class WindowImpl extends EventTargetImpl implements Window native "@*DOMWindow" 
   // API level getter and setter for Location.
   // TODO: The cross domain safe wrapper can be inserted here or folded into
   // _LocationWrapper.
-  Location get location() => _get_location();
+  Location get location => _get_location();
 
   // TODO: consider forcing users to do: window.location.assign('string').
   /**
@@ -17453,7 +17535,7 @@ class WindowImpl extends EventTargetImpl implements Window native "@*DOMWindow" 
 ''';
 
 
-  IDBFactoryImpl get indexedDB() => _get_indexedDB();
+  IDBFactoryImpl get indexedDB => _get_indexedDB();
 
   IDBFactoryImpl _get_indexedDB() native
       'return this.indexedDB || this.webkitIndexedDB || this.mozIndexedDB';
@@ -17477,7 +17559,7 @@ class WindowImpl extends EventTargetImpl implements Window native "@*DOMWindow" 
     (window.URL || window.webkitURL).revokeObjectURL(objectUrl)
   ''';
 
-  WindowEventsImpl get on() =>
+  WindowEventsImpl get on =>
     new WindowEventsImpl(this);
 
   static const int PERSISTENT = 1;
@@ -17667,158 +17749,158 @@ class WindowImpl extends EventTargetImpl implements Window native "@*DOMWindow" 
 class WindowEventsImpl extends EventsImpl implements WindowEvents {
   WindowEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get abort() => this['abort'];
+  EventListenerList get abort => this['abort'];
 
-  EventListenerList get animationEnd() => this['webkitAnimationEnd'];
+  EventListenerList get animationEnd => this['webkitAnimationEnd'];
 
-  EventListenerList get animationIteration() => this['webkitAnimationIteration'];
+  EventListenerList get animationIteration => this['webkitAnimationIteration'];
 
-  EventListenerList get animationStart() => this['webkitAnimationStart'];
+  EventListenerList get animationStart => this['webkitAnimationStart'];
 
-  EventListenerList get beforeUnload() => this['beforeunload'];
+  EventListenerList get beforeUnload => this['beforeunload'];
 
-  EventListenerList get blur() => this['blur'];
+  EventListenerList get blur => this['blur'];
 
-  EventListenerList get canPlay() => this['canplay'];
+  EventListenerList get canPlay => this['canplay'];
 
-  EventListenerList get canPlayThrough() => this['canplaythrough'];
+  EventListenerList get canPlayThrough => this['canplaythrough'];
 
-  EventListenerList get change() => this['change'];
+  EventListenerList get change => this['change'];
 
-  EventListenerList get click() => this['click'];
+  EventListenerList get click => this['click'];
 
-  EventListenerList get contentLoaded() => this['DOMContentLoaded'];
+  EventListenerList get contentLoaded => this['DOMContentLoaded'];
 
-  EventListenerList get contextMenu() => this['contextmenu'];
+  EventListenerList get contextMenu => this['contextmenu'];
 
-  EventListenerList get deviceMotion() => this['devicemotion'];
+  EventListenerList get deviceMotion => this['devicemotion'];
 
-  EventListenerList get deviceOrientation() => this['deviceorientation'];
+  EventListenerList get deviceOrientation => this['deviceorientation'];
 
-  EventListenerList get doubleClick() => this['dblclick'];
+  EventListenerList get doubleClick => this['dblclick'];
 
-  EventListenerList get drag() => this['drag'];
+  EventListenerList get drag => this['drag'];
 
-  EventListenerList get dragEnd() => this['dragend'];
+  EventListenerList get dragEnd => this['dragend'];
 
-  EventListenerList get dragEnter() => this['dragenter'];
+  EventListenerList get dragEnter => this['dragenter'];
 
-  EventListenerList get dragLeave() => this['dragleave'];
+  EventListenerList get dragLeave => this['dragleave'];
 
-  EventListenerList get dragOver() => this['dragover'];
+  EventListenerList get dragOver => this['dragover'];
 
-  EventListenerList get dragStart() => this['dragstart'];
+  EventListenerList get dragStart => this['dragstart'];
 
-  EventListenerList get drop() => this['drop'];
+  EventListenerList get drop => this['drop'];
 
-  EventListenerList get durationChange() => this['durationchange'];
+  EventListenerList get durationChange => this['durationchange'];
 
-  EventListenerList get emptied() => this['emptied'];
+  EventListenerList get emptied => this['emptied'];
 
-  EventListenerList get ended() => this['ended'];
+  EventListenerList get ended => this['ended'];
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 
-  EventListenerList get focus() => this['focus'];
+  EventListenerList get focus => this['focus'];
 
-  EventListenerList get hashChange() => this['hashchange'];
+  EventListenerList get hashChange => this['hashchange'];
 
-  EventListenerList get input() => this['input'];
+  EventListenerList get input => this['input'];
 
-  EventListenerList get invalid() => this['invalid'];
+  EventListenerList get invalid => this['invalid'];
 
-  EventListenerList get keyDown() => this['keydown'];
+  EventListenerList get keyDown => this['keydown'];
 
-  EventListenerList get keyPress() => this['keypress'];
+  EventListenerList get keyPress => this['keypress'];
 
-  EventListenerList get keyUp() => this['keyup'];
+  EventListenerList get keyUp => this['keyup'];
 
-  EventListenerList get load() => this['load'];
+  EventListenerList get load => this['load'];
 
-  EventListenerList get loadStart() => this['loadstart'];
+  EventListenerList get loadStart => this['loadstart'];
 
-  EventListenerList get loadedData() => this['loadeddata'];
+  EventListenerList get loadedData => this['loadeddata'];
 
-  EventListenerList get loadedMetadata() => this['loadedmetadata'];
+  EventListenerList get loadedMetadata => this['loadedmetadata'];
 
-  EventListenerList get message() => this['message'];
+  EventListenerList get message => this['message'];
 
-  EventListenerList get mouseDown() => this['mousedown'];
+  EventListenerList get mouseDown => this['mousedown'];
 
-  EventListenerList get mouseMove() => this['mousemove'];
+  EventListenerList get mouseMove => this['mousemove'];
 
-  EventListenerList get mouseOut() => this['mouseout'];
+  EventListenerList get mouseOut => this['mouseout'];
 
-  EventListenerList get mouseOver() => this['mouseover'];
+  EventListenerList get mouseOver => this['mouseover'];
 
-  EventListenerList get mouseUp() => this['mouseup'];
+  EventListenerList get mouseUp => this['mouseup'];
 
-  EventListenerList get mouseWheel() => this['mousewheel'];
+  EventListenerList get mouseWheel => this['mousewheel'];
 
-  EventListenerList get offline() => this['offline'];
+  EventListenerList get offline => this['offline'];
 
-  EventListenerList get online() => this['online'];
+  EventListenerList get online => this['online'];
 
-  EventListenerList get pageHide() => this['pagehide'];
+  EventListenerList get pageHide => this['pagehide'];
 
-  EventListenerList get pageShow() => this['pageshow'];
+  EventListenerList get pageShow => this['pageshow'];
 
-  EventListenerList get pause() => this['pause'];
+  EventListenerList get pause => this['pause'];
 
-  EventListenerList get play() => this['play'];
+  EventListenerList get play => this['play'];
 
-  EventListenerList get playing() => this['playing'];
+  EventListenerList get playing => this['playing'];
 
-  EventListenerList get popState() => this['popstate'];
+  EventListenerList get popState => this['popstate'];
 
-  EventListenerList get progress() => this['progress'];
+  EventListenerList get progress => this['progress'];
 
-  EventListenerList get rateChange() => this['ratechange'];
+  EventListenerList get rateChange => this['ratechange'];
 
-  EventListenerList get reset() => this['reset'];
+  EventListenerList get reset => this['reset'];
 
-  EventListenerList get resize() => this['resize'];
+  EventListenerList get resize => this['resize'];
 
-  EventListenerList get scroll() => this['scroll'];
+  EventListenerList get scroll => this['scroll'];
 
-  EventListenerList get search() => this['search'];
+  EventListenerList get search => this['search'];
 
-  EventListenerList get seeked() => this['seeked'];
+  EventListenerList get seeked => this['seeked'];
 
-  EventListenerList get seeking() => this['seeking'];
+  EventListenerList get seeking => this['seeking'];
 
-  EventListenerList get select() => this['select'];
+  EventListenerList get select => this['select'];
 
-  EventListenerList get stalled() => this['stalled'];
+  EventListenerList get stalled => this['stalled'];
 
-  EventListenerList get storage() => this['storage'];
+  EventListenerList get storage => this['storage'];
 
-  EventListenerList get submit() => this['submit'];
+  EventListenerList get submit => this['submit'];
 
-  EventListenerList get suspend() => this['suspend'];
+  EventListenerList get suspend => this['suspend'];
 
-  EventListenerList get timeUpdate() => this['timeupdate'];
+  EventListenerList get timeUpdate => this['timeupdate'];
 
-  EventListenerList get touchCancel() => this['touchcancel'];
+  EventListenerList get touchCancel => this['touchcancel'];
 
-  EventListenerList get touchEnd() => this['touchend'];
+  EventListenerList get touchEnd => this['touchend'];
 
-  EventListenerList get touchMove() => this['touchmove'];
+  EventListenerList get touchMove => this['touchmove'];
 
-  EventListenerList get touchStart() => this['touchstart'];
+  EventListenerList get touchStart => this['touchstart'];
 
-  EventListenerList get transitionEnd() => this['webkitTransitionEnd'];
+  EventListenerList get transitionEnd => this['webkitTransitionEnd'];
 
-  EventListenerList get unload() => this['unload'];
+  EventListenerList get unload => this['unload'];
 
-  EventListenerList get volumeChange() => this['volumechange'];
+  EventListenerList get volumeChange => this['volumechange'];
 
-  EventListenerList get waiting() => this['waiting'];
+  EventListenerList get waiting => this['waiting'];
 }
 
 class WorkerImpl extends AbstractWorkerImpl implements Worker native "*Worker" {
 
-  WorkerEventsImpl get on() =>
+  WorkerEventsImpl get on =>
     new WorkerEventsImpl(this);
 
   void postMessage(message, [List messagePorts]) native;
@@ -17831,12 +17913,12 @@ class WorkerImpl extends AbstractWorkerImpl implements Worker native "*Worker" {
 class WorkerEventsImpl extends AbstractWorkerEventsImpl implements WorkerEvents {
   WorkerEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get message() => this['message'];
+  EventListenerList get message => this['message'];
 }
 
 class WorkerContextImpl extends EventTargetImpl implements WorkerContext native "*WorkerContext" {
 
-  WorkerContextEventsImpl get on() =>
+  WorkerContextEventsImpl get on =>
     new WorkerContextEventsImpl(this);
 
   static const int PERSISTENT = 1;
@@ -17887,7 +17969,7 @@ class WorkerContextImpl extends EventTargetImpl implements WorkerContext native 
 class WorkerContextEventsImpl extends EventsImpl implements WorkerContextEvents {
   WorkerContextEventsImpl(_ptr) : super(_ptr);
 
-  EventListenerList get error() => this['error'];
+  EventListenerList get error => this['error'];
 }
 
 class WorkerLocationImpl implements WorkerLocation native "*WorkerLocation" {
@@ -18536,9 +18618,25 @@ class _PeerConnection00FactoryProvider {
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+class _RTCIceCandidateFactoryProvider {
+  factory RTCIceCandidate(Map dictionary) native
+      '''return new RTCIceCandidate(dictionary);''';
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 class _RTCPeerConnectionFactoryProvider {
-  factory RTCPeerConnection(Map rtcICEServers, [Map mediaConstraints]) native
-      '''return new RTCPeerConnection(rtcICEServers, mediaConstraints);''';
+  factory RTCPeerConnection(Map rtcIceServers, [Map mediaConstraints]) native
+      '''return new RTCPeerConnection(rtcIceServers, mediaConstraints);''';
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+class _RTCSessionDescriptionFactoryProvider {
+  factory RTCSessionDescription(Map dictionary) native
+      '''return new RTCSessionDescription(dictionary);''';
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -18649,7 +18747,7 @@ interface AbstractWorker extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  AbstractWorkerEvents get on();
+  AbstractWorkerEvents get on;
 
   /** @domName AbstractWorker.addEventListener */
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]);
@@ -18663,7 +18761,7 @@ interface AbstractWorker extends EventTarget {
 
 interface AbstractWorkerEvents extends Events {
 
-  EventListenerList get error();
+  EventListenerList get error;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -19086,7 +19184,7 @@ interface AudioContext extends EventTarget default _AudioContextFactoryProvider 
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  AudioContextEvents get on();
+  AudioContextEvents get on;
 
   /** @domName AudioContext.activeSourceCount */
   final int activeSourceCount;
@@ -19163,7 +19261,7 @@ interface AudioContext extends EventTarget default _AudioContextFactoryProvider 
 
 interface AudioContextEvents extends Events {
 
-  EventListenerList get complete();
+  EventListenerList get complete;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -19459,7 +19557,7 @@ interface BatteryManager extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  BatteryManagerEvents get on();
+  BatteryManagerEvents get on;
 
   /** @domName BatteryManager.charging */
   final bool charging;
@@ -19477,7 +19575,7 @@ interface BatteryManager extends EventTarget {
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]);
 
   /** @domName BatteryManager.dispatchEvent */
-  bool $dom_dispatchEvent(Event evt);
+  bool $dom_dispatchEvent(Event event);
 
   /** @domName BatteryManager.removeEventListener */
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]);
@@ -19485,13 +19583,13 @@ interface BatteryManager extends EventTarget {
 
 interface BatteryManagerEvents extends Events {
 
-  EventListenerList get chargingChange();
+  EventListenerList get chargingChange;
 
-  EventListenerList get chargingTimeChange();
+  EventListenerList get chargingTimeChange;
 
-  EventListenerList get dischargingTimeChange();
+  EventListenerList get dischargingTimeChange;
 
-  EventListenerList get levelChange();
+  EventListenerList get levelChange;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -19582,7 +19680,7 @@ interface BodyElement extends Element default _Elements {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  BodyElementEvents get on();
+  BodyElementEvents get on;
 
   /** @domName HTMLBodyElement.aLink */
   String aLink;
@@ -19602,31 +19700,31 @@ interface BodyElement extends Element default _Elements {
 
 interface BodyElementEvents extends ElementEvents {
 
-  EventListenerList get beforeUnload();
+  EventListenerList get beforeUnload;
 
-  EventListenerList get blur();
+  EventListenerList get blur;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get focus();
+  EventListenerList get focus;
 
-  EventListenerList get hashChange();
+  EventListenerList get hashChange;
 
-  EventListenerList get load();
+  EventListenerList get load;
 
-  EventListenerList get message();
+  EventListenerList get message;
 
-  EventListenerList get offline();
+  EventListenerList get offline;
 
-  EventListenerList get online();
+  EventListenerList get online;
 
-  EventListenerList get popState();
+  EventListenerList get popState;
 
-  EventListenerList get resize();
+  EventListenerList get resize;
 
-  EventListenerList get storage();
+  EventListenerList get storage;
 
-  EventListenerList get unload();
+  EventListenerList get unload;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -20115,1843 +20213,1843 @@ interface CSSStyleDeclaration default _CSSStyleDeclarationFactoryProvider {
 
 
   /** Gets the value of "animation" */
-  String get animation();
+  String get animation;
 
   /** Sets the value of "animation" */
   void set animation(var value);
 
   /** Gets the value of "animation-delay" */
-  String get animationDelay();
+  String get animationDelay;
 
   /** Sets the value of "animation-delay" */
   void set animationDelay(var value);
 
   /** Gets the value of "animation-direction" */
-  String get animationDirection();
+  String get animationDirection;
 
   /** Sets the value of "animation-direction" */
   void set animationDirection(var value);
 
   /** Gets the value of "animation-duration" */
-  String get animationDuration();
+  String get animationDuration;
 
   /** Sets the value of "animation-duration" */
   void set animationDuration(var value);
 
   /** Gets the value of "animation-fill-mode" */
-  String get animationFillMode();
+  String get animationFillMode;
 
   /** Sets the value of "animation-fill-mode" */
   void set animationFillMode(var value);
 
   /** Gets the value of "animation-iteration-count" */
-  String get animationIterationCount();
+  String get animationIterationCount;
 
   /** Sets the value of "animation-iteration-count" */
   void set animationIterationCount(var value);
 
   /** Gets the value of "animation-name" */
-  String get animationName();
+  String get animationName;
 
   /** Sets the value of "animation-name" */
   void set animationName(var value);
 
   /** Gets the value of "animation-play-state" */
-  String get animationPlayState();
+  String get animationPlayState;
 
   /** Sets the value of "animation-play-state" */
   void set animationPlayState(var value);
 
   /** Gets the value of "animation-timing-function" */
-  String get animationTimingFunction();
+  String get animationTimingFunction;
 
   /** Sets the value of "animation-timing-function" */
   void set animationTimingFunction(var value);
 
   /** Gets the value of "appearance" */
-  String get appearance();
+  String get appearance;
 
   /** Sets the value of "appearance" */
   void set appearance(var value);
 
   /** Gets the value of "backface-visibility" */
-  String get backfaceVisibility();
+  String get backfaceVisibility;
 
   /** Sets the value of "backface-visibility" */
   void set backfaceVisibility(var value);
 
   /** Gets the value of "background" */
-  String get background();
+  String get background;
 
   /** Sets the value of "background" */
   void set background(var value);
 
   /** Gets the value of "background-attachment" */
-  String get backgroundAttachment();
+  String get backgroundAttachment;
 
   /** Sets the value of "background-attachment" */
   void set backgroundAttachment(var value);
 
   /** Gets the value of "background-clip" */
-  String get backgroundClip();
+  String get backgroundClip;
 
   /** Sets the value of "background-clip" */
   void set backgroundClip(var value);
 
   /** Gets the value of "background-color" */
-  String get backgroundColor();
+  String get backgroundColor;
 
   /** Sets the value of "background-color" */
   void set backgroundColor(var value);
 
   /** Gets the value of "background-composite" */
-  String get backgroundComposite();
+  String get backgroundComposite;
 
   /** Sets the value of "background-composite" */
   void set backgroundComposite(var value);
 
   /** Gets the value of "background-image" */
-  String get backgroundImage();
+  String get backgroundImage;
 
   /** Sets the value of "background-image" */
   void set backgroundImage(var value);
 
   /** Gets the value of "background-origin" */
-  String get backgroundOrigin();
+  String get backgroundOrigin;
 
   /** Sets the value of "background-origin" */
   void set backgroundOrigin(var value);
 
   /** Gets the value of "background-position" */
-  String get backgroundPosition();
+  String get backgroundPosition;
 
   /** Sets the value of "background-position" */
   void set backgroundPosition(var value);
 
   /** Gets the value of "background-position-x" */
-  String get backgroundPositionX();
+  String get backgroundPositionX;
 
   /** Sets the value of "background-position-x" */
   void set backgroundPositionX(var value);
 
   /** Gets the value of "background-position-y" */
-  String get backgroundPositionY();
+  String get backgroundPositionY;
 
   /** Sets the value of "background-position-y" */
   void set backgroundPositionY(var value);
 
   /** Gets the value of "background-repeat" */
-  String get backgroundRepeat();
+  String get backgroundRepeat;
 
   /** Sets the value of "background-repeat" */
   void set backgroundRepeat(var value);
 
   /** Gets the value of "background-repeat-x" */
-  String get backgroundRepeatX();
+  String get backgroundRepeatX;
 
   /** Sets the value of "background-repeat-x" */
   void set backgroundRepeatX(var value);
 
   /** Gets the value of "background-repeat-y" */
-  String get backgroundRepeatY();
+  String get backgroundRepeatY;
 
   /** Sets the value of "background-repeat-y" */
   void set backgroundRepeatY(var value);
 
   /** Gets the value of "background-size" */
-  String get backgroundSize();
+  String get backgroundSize;
 
   /** Sets the value of "background-size" */
   void set backgroundSize(var value);
 
   /** Gets the value of "border" */
-  String get border();
+  String get border;
 
   /** Sets the value of "border" */
   void set border(var value);
 
   /** Gets the value of "border-after" */
-  String get borderAfter();
+  String get borderAfter;
 
   /** Sets the value of "border-after" */
   void set borderAfter(var value);
 
   /** Gets the value of "border-after-color" */
-  String get borderAfterColor();
+  String get borderAfterColor;
 
   /** Sets the value of "border-after-color" */
   void set borderAfterColor(var value);
 
   /** Gets the value of "border-after-style" */
-  String get borderAfterStyle();
+  String get borderAfterStyle;
 
   /** Sets the value of "border-after-style" */
   void set borderAfterStyle(var value);
 
   /** Gets the value of "border-after-width" */
-  String get borderAfterWidth();
+  String get borderAfterWidth;
 
   /** Sets the value of "border-after-width" */
   void set borderAfterWidth(var value);
 
   /** Gets the value of "border-before" */
-  String get borderBefore();
+  String get borderBefore;
 
   /** Sets the value of "border-before" */
   void set borderBefore(var value);
 
   /** Gets the value of "border-before-color" */
-  String get borderBeforeColor();
+  String get borderBeforeColor;
 
   /** Sets the value of "border-before-color" */
   void set borderBeforeColor(var value);
 
   /** Gets the value of "border-before-style" */
-  String get borderBeforeStyle();
+  String get borderBeforeStyle;
 
   /** Sets the value of "border-before-style" */
   void set borderBeforeStyle(var value);
 
   /** Gets the value of "border-before-width" */
-  String get borderBeforeWidth();
+  String get borderBeforeWidth;
 
   /** Sets the value of "border-before-width" */
   void set borderBeforeWidth(var value);
 
   /** Gets the value of "border-bottom" */
-  String get borderBottom();
+  String get borderBottom;
 
   /** Sets the value of "border-bottom" */
   void set borderBottom(var value);
 
   /** Gets the value of "border-bottom-color" */
-  String get borderBottomColor();
+  String get borderBottomColor;
 
   /** Sets the value of "border-bottom-color" */
   void set borderBottomColor(var value);
 
   /** Gets the value of "border-bottom-left-radius" */
-  String get borderBottomLeftRadius();
+  String get borderBottomLeftRadius;
 
   /** Sets the value of "border-bottom-left-radius" */
   void set borderBottomLeftRadius(var value);
 
   /** Gets the value of "border-bottom-right-radius" */
-  String get borderBottomRightRadius();
+  String get borderBottomRightRadius;
 
   /** Sets the value of "border-bottom-right-radius" */
   void set borderBottomRightRadius(var value);
 
   /** Gets the value of "border-bottom-style" */
-  String get borderBottomStyle();
+  String get borderBottomStyle;
 
   /** Sets the value of "border-bottom-style" */
   void set borderBottomStyle(var value);
 
   /** Gets the value of "border-bottom-width" */
-  String get borderBottomWidth();
+  String get borderBottomWidth;
 
   /** Sets the value of "border-bottom-width" */
   void set borderBottomWidth(var value);
 
   /** Gets the value of "border-collapse" */
-  String get borderCollapse();
+  String get borderCollapse;
 
   /** Sets the value of "border-collapse" */
   void set borderCollapse(var value);
 
   /** Gets the value of "border-color" */
-  String get borderColor();
+  String get borderColor;
 
   /** Sets the value of "border-color" */
   void set borderColor(var value);
 
   /** Gets the value of "border-end" */
-  String get borderEnd();
+  String get borderEnd;
 
   /** Sets the value of "border-end" */
   void set borderEnd(var value);
 
   /** Gets the value of "border-end-color" */
-  String get borderEndColor();
+  String get borderEndColor;
 
   /** Sets the value of "border-end-color" */
   void set borderEndColor(var value);
 
   /** Gets the value of "border-end-style" */
-  String get borderEndStyle();
+  String get borderEndStyle;
 
   /** Sets the value of "border-end-style" */
   void set borderEndStyle(var value);
 
   /** Gets the value of "border-end-width" */
-  String get borderEndWidth();
+  String get borderEndWidth;
 
   /** Sets the value of "border-end-width" */
   void set borderEndWidth(var value);
 
   /** Gets the value of "border-fit" */
-  String get borderFit();
+  String get borderFit;
 
   /** Sets the value of "border-fit" */
   void set borderFit(var value);
 
   /** Gets the value of "border-horizontal-spacing" */
-  String get borderHorizontalSpacing();
+  String get borderHorizontalSpacing;
 
   /** Sets the value of "border-horizontal-spacing" */
   void set borderHorizontalSpacing(var value);
 
   /** Gets the value of "border-image" */
-  String get borderImage();
+  String get borderImage;
 
   /** Sets the value of "border-image" */
   void set borderImage(var value);
 
   /** Gets the value of "border-image-outset" */
-  String get borderImageOutset();
+  String get borderImageOutset;
 
   /** Sets the value of "border-image-outset" */
   void set borderImageOutset(var value);
 
   /** Gets the value of "border-image-repeat" */
-  String get borderImageRepeat();
+  String get borderImageRepeat;
 
   /** Sets the value of "border-image-repeat" */
   void set borderImageRepeat(var value);
 
   /** Gets the value of "border-image-slice" */
-  String get borderImageSlice();
+  String get borderImageSlice;
 
   /** Sets the value of "border-image-slice" */
   void set borderImageSlice(var value);
 
   /** Gets the value of "border-image-source" */
-  String get borderImageSource();
+  String get borderImageSource;
 
   /** Sets the value of "border-image-source" */
   void set borderImageSource(var value);
 
   /** Gets the value of "border-image-width" */
-  String get borderImageWidth();
+  String get borderImageWidth;
 
   /** Sets the value of "border-image-width" */
   void set borderImageWidth(var value);
 
   /** Gets the value of "border-left" */
-  String get borderLeft();
+  String get borderLeft;
 
   /** Sets the value of "border-left" */
   void set borderLeft(var value);
 
   /** Gets the value of "border-left-color" */
-  String get borderLeftColor();
+  String get borderLeftColor;
 
   /** Sets the value of "border-left-color" */
   void set borderLeftColor(var value);
 
   /** Gets the value of "border-left-style" */
-  String get borderLeftStyle();
+  String get borderLeftStyle;
 
   /** Sets the value of "border-left-style" */
   void set borderLeftStyle(var value);
 
   /** Gets the value of "border-left-width" */
-  String get borderLeftWidth();
+  String get borderLeftWidth;
 
   /** Sets the value of "border-left-width" */
   void set borderLeftWidth(var value);
 
   /** Gets the value of "border-radius" */
-  String get borderRadius();
+  String get borderRadius;
 
   /** Sets the value of "border-radius" */
   void set borderRadius(var value);
 
   /** Gets the value of "border-right" */
-  String get borderRight();
+  String get borderRight;
 
   /** Sets the value of "border-right" */
   void set borderRight(var value);
 
   /** Gets the value of "border-right-color" */
-  String get borderRightColor();
+  String get borderRightColor;
 
   /** Sets the value of "border-right-color" */
   void set borderRightColor(var value);
 
   /** Gets the value of "border-right-style" */
-  String get borderRightStyle();
+  String get borderRightStyle;
 
   /** Sets the value of "border-right-style" */
   void set borderRightStyle(var value);
 
   /** Gets the value of "border-right-width" */
-  String get borderRightWidth();
+  String get borderRightWidth;
 
   /** Sets the value of "border-right-width" */
   void set borderRightWidth(var value);
 
   /** Gets the value of "border-spacing" */
-  String get borderSpacing();
+  String get borderSpacing;
 
   /** Sets the value of "border-spacing" */
   void set borderSpacing(var value);
 
   /** Gets the value of "border-start" */
-  String get borderStart();
+  String get borderStart;
 
   /** Sets the value of "border-start" */
   void set borderStart(var value);
 
   /** Gets the value of "border-start-color" */
-  String get borderStartColor();
+  String get borderStartColor;
 
   /** Sets the value of "border-start-color" */
   void set borderStartColor(var value);
 
   /** Gets the value of "border-start-style" */
-  String get borderStartStyle();
+  String get borderStartStyle;
 
   /** Sets the value of "border-start-style" */
   void set borderStartStyle(var value);
 
   /** Gets the value of "border-start-width" */
-  String get borderStartWidth();
+  String get borderStartWidth;
 
   /** Sets the value of "border-start-width" */
   void set borderStartWidth(var value);
 
   /** Gets the value of "border-style" */
-  String get borderStyle();
+  String get borderStyle;
 
   /** Sets the value of "border-style" */
   void set borderStyle(var value);
 
   /** Gets the value of "border-top" */
-  String get borderTop();
+  String get borderTop;
 
   /** Sets the value of "border-top" */
   void set borderTop(var value);
 
   /** Gets the value of "border-top-color" */
-  String get borderTopColor();
+  String get borderTopColor;
 
   /** Sets the value of "border-top-color" */
   void set borderTopColor(var value);
 
   /** Gets the value of "border-top-left-radius" */
-  String get borderTopLeftRadius();
+  String get borderTopLeftRadius;
 
   /** Sets the value of "border-top-left-radius" */
   void set borderTopLeftRadius(var value);
 
   /** Gets the value of "border-top-right-radius" */
-  String get borderTopRightRadius();
+  String get borderTopRightRadius;
 
   /** Sets the value of "border-top-right-radius" */
   void set borderTopRightRadius(var value);
 
   /** Gets the value of "border-top-style" */
-  String get borderTopStyle();
+  String get borderTopStyle;
 
   /** Sets the value of "border-top-style" */
   void set borderTopStyle(var value);
 
   /** Gets the value of "border-top-width" */
-  String get borderTopWidth();
+  String get borderTopWidth;
 
   /** Sets the value of "border-top-width" */
   void set borderTopWidth(var value);
 
   /** Gets the value of "border-vertical-spacing" */
-  String get borderVerticalSpacing();
+  String get borderVerticalSpacing;
 
   /** Sets the value of "border-vertical-spacing" */
   void set borderVerticalSpacing(var value);
 
   /** Gets the value of "border-width" */
-  String get borderWidth();
+  String get borderWidth;
 
   /** Sets the value of "border-width" */
   void set borderWidth(var value);
 
   /** Gets the value of "bottom" */
-  String get bottom();
+  String get bottom;
 
   /** Sets the value of "bottom" */
   void set bottom(var value);
 
   /** Gets the value of "box-align" */
-  String get boxAlign();
+  String get boxAlign;
 
   /** Sets the value of "box-align" */
   void set boxAlign(var value);
 
   /** Gets the value of "box-direction" */
-  String get boxDirection();
+  String get boxDirection;
 
   /** Sets the value of "box-direction" */
   void set boxDirection(var value);
 
   /** Gets the value of "box-flex" */
-  String get boxFlex();
+  String get boxFlex;
 
   /** Sets the value of "box-flex" */
   void set boxFlex(var value);
 
   /** Gets the value of "box-flex-group" */
-  String get boxFlexGroup();
+  String get boxFlexGroup;
 
   /** Sets the value of "box-flex-group" */
   void set boxFlexGroup(var value);
 
   /** Gets the value of "box-lines" */
-  String get boxLines();
+  String get boxLines;
 
   /** Sets the value of "box-lines" */
   void set boxLines(var value);
 
   /** Gets the value of "box-ordinal-group" */
-  String get boxOrdinalGroup();
+  String get boxOrdinalGroup;
 
   /** Sets the value of "box-ordinal-group" */
   void set boxOrdinalGroup(var value);
 
   /** Gets the value of "box-orient" */
-  String get boxOrient();
+  String get boxOrient;
 
   /** Sets the value of "box-orient" */
   void set boxOrient(var value);
 
   /** Gets the value of "box-pack" */
-  String get boxPack();
+  String get boxPack;
 
   /** Sets the value of "box-pack" */
   void set boxPack(var value);
 
   /** Gets the value of "box-reflect" */
-  String get boxReflect();
+  String get boxReflect;
 
   /** Sets the value of "box-reflect" */
   void set boxReflect(var value);
 
   /** Gets the value of "box-shadow" */
-  String get boxShadow();
+  String get boxShadow;
 
   /** Sets the value of "box-shadow" */
   void set boxShadow(var value);
 
   /** Gets the value of "box-sizing" */
-  String get boxSizing();
+  String get boxSizing;
 
   /** Sets the value of "box-sizing" */
   void set boxSizing(var value);
 
   /** Gets the value of "caption-side" */
-  String get captionSide();
+  String get captionSide;
 
   /** Sets the value of "caption-side" */
   void set captionSide(var value);
 
   /** Gets the value of "clear" */
-  String get clear();
+  String get clear;
 
   /** Sets the value of "clear" */
   void set clear(var value);
 
   /** Gets the value of "clip" */
-  String get clip();
+  String get clip;
 
   /** Sets the value of "clip" */
   void set clip(var value);
 
   /** Gets the value of "color" */
-  String get color();
+  String get color;
 
   /** Sets the value of "color" */
   void set color(var value);
 
   /** Gets the value of "color-correction" */
-  String get colorCorrection();
+  String get colorCorrection;
 
   /** Sets the value of "color-correction" */
   void set colorCorrection(var value);
 
   /** Gets the value of "column-break-after" */
-  String get columnBreakAfter();
+  String get columnBreakAfter;
 
   /** Sets the value of "column-break-after" */
   void set columnBreakAfter(var value);
 
   /** Gets the value of "column-break-before" */
-  String get columnBreakBefore();
+  String get columnBreakBefore;
 
   /** Sets the value of "column-break-before" */
   void set columnBreakBefore(var value);
 
   /** Gets the value of "column-break-inside" */
-  String get columnBreakInside();
+  String get columnBreakInside;
 
   /** Sets the value of "column-break-inside" */
   void set columnBreakInside(var value);
 
   /** Gets the value of "column-count" */
-  String get columnCount();
+  String get columnCount;
 
   /** Sets the value of "column-count" */
   void set columnCount(var value);
 
   /** Gets the value of "column-gap" */
-  String get columnGap();
+  String get columnGap;
 
   /** Sets the value of "column-gap" */
   void set columnGap(var value);
 
   /** Gets the value of "column-rule" */
-  String get columnRule();
+  String get columnRule;
 
   /** Sets the value of "column-rule" */
   void set columnRule(var value);
 
   /** Gets the value of "column-rule-color" */
-  String get columnRuleColor();
+  String get columnRuleColor;
 
   /** Sets the value of "column-rule-color" */
   void set columnRuleColor(var value);
 
   /** Gets the value of "column-rule-style" */
-  String get columnRuleStyle();
+  String get columnRuleStyle;
 
   /** Sets the value of "column-rule-style" */
   void set columnRuleStyle(var value);
 
   /** Gets the value of "column-rule-width" */
-  String get columnRuleWidth();
+  String get columnRuleWidth;
 
   /** Sets the value of "column-rule-width" */
   void set columnRuleWidth(var value);
 
   /** Gets the value of "column-span" */
-  String get columnSpan();
+  String get columnSpan;
 
   /** Sets the value of "column-span" */
   void set columnSpan(var value);
 
   /** Gets the value of "column-width" */
-  String get columnWidth();
+  String get columnWidth;
 
   /** Sets the value of "column-width" */
   void set columnWidth(var value);
 
   /** Gets the value of "columns" */
-  String get columns();
+  String get columns;
 
   /** Sets the value of "columns" */
   void set columns(var value);
 
   /** Gets the value of "content" */
-  String get content();
+  String get content;
 
   /** Sets the value of "content" */
   void set content(var value);
 
   /** Gets the value of "counter-increment" */
-  String get counterIncrement();
+  String get counterIncrement;
 
   /** Sets the value of "counter-increment" */
   void set counterIncrement(var value);
 
   /** Gets the value of "counter-reset" */
-  String get counterReset();
+  String get counterReset;
 
   /** Sets the value of "counter-reset" */
   void set counterReset(var value);
 
   /** Gets the value of "cursor" */
-  String get cursor();
+  String get cursor;
 
   /** Sets the value of "cursor" */
   void set cursor(var value);
 
   /** Gets the value of "direction" */
-  String get direction();
+  String get direction;
 
   /** Sets the value of "direction" */
   void set direction(var value);
 
   /** Gets the value of "display" */
-  String get display();
+  String get display;
 
   /** Sets the value of "display" */
   void set display(var value);
 
   /** Gets the value of "empty-cells" */
-  String get emptyCells();
+  String get emptyCells;
 
   /** Sets the value of "empty-cells" */
   void set emptyCells(var value);
 
   /** Gets the value of "filter" */
-  String get filter();
+  String get filter;
 
   /** Sets the value of "filter" */
   void set filter(var value);
 
   /** Gets the value of "flex-align" */
-  String get flexAlign();
+  String get flexAlign;
 
   /** Sets the value of "flex-align" */
   void set flexAlign(var value);
 
   /** Gets the value of "flex-flow" */
-  String get flexFlow();
+  String get flexFlow;
 
   /** Sets the value of "flex-flow" */
   void set flexFlow(var value);
 
   /** Gets the value of "flex-order" */
-  String get flexOrder();
+  String get flexOrder;
 
   /** Sets the value of "flex-order" */
   void set flexOrder(var value);
 
   /** Gets the value of "flex-pack" */
-  String get flexPack();
+  String get flexPack;
 
   /** Sets the value of "flex-pack" */
   void set flexPack(var value);
 
   /** Gets the value of "float" */
-  String get float();
+  String get float;
 
   /** Sets the value of "float" */
   void set float(var value);
 
   /** Gets the value of "flow-from" */
-  String get flowFrom();
+  String get flowFrom;
 
   /** Sets the value of "flow-from" */
   void set flowFrom(var value);
 
   /** Gets the value of "flow-into" */
-  String get flowInto();
+  String get flowInto;
 
   /** Sets the value of "flow-into" */
   void set flowInto(var value);
 
   /** Gets the value of "font" */
-  String get font();
+  String get font;
 
   /** Sets the value of "font" */
   void set font(var value);
 
   /** Gets the value of "font-family" */
-  String get fontFamily();
+  String get fontFamily;
 
   /** Sets the value of "font-family" */
   void set fontFamily(var value);
 
   /** Gets the value of "font-feature-settings" */
-  String get fontFeatureSettings();
+  String get fontFeatureSettings;
 
   /** Sets the value of "font-feature-settings" */
   void set fontFeatureSettings(var value);
 
   /** Gets the value of "font-size" */
-  String get fontSize();
+  String get fontSize;
 
   /** Sets the value of "font-size" */
   void set fontSize(var value);
 
   /** Gets the value of "font-size-delta" */
-  String get fontSizeDelta();
+  String get fontSizeDelta;
 
   /** Sets the value of "font-size-delta" */
   void set fontSizeDelta(var value);
 
   /** Gets the value of "font-smoothing" */
-  String get fontSmoothing();
+  String get fontSmoothing;
 
   /** Sets the value of "font-smoothing" */
   void set fontSmoothing(var value);
 
   /** Gets the value of "font-stretch" */
-  String get fontStretch();
+  String get fontStretch;
 
   /** Sets the value of "font-stretch" */
   void set fontStretch(var value);
 
   /** Gets the value of "font-style" */
-  String get fontStyle();
+  String get fontStyle;
 
   /** Sets the value of "font-style" */
   void set fontStyle(var value);
 
   /** Gets the value of "font-variant" */
-  String get fontVariant();
+  String get fontVariant;
 
   /** Sets the value of "font-variant" */
   void set fontVariant(var value);
 
   /** Gets the value of "font-weight" */
-  String get fontWeight();
+  String get fontWeight;
 
   /** Sets the value of "font-weight" */
   void set fontWeight(var value);
 
   /** Gets the value of "height" */
-  String get height();
+  String get height;
 
   /** Sets the value of "height" */
   void set height(var value);
 
   /** Gets the value of "highlight" */
-  String get highlight();
+  String get highlight;
 
   /** Sets the value of "highlight" */
   void set highlight(var value);
 
   /** Gets the value of "hyphenate-character" */
-  String get hyphenateCharacter();
+  String get hyphenateCharacter;
 
   /** Sets the value of "hyphenate-character" */
   void set hyphenateCharacter(var value);
 
   /** Gets the value of "hyphenate-limit-after" */
-  String get hyphenateLimitAfter();
+  String get hyphenateLimitAfter;
 
   /** Sets the value of "hyphenate-limit-after" */
   void set hyphenateLimitAfter(var value);
 
   /** Gets the value of "hyphenate-limit-before" */
-  String get hyphenateLimitBefore();
+  String get hyphenateLimitBefore;
 
   /** Sets the value of "hyphenate-limit-before" */
   void set hyphenateLimitBefore(var value);
 
   /** Gets the value of "hyphenate-limit-lines" */
-  String get hyphenateLimitLines();
+  String get hyphenateLimitLines;
 
   /** Sets the value of "hyphenate-limit-lines" */
   void set hyphenateLimitLines(var value);
 
   /** Gets the value of "hyphens" */
-  String get hyphens();
+  String get hyphens;
 
   /** Sets the value of "hyphens" */
   void set hyphens(var value);
 
   /** Gets the value of "image-rendering" */
-  String get imageRendering();
+  String get imageRendering;
 
   /** Sets the value of "image-rendering" */
   void set imageRendering(var value);
 
   /** Gets the value of "left" */
-  String get left();
+  String get left;
 
   /** Sets the value of "left" */
   void set left(var value);
 
   /** Gets the value of "letter-spacing" */
-  String get letterSpacing();
+  String get letterSpacing;
 
   /** Sets the value of "letter-spacing" */
   void set letterSpacing(var value);
 
   /** Gets the value of "line-box-contain" */
-  String get lineBoxContain();
+  String get lineBoxContain;
 
   /** Sets the value of "line-box-contain" */
   void set lineBoxContain(var value);
 
   /** Gets the value of "line-break" */
-  String get lineBreak();
+  String get lineBreak;
 
   /** Sets the value of "line-break" */
   void set lineBreak(var value);
 
   /** Gets the value of "line-clamp" */
-  String get lineClamp();
+  String get lineClamp;
 
   /** Sets the value of "line-clamp" */
   void set lineClamp(var value);
 
   /** Gets the value of "line-height" */
-  String get lineHeight();
+  String get lineHeight;
 
   /** Sets the value of "line-height" */
   void set lineHeight(var value);
 
   /** Gets the value of "list-style" */
-  String get listStyle();
+  String get listStyle;
 
   /** Sets the value of "list-style" */
   void set listStyle(var value);
 
   /** Gets the value of "list-style-image" */
-  String get listStyleImage();
+  String get listStyleImage;
 
   /** Sets the value of "list-style-image" */
   void set listStyleImage(var value);
 
   /** Gets the value of "list-style-position" */
-  String get listStylePosition();
+  String get listStylePosition;
 
   /** Sets the value of "list-style-position" */
   void set listStylePosition(var value);
 
   /** Gets the value of "list-style-type" */
-  String get listStyleType();
+  String get listStyleType;
 
   /** Sets the value of "list-style-type" */
   void set listStyleType(var value);
 
   /** Gets the value of "locale" */
-  String get locale();
+  String get locale;
 
   /** Sets the value of "locale" */
   void set locale(var value);
 
   /** Gets the value of "logical-height" */
-  String get logicalHeight();
+  String get logicalHeight;
 
   /** Sets the value of "logical-height" */
   void set logicalHeight(var value);
 
   /** Gets the value of "logical-width" */
-  String get logicalWidth();
+  String get logicalWidth;
 
   /** Sets the value of "logical-width" */
   void set logicalWidth(var value);
 
   /** Gets the value of "margin" */
-  String get margin();
+  String get margin;
 
   /** Sets the value of "margin" */
   void set margin(var value);
 
   /** Gets the value of "margin-after" */
-  String get marginAfter();
+  String get marginAfter;
 
   /** Sets the value of "margin-after" */
   void set marginAfter(var value);
 
   /** Gets the value of "margin-after-collapse" */
-  String get marginAfterCollapse();
+  String get marginAfterCollapse;
 
   /** Sets the value of "margin-after-collapse" */
   void set marginAfterCollapse(var value);
 
   /** Gets the value of "margin-before" */
-  String get marginBefore();
+  String get marginBefore;
 
   /** Sets the value of "margin-before" */
   void set marginBefore(var value);
 
   /** Gets the value of "margin-before-collapse" */
-  String get marginBeforeCollapse();
+  String get marginBeforeCollapse;
 
   /** Sets the value of "margin-before-collapse" */
   void set marginBeforeCollapse(var value);
 
   /** Gets the value of "margin-bottom" */
-  String get marginBottom();
+  String get marginBottom;
 
   /** Sets the value of "margin-bottom" */
   void set marginBottom(var value);
 
   /** Gets the value of "margin-bottom-collapse" */
-  String get marginBottomCollapse();
+  String get marginBottomCollapse;
 
   /** Sets the value of "margin-bottom-collapse" */
   void set marginBottomCollapse(var value);
 
   /** Gets the value of "margin-collapse" */
-  String get marginCollapse();
+  String get marginCollapse;
 
   /** Sets the value of "margin-collapse" */
   void set marginCollapse(var value);
 
   /** Gets the value of "margin-end" */
-  String get marginEnd();
+  String get marginEnd;
 
   /** Sets the value of "margin-end" */
   void set marginEnd(var value);
 
   /** Gets the value of "margin-left" */
-  String get marginLeft();
+  String get marginLeft;
 
   /** Sets the value of "margin-left" */
   void set marginLeft(var value);
 
   /** Gets the value of "margin-right" */
-  String get marginRight();
+  String get marginRight;
 
   /** Sets the value of "margin-right" */
   void set marginRight(var value);
 
   /** Gets the value of "margin-start" */
-  String get marginStart();
+  String get marginStart;
 
   /** Sets the value of "margin-start" */
   void set marginStart(var value);
 
   /** Gets the value of "margin-top" */
-  String get marginTop();
+  String get marginTop;
 
   /** Sets the value of "margin-top" */
   void set marginTop(var value);
 
   /** Gets the value of "margin-top-collapse" */
-  String get marginTopCollapse();
+  String get marginTopCollapse;
 
   /** Sets the value of "margin-top-collapse" */
   void set marginTopCollapse(var value);
 
   /** Gets the value of "marquee" */
-  String get marquee();
+  String get marquee;
 
   /** Sets the value of "marquee" */
   void set marquee(var value);
 
   /** Gets the value of "marquee-direction" */
-  String get marqueeDirection();
+  String get marqueeDirection;
 
   /** Sets the value of "marquee-direction" */
   void set marqueeDirection(var value);
 
   /** Gets the value of "marquee-increment" */
-  String get marqueeIncrement();
+  String get marqueeIncrement;
 
   /** Sets the value of "marquee-increment" */
   void set marqueeIncrement(var value);
 
   /** Gets the value of "marquee-repetition" */
-  String get marqueeRepetition();
+  String get marqueeRepetition;
 
   /** Sets the value of "marquee-repetition" */
   void set marqueeRepetition(var value);
 
   /** Gets the value of "marquee-speed" */
-  String get marqueeSpeed();
+  String get marqueeSpeed;
 
   /** Sets the value of "marquee-speed" */
   void set marqueeSpeed(var value);
 
   /** Gets the value of "marquee-style" */
-  String get marqueeStyle();
+  String get marqueeStyle;
 
   /** Sets the value of "marquee-style" */
   void set marqueeStyle(var value);
 
   /** Gets the value of "mask" */
-  String get mask();
+  String get mask;
 
   /** Sets the value of "mask" */
   void set mask(var value);
 
   /** Gets the value of "mask-attachment" */
-  String get maskAttachment();
+  String get maskAttachment;
 
   /** Sets the value of "mask-attachment" */
   void set maskAttachment(var value);
 
   /** Gets the value of "mask-box-image" */
-  String get maskBoxImage();
+  String get maskBoxImage;
 
   /** Sets the value of "mask-box-image" */
   void set maskBoxImage(var value);
 
   /** Gets the value of "mask-box-image-outset" */
-  String get maskBoxImageOutset();
+  String get maskBoxImageOutset;
 
   /** Sets the value of "mask-box-image-outset" */
   void set maskBoxImageOutset(var value);
 
   /** Gets the value of "mask-box-image-repeat" */
-  String get maskBoxImageRepeat();
+  String get maskBoxImageRepeat;
 
   /** Sets the value of "mask-box-image-repeat" */
   void set maskBoxImageRepeat(var value);
 
   /** Gets the value of "mask-box-image-slice" */
-  String get maskBoxImageSlice();
+  String get maskBoxImageSlice;
 
   /** Sets the value of "mask-box-image-slice" */
   void set maskBoxImageSlice(var value);
 
   /** Gets the value of "mask-box-image-source" */
-  String get maskBoxImageSource();
+  String get maskBoxImageSource;
 
   /** Sets the value of "mask-box-image-source" */
   void set maskBoxImageSource(var value);
 
   /** Gets the value of "mask-box-image-width" */
-  String get maskBoxImageWidth();
+  String get maskBoxImageWidth;
 
   /** Sets the value of "mask-box-image-width" */
   void set maskBoxImageWidth(var value);
 
   /** Gets the value of "mask-clip" */
-  String get maskClip();
+  String get maskClip;
 
   /** Sets the value of "mask-clip" */
   void set maskClip(var value);
 
   /** Gets the value of "mask-composite" */
-  String get maskComposite();
+  String get maskComposite;
 
   /** Sets the value of "mask-composite" */
   void set maskComposite(var value);
 
   /** Gets the value of "mask-image" */
-  String get maskImage();
+  String get maskImage;
 
   /** Sets the value of "mask-image" */
   void set maskImage(var value);
 
   /** Gets the value of "mask-origin" */
-  String get maskOrigin();
+  String get maskOrigin;
 
   /** Sets the value of "mask-origin" */
   void set maskOrigin(var value);
 
   /** Gets the value of "mask-position" */
-  String get maskPosition();
+  String get maskPosition;
 
   /** Sets the value of "mask-position" */
   void set maskPosition(var value);
 
   /** Gets the value of "mask-position-x" */
-  String get maskPositionX();
+  String get maskPositionX;
 
   /** Sets the value of "mask-position-x" */
   void set maskPositionX(var value);
 
   /** Gets the value of "mask-position-y" */
-  String get maskPositionY();
+  String get maskPositionY;
 
   /** Sets the value of "mask-position-y" */
   void set maskPositionY(var value);
 
   /** Gets the value of "mask-repeat" */
-  String get maskRepeat();
+  String get maskRepeat;
 
   /** Sets the value of "mask-repeat" */
   void set maskRepeat(var value);
 
   /** Gets the value of "mask-repeat-x" */
-  String get maskRepeatX();
+  String get maskRepeatX;
 
   /** Sets the value of "mask-repeat-x" */
   void set maskRepeatX(var value);
 
   /** Gets the value of "mask-repeat-y" */
-  String get maskRepeatY();
+  String get maskRepeatY;
 
   /** Sets the value of "mask-repeat-y" */
   void set maskRepeatY(var value);
 
   /** Gets the value of "mask-size" */
-  String get maskSize();
+  String get maskSize;
 
   /** Sets the value of "mask-size" */
   void set maskSize(var value);
 
   /** Gets the value of "match-nearest-mail-blockquote-color" */
-  String get matchNearestMailBlockquoteColor();
+  String get matchNearestMailBlockquoteColor;
 
   /** Sets the value of "match-nearest-mail-blockquote-color" */
   void set matchNearestMailBlockquoteColor(var value);
 
   /** Gets the value of "max-height" */
-  String get maxHeight();
+  String get maxHeight;
 
   /** Sets the value of "max-height" */
   void set maxHeight(var value);
 
   /** Gets the value of "max-logical-height" */
-  String get maxLogicalHeight();
+  String get maxLogicalHeight;
 
   /** Sets the value of "max-logical-height" */
   void set maxLogicalHeight(var value);
 
   /** Gets the value of "max-logical-width" */
-  String get maxLogicalWidth();
+  String get maxLogicalWidth;
 
   /** Sets the value of "max-logical-width" */
   void set maxLogicalWidth(var value);
 
   /** Gets the value of "max-width" */
-  String get maxWidth();
+  String get maxWidth;
 
   /** Sets the value of "max-width" */
   void set maxWidth(var value);
 
   /** Gets the value of "min-height" */
-  String get minHeight();
+  String get minHeight;
 
   /** Sets the value of "min-height" */
   void set minHeight(var value);
 
   /** Gets the value of "min-logical-height" */
-  String get minLogicalHeight();
+  String get minLogicalHeight;
 
   /** Sets the value of "min-logical-height" */
   void set minLogicalHeight(var value);
 
   /** Gets the value of "min-logical-width" */
-  String get minLogicalWidth();
+  String get minLogicalWidth;
 
   /** Sets the value of "min-logical-width" */
   void set minLogicalWidth(var value);
 
   /** Gets the value of "min-width" */
-  String get minWidth();
+  String get minWidth;
 
   /** Sets the value of "min-width" */
   void set minWidth(var value);
 
   /** Gets the value of "nbsp-mode" */
-  String get nbspMode();
+  String get nbspMode;
 
   /** Sets the value of "nbsp-mode" */
   void set nbspMode(var value);
 
   /** Gets the value of "opacity" */
-  String get opacity();
+  String get opacity;
 
   /** Sets the value of "opacity" */
   void set opacity(var value);
 
   /** Gets the value of "orphans" */
-  String get orphans();
+  String get orphans;
 
   /** Sets the value of "orphans" */
   void set orphans(var value);
 
   /** Gets the value of "outline" */
-  String get outline();
+  String get outline;
 
   /** Sets the value of "outline" */
   void set outline(var value);
 
   /** Gets the value of "outline-color" */
-  String get outlineColor();
+  String get outlineColor;
 
   /** Sets the value of "outline-color" */
   void set outlineColor(var value);
 
   /** Gets the value of "outline-offset" */
-  String get outlineOffset();
+  String get outlineOffset;
 
   /** Sets the value of "outline-offset" */
   void set outlineOffset(var value);
 
   /** Gets the value of "outline-style" */
-  String get outlineStyle();
+  String get outlineStyle;
 
   /** Sets the value of "outline-style" */
   void set outlineStyle(var value);
 
   /** Gets the value of "outline-width" */
-  String get outlineWidth();
+  String get outlineWidth;
 
   /** Sets the value of "outline-width" */
   void set outlineWidth(var value);
 
   /** Gets the value of "overflow" */
-  String get overflow();
+  String get overflow;
 
   /** Sets the value of "overflow" */
   void set overflow(var value);
 
   /** Gets the value of "overflow-x" */
-  String get overflowX();
+  String get overflowX;
 
   /** Sets the value of "overflow-x" */
   void set overflowX(var value);
 
   /** Gets the value of "overflow-y" */
-  String get overflowY();
+  String get overflowY;
 
   /** Sets the value of "overflow-y" */
   void set overflowY(var value);
 
   /** Gets the value of "padding" */
-  String get padding();
+  String get padding;
 
   /** Sets the value of "padding" */
   void set padding(var value);
 
   /** Gets the value of "padding-after" */
-  String get paddingAfter();
+  String get paddingAfter;
 
   /** Sets the value of "padding-after" */
   void set paddingAfter(var value);
 
   /** Gets the value of "padding-before" */
-  String get paddingBefore();
+  String get paddingBefore;
 
   /** Sets the value of "padding-before" */
   void set paddingBefore(var value);
 
   /** Gets the value of "padding-bottom" */
-  String get paddingBottom();
+  String get paddingBottom;
 
   /** Sets the value of "padding-bottom" */
   void set paddingBottom(var value);
 
   /** Gets the value of "padding-end" */
-  String get paddingEnd();
+  String get paddingEnd;
 
   /** Sets the value of "padding-end" */
   void set paddingEnd(var value);
 
   /** Gets the value of "padding-left" */
-  String get paddingLeft();
+  String get paddingLeft;
 
   /** Sets the value of "padding-left" */
   void set paddingLeft(var value);
 
   /** Gets the value of "padding-right" */
-  String get paddingRight();
+  String get paddingRight;
 
   /** Sets the value of "padding-right" */
   void set paddingRight(var value);
 
   /** Gets the value of "padding-start" */
-  String get paddingStart();
+  String get paddingStart;
 
   /** Sets the value of "padding-start" */
   void set paddingStart(var value);
 
   /** Gets the value of "padding-top" */
-  String get paddingTop();
+  String get paddingTop;
 
   /** Sets the value of "padding-top" */
   void set paddingTop(var value);
 
   /** Gets the value of "page" */
-  String get page();
+  String get page;
 
   /** Sets the value of "page" */
   void set page(var value);
 
   /** Gets the value of "page-break-after" */
-  String get pageBreakAfter();
+  String get pageBreakAfter;
 
   /** Sets the value of "page-break-after" */
   void set pageBreakAfter(var value);
 
   /** Gets the value of "page-break-before" */
-  String get pageBreakBefore();
+  String get pageBreakBefore;
 
   /** Sets the value of "page-break-before" */
   void set pageBreakBefore(var value);
 
   /** Gets the value of "page-break-inside" */
-  String get pageBreakInside();
+  String get pageBreakInside;
 
   /** Sets the value of "page-break-inside" */
   void set pageBreakInside(var value);
 
   /** Gets the value of "perspective" */
-  String get perspective();
+  String get perspective;
 
   /** Sets the value of "perspective" */
   void set perspective(var value);
 
   /** Gets the value of "perspective-origin" */
-  String get perspectiveOrigin();
+  String get perspectiveOrigin;
 
   /** Sets the value of "perspective-origin" */
   void set perspectiveOrigin(var value);
 
   /** Gets the value of "perspective-origin-x" */
-  String get perspectiveOriginX();
+  String get perspectiveOriginX;
 
   /** Sets the value of "perspective-origin-x" */
   void set perspectiveOriginX(var value);
 
   /** Gets the value of "perspective-origin-y" */
-  String get perspectiveOriginY();
+  String get perspectiveOriginY;
 
   /** Sets the value of "perspective-origin-y" */
   void set perspectiveOriginY(var value);
 
   /** Gets the value of "pointer-events" */
-  String get pointerEvents();
+  String get pointerEvents;
 
   /** Sets the value of "pointer-events" */
   void set pointerEvents(var value);
 
   /** Gets the value of "position" */
-  String get position();
+  String get position;
 
   /** Sets the value of "position" */
   void set position(var value);
 
   /** Gets the value of "quotes" */
-  String get quotes();
+  String get quotes;
 
   /** Sets the value of "quotes" */
   void set quotes(var value);
 
   /** Gets the value of "region-break-after" */
-  String get regionBreakAfter();
+  String get regionBreakAfter;
 
   /** Sets the value of "region-break-after" */
   void set regionBreakAfter(var value);
 
   /** Gets the value of "region-break-before" */
-  String get regionBreakBefore();
+  String get regionBreakBefore;
 
   /** Sets the value of "region-break-before" */
   void set regionBreakBefore(var value);
 
   /** Gets the value of "region-break-inside" */
-  String get regionBreakInside();
+  String get regionBreakInside;
 
   /** Sets the value of "region-break-inside" */
   void set regionBreakInside(var value);
 
   /** Gets the value of "region-overflow" */
-  String get regionOverflow();
+  String get regionOverflow;
 
   /** Sets the value of "region-overflow" */
   void set regionOverflow(var value);
 
   /** Gets the value of "resize" */
-  String get resize();
+  String get resize;
 
   /** Sets the value of "resize" */
   void set resize(var value);
 
   /** Gets the value of "right" */
-  String get right();
+  String get right;
 
   /** Sets the value of "right" */
   void set right(var value);
 
   /** Gets the value of "rtl-ordering" */
-  String get rtlOrdering();
+  String get rtlOrdering;
 
   /** Sets the value of "rtl-ordering" */
   void set rtlOrdering(var value);
 
   /** Gets the value of "size" */
-  String get size();
+  String get size;
 
   /** Sets the value of "size" */
   void set size(var value);
 
   /** Gets the value of "speak" */
-  String get speak();
+  String get speak;
 
   /** Sets the value of "speak" */
   void set speak(var value);
 
   /** Gets the value of "src" */
-  String get src();
+  String get src;
 
   /** Sets the value of "src" */
   void set src(var value);
 
   /** Gets the value of "table-layout" */
-  String get tableLayout();
+  String get tableLayout;
 
   /** Sets the value of "table-layout" */
   void set tableLayout(var value);
 
   /** Gets the value of "tap-highlight-color" */
-  String get tapHighlightColor();
+  String get tapHighlightColor;
 
   /** Sets the value of "tap-highlight-color" */
   void set tapHighlightColor(var value);
 
   /** Gets the value of "text-align" */
-  String get textAlign();
+  String get textAlign;
 
   /** Sets the value of "text-align" */
   void set textAlign(var value);
 
   /** Gets the value of "text-combine" */
-  String get textCombine();
+  String get textCombine;
 
   /** Sets the value of "text-combine" */
   void set textCombine(var value);
 
   /** Gets the value of "text-decoration" */
-  String get textDecoration();
+  String get textDecoration;
 
   /** Sets the value of "text-decoration" */
   void set textDecoration(var value);
 
   /** Gets the value of "text-decorations-in-effect" */
-  String get textDecorationsInEffect();
+  String get textDecorationsInEffect;
 
   /** Sets the value of "text-decorations-in-effect" */
   void set textDecorationsInEffect(var value);
 
   /** Gets the value of "text-emphasis" */
-  String get textEmphasis();
+  String get textEmphasis;
 
   /** Sets the value of "text-emphasis" */
   void set textEmphasis(var value);
 
   /** Gets the value of "text-emphasis-color" */
-  String get textEmphasisColor();
+  String get textEmphasisColor;
 
   /** Sets the value of "text-emphasis-color" */
   void set textEmphasisColor(var value);
 
   /** Gets the value of "text-emphasis-position" */
-  String get textEmphasisPosition();
+  String get textEmphasisPosition;
 
   /** Sets the value of "text-emphasis-position" */
   void set textEmphasisPosition(var value);
 
   /** Gets the value of "text-emphasis-style" */
-  String get textEmphasisStyle();
+  String get textEmphasisStyle;
 
   /** Sets the value of "text-emphasis-style" */
   void set textEmphasisStyle(var value);
 
   /** Gets the value of "text-fill-color" */
-  String get textFillColor();
+  String get textFillColor;
 
   /** Sets the value of "text-fill-color" */
   void set textFillColor(var value);
 
   /** Gets the value of "text-indent" */
-  String get textIndent();
+  String get textIndent;
 
   /** Sets the value of "text-indent" */
   void set textIndent(var value);
 
   /** Gets the value of "text-line-through" */
-  String get textLineThrough();
+  String get textLineThrough;
 
   /** Sets the value of "text-line-through" */
   void set textLineThrough(var value);
 
   /** Gets the value of "text-line-through-color" */
-  String get textLineThroughColor();
+  String get textLineThroughColor;
 
   /** Sets the value of "text-line-through-color" */
   void set textLineThroughColor(var value);
 
   /** Gets the value of "text-line-through-mode" */
-  String get textLineThroughMode();
+  String get textLineThroughMode;
 
   /** Sets the value of "text-line-through-mode" */
   void set textLineThroughMode(var value);
 
   /** Gets the value of "text-line-through-style" */
-  String get textLineThroughStyle();
+  String get textLineThroughStyle;
 
   /** Sets the value of "text-line-through-style" */
   void set textLineThroughStyle(var value);
 
   /** Gets the value of "text-line-through-width" */
-  String get textLineThroughWidth();
+  String get textLineThroughWidth;
 
   /** Sets the value of "text-line-through-width" */
   void set textLineThroughWidth(var value);
 
   /** Gets the value of "text-orientation" */
-  String get textOrientation();
+  String get textOrientation;
 
   /** Sets the value of "text-orientation" */
   void set textOrientation(var value);
 
   /** Gets the value of "text-overflow" */
-  String get textOverflow();
+  String get textOverflow;
 
   /** Sets the value of "text-overflow" */
   void set textOverflow(var value);
 
   /** Gets the value of "text-overline" */
-  String get textOverline();
+  String get textOverline;
 
   /** Sets the value of "text-overline" */
   void set textOverline(var value);
 
   /** Gets the value of "text-overline-color" */
-  String get textOverlineColor();
+  String get textOverlineColor;
 
   /** Sets the value of "text-overline-color" */
   void set textOverlineColor(var value);
 
   /** Gets the value of "text-overline-mode" */
-  String get textOverlineMode();
+  String get textOverlineMode;
 
   /** Sets the value of "text-overline-mode" */
   void set textOverlineMode(var value);
 
   /** Gets the value of "text-overline-style" */
-  String get textOverlineStyle();
+  String get textOverlineStyle;
 
   /** Sets the value of "text-overline-style" */
   void set textOverlineStyle(var value);
 
   /** Gets the value of "text-overline-width" */
-  String get textOverlineWidth();
+  String get textOverlineWidth;
 
   /** Sets the value of "text-overline-width" */
   void set textOverlineWidth(var value);
 
   /** Gets the value of "text-rendering" */
-  String get textRendering();
+  String get textRendering;
 
   /** Sets the value of "text-rendering" */
   void set textRendering(var value);
 
   /** Gets the value of "text-security" */
-  String get textSecurity();
+  String get textSecurity;
 
   /** Sets the value of "text-security" */
   void set textSecurity(var value);
 
   /** Gets the value of "text-shadow" */
-  String get textShadow();
+  String get textShadow;
 
   /** Sets the value of "text-shadow" */
   void set textShadow(var value);
 
   /** Gets the value of "text-size-adjust" */
-  String get textSizeAdjust();
+  String get textSizeAdjust;
 
   /** Sets the value of "text-size-adjust" */
   void set textSizeAdjust(var value);
 
   /** Gets the value of "text-stroke" */
-  String get textStroke();
+  String get textStroke;
 
   /** Sets the value of "text-stroke" */
   void set textStroke(var value);
 
   /** Gets the value of "text-stroke-color" */
-  String get textStrokeColor();
+  String get textStrokeColor;
 
   /** Sets the value of "text-stroke-color" */
   void set textStrokeColor(var value);
 
   /** Gets the value of "text-stroke-width" */
-  String get textStrokeWidth();
+  String get textStrokeWidth;
 
   /** Sets the value of "text-stroke-width" */
   void set textStrokeWidth(var value);
 
   /** Gets the value of "text-transform" */
-  String get textTransform();
+  String get textTransform;
 
   /** Sets the value of "text-transform" */
   void set textTransform(var value);
 
   /** Gets the value of "text-underline" */
-  String get textUnderline();
+  String get textUnderline;
 
   /** Sets the value of "text-underline" */
   void set textUnderline(var value);
 
   /** Gets the value of "text-underline-color" */
-  String get textUnderlineColor();
+  String get textUnderlineColor;
 
   /** Sets the value of "text-underline-color" */
   void set textUnderlineColor(var value);
 
   /** Gets the value of "text-underline-mode" */
-  String get textUnderlineMode();
+  String get textUnderlineMode;
 
   /** Sets the value of "text-underline-mode" */
   void set textUnderlineMode(var value);
 
   /** Gets the value of "text-underline-style" */
-  String get textUnderlineStyle();
+  String get textUnderlineStyle;
 
   /** Sets the value of "text-underline-style" */
   void set textUnderlineStyle(var value);
 
   /** Gets the value of "text-underline-width" */
-  String get textUnderlineWidth();
+  String get textUnderlineWidth;
 
   /** Sets the value of "text-underline-width" */
   void set textUnderlineWidth(var value);
 
   /** Gets the value of "top" */
-  String get top();
+  String get top;
 
   /** Sets the value of "top" */
   void set top(var value);
 
   /** Gets the value of "transform" */
-  String get transform();
+  String get transform;
 
   /** Sets the value of "transform" */
   void set transform(var value);
 
   /** Gets the value of "transform-origin" */
-  String get transformOrigin();
+  String get transformOrigin;
 
   /** Sets the value of "transform-origin" */
   void set transformOrigin(var value);
 
   /** Gets the value of "transform-origin-x" */
-  String get transformOriginX();
+  String get transformOriginX;
 
   /** Sets the value of "transform-origin-x" */
   void set transformOriginX(var value);
 
   /** Gets the value of "transform-origin-y" */
-  String get transformOriginY();
+  String get transformOriginY;
 
   /** Sets the value of "transform-origin-y" */
   void set transformOriginY(var value);
 
   /** Gets the value of "transform-origin-z" */
-  String get transformOriginZ();
+  String get transformOriginZ;
 
   /** Sets the value of "transform-origin-z" */
   void set transformOriginZ(var value);
 
   /** Gets the value of "transform-style" */
-  String get transformStyle();
+  String get transformStyle;
 
   /** Sets the value of "transform-style" */
   void set transformStyle(var value);
 
   /** Gets the value of "transition" */
-  String get transition();
+  String get transition;
 
   /** Sets the value of "transition" */
   void set transition(var value);
 
   /** Gets the value of "transition-delay" */
-  String get transitionDelay();
+  String get transitionDelay;
 
   /** Sets the value of "transition-delay" */
   void set transitionDelay(var value);
 
   /** Gets the value of "transition-duration" */
-  String get transitionDuration();
+  String get transitionDuration;
 
   /** Sets the value of "transition-duration" */
   void set transitionDuration(var value);
 
   /** Gets the value of "transition-property" */
-  String get transitionProperty();
+  String get transitionProperty;
 
   /** Sets the value of "transition-property" */
   void set transitionProperty(var value);
 
   /** Gets the value of "transition-timing-function" */
-  String get transitionTimingFunction();
+  String get transitionTimingFunction;
 
   /** Sets the value of "transition-timing-function" */
   void set transitionTimingFunction(var value);
 
   /** Gets the value of "unicode-bidi" */
-  String get unicodeBidi();
+  String get unicodeBidi;
 
   /** Sets the value of "unicode-bidi" */
   void set unicodeBidi(var value);
 
   /** Gets the value of "unicode-range" */
-  String get unicodeRange();
+  String get unicodeRange;
 
   /** Sets the value of "unicode-range" */
   void set unicodeRange(var value);
 
   /** Gets the value of "user-drag" */
-  String get userDrag();
+  String get userDrag;
 
   /** Sets the value of "user-drag" */
   void set userDrag(var value);
 
   /** Gets the value of "user-modify" */
-  String get userModify();
+  String get userModify;
 
   /** Sets the value of "user-modify" */
   void set userModify(var value);
 
   /** Gets the value of "user-select" */
-  String get userSelect();
+  String get userSelect;
 
   /** Sets the value of "user-select" */
   void set userSelect(var value);
 
   /** Gets the value of "vertical-align" */
-  String get verticalAlign();
+  String get verticalAlign;
 
   /** Sets the value of "vertical-align" */
   void set verticalAlign(var value);
 
   /** Gets the value of "visibility" */
-  String get visibility();
+  String get visibility;
 
   /** Sets the value of "visibility" */
   void set visibility(var value);
 
   /** Gets the value of "white-space" */
-  String get whiteSpace();
+  String get whiteSpace;
 
   /** Sets the value of "white-space" */
   void set whiteSpace(var value);
 
   /** Gets the value of "widows" */
-  String get widows();
+  String get widows;
 
   /** Sets the value of "widows" */
   void set widows(var value);
 
   /** Gets the value of "width" */
-  String get width();
+  String get width;
 
   /** Sets the value of "width" */
   void set width(var value);
 
   /** Gets the value of "word-break" */
-  String get wordBreak();
+  String get wordBreak;
 
   /** Sets the value of "word-break" */
   void set wordBreak(var value);
 
   /** Gets the value of "word-spacing" */
-  String get wordSpacing();
+  String get wordSpacing;
 
   /** Sets the value of "word-spacing" */
   void set wordSpacing(var value);
 
   /** Gets the value of "word-wrap" */
-  String get wordWrap();
+  String get wordWrap;
 
   /** Sets the value of "word-wrap" */
   void set wordWrap(var value);
 
   /** Gets the value of "wrap-shape" */
-  String get wrapShape();
+  String get wrapShape;
 
   /** Sets the value of "wrap-shape" */
   void set wrapShape(var value);
 
   /** Gets the value of "writing-mode" */
-  String get writingMode();
+  String get writingMode;
 
   /** Sets the value of "writing-mode" */
   void set writingMode(var value);
 
   /** Gets the value of "z-index" */
-  String get zIndex();
+  String get zIndex;
 
   /** Sets the value of "z-index" */
   void set zIndex(var value);
 
   /** Gets the value of "zoom" */
-  String get zoom();
+  String get zoom;
 
   /** Sets the value of "zoom" */
   void set zoom(var value);
@@ -22714,7 +22812,7 @@ interface DOMApplicationCache extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  DOMApplicationCacheEvents get on();
+  DOMApplicationCacheEvents get on;
 
   static const int CHECKING = 2;
 
@@ -22752,21 +22850,21 @@ interface DOMApplicationCache extends EventTarget {
 
 interface DOMApplicationCacheEvents extends Events {
 
-  EventListenerList get cached();
+  EventListenerList get cached;
 
-  EventListenerList get checking();
+  EventListenerList get checking;
 
-  EventListenerList get downloading();
+  EventListenerList get downloading;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get noUpdate();
+  EventListenerList get noUpdate;
 
-  EventListenerList get obsolete();
+  EventListenerList get obsolete;
 
-  EventListenerList get progress();
+  EventListenerList get progress;
 
-  EventListenerList get updateReady();
+  EventListenerList get updateReady;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -23355,7 +23453,7 @@ interface DedicatedWorkerContext extends WorkerContext {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  DedicatedWorkerContextEvents get on();
+  DedicatedWorkerContextEvents get on;
 
   /** @domName DedicatedWorkerContext.postMessage */
   void postMessage(Object message, [List messagePorts]);
@@ -23366,7 +23464,7 @@ interface DedicatedWorkerContext extends WorkerContext {
 
 interface DedicatedWorkerContextEvents extends WorkerContextEvents {
 
-  EventListenerList get message();
+  EventListenerList get message;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -23533,7 +23631,7 @@ interface Document extends HtmlElement {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  DocumentEvents get on();
+  DocumentEvents get on;
 
   /** @domName HTMLDocument.activeElement */
   final Element activeElement;
@@ -23689,103 +23787,103 @@ interface Document extends HtmlElement {
 
 interface DocumentEvents extends ElementEvents {
 
-  EventListenerList get abort();
+  EventListenerList get abort;
 
-  EventListenerList get beforeCopy();
+  EventListenerList get beforeCopy;
 
-  EventListenerList get beforeCut();
+  EventListenerList get beforeCut;
 
-  EventListenerList get beforePaste();
+  EventListenerList get beforePaste;
 
-  EventListenerList get blur();
+  EventListenerList get blur;
 
-  EventListenerList get change();
+  EventListenerList get change;
 
-  EventListenerList get click();
+  EventListenerList get click;
 
-  EventListenerList get contextMenu();
+  EventListenerList get contextMenu;
 
-  EventListenerList get copy();
+  EventListenerList get copy;
 
-  EventListenerList get cut();
+  EventListenerList get cut;
 
-  EventListenerList get doubleClick();
+  EventListenerList get doubleClick;
 
-  EventListenerList get drag();
+  EventListenerList get drag;
 
-  EventListenerList get dragEnd();
+  EventListenerList get dragEnd;
 
-  EventListenerList get dragEnter();
+  EventListenerList get dragEnter;
 
-  EventListenerList get dragLeave();
+  EventListenerList get dragLeave;
 
-  EventListenerList get dragOver();
+  EventListenerList get dragOver;
 
-  EventListenerList get dragStart();
+  EventListenerList get dragStart;
 
-  EventListenerList get drop();
+  EventListenerList get drop;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get focus();
+  EventListenerList get focus;
 
-  EventListenerList get fullscreenChange();
+  EventListenerList get fullscreenChange;
 
-  EventListenerList get fullscreenError();
+  EventListenerList get fullscreenError;
 
-  EventListenerList get input();
+  EventListenerList get input;
 
-  EventListenerList get invalid();
+  EventListenerList get invalid;
 
-  EventListenerList get keyDown();
+  EventListenerList get keyDown;
 
-  EventListenerList get keyPress();
+  EventListenerList get keyPress;
 
-  EventListenerList get keyUp();
+  EventListenerList get keyUp;
 
-  EventListenerList get load();
+  EventListenerList get load;
 
-  EventListenerList get mouseDown();
+  EventListenerList get mouseDown;
 
-  EventListenerList get mouseMove();
+  EventListenerList get mouseMove;
 
-  EventListenerList get mouseOut();
+  EventListenerList get mouseOut;
 
-  EventListenerList get mouseOver();
+  EventListenerList get mouseOver;
 
-  EventListenerList get mouseUp();
+  EventListenerList get mouseUp;
 
-  EventListenerList get mouseWheel();
+  EventListenerList get mouseWheel;
 
-  EventListenerList get paste();
+  EventListenerList get paste;
 
-  EventListenerList get pointerLockChange();
+  EventListenerList get pointerLockChange;
 
-  EventListenerList get pointerLockError();
+  EventListenerList get pointerLockError;
 
-  EventListenerList get readyStateChange();
+  EventListenerList get readyStateChange;
 
-  EventListenerList get reset();
+  EventListenerList get reset;
 
-  EventListenerList get scroll();
+  EventListenerList get scroll;
 
-  EventListenerList get search();
+  EventListenerList get search;
 
-  EventListenerList get select();
+  EventListenerList get select;
 
-  EventListenerList get selectStart();
+  EventListenerList get selectStart;
 
-  EventListenerList get selectionChange();
+  EventListenerList get selectionChange;
 
-  EventListenerList get submit();
+  EventListenerList get submit;
 
-  EventListenerList get touchCancel();
+  EventListenerList get touchCancel;
 
-  EventListenerList get touchEnd();
+  EventListenerList get touchEnd;
 
-  EventListenerList get touchMove();
+  EventListenerList get touchMove;
 
-  EventListenerList get touchStart();
+  EventListenerList get touchStart;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -23810,7 +23908,7 @@ interface DocumentFragment extends Element default _DocumentFragmentFactoryProvi
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  ElementEvents get on();
+  ElementEvents get on;
 
   /** @domName DocumentFragment.querySelector */
   Element $dom_querySelector(String selectors);
@@ -23903,7 +24001,7 @@ interface ElementList extends List {
 
   ElementList getRange(int start, int length);
 
-  Element get first();
+  Element get first;
   // TODO(jacobr): add insertAt
 }
 
@@ -23921,13 +24019,13 @@ interface AttributeMap extends Map<String, String> {
  */
 interface ElementRect {
   // Relative to offsetParent
-  ClientRect get client();
-  ClientRect get offset();
-  ClientRect get scroll();
+  ClientRect get client;
+  ClientRect get offset;
+  ClientRect get scroll;
   // In global coords
-  ClientRect get bounding();
+  ClientRect get bounding;
   // In global coords
-  List<ClientRect> get clientRects();
+  List<ClientRect> get clientRects;
 }
 
 interface NodeSelector {
@@ -23946,7 +24044,7 @@ interface CSSClassSet extends Set<String> {
    * Returns [:true:] classes cannot be added or removed from this
    * [:CSSClassSet:].
    */
-  bool get isFrozen();
+  bool get isFrozen;
 }
 
 /// @domName Element
@@ -23954,23 +24052,23 @@ interface Element extends Node, NodeSelector default _ElementFactoryProvider {
   Element.html(String html);
   Element.tag(String tag);
 
-  AttributeMap get attributes();
+  AttributeMap get attributes;
   void set attributes(Map<String, String> value);
 
   /**
    * @domName childElementCount, firstElementChild, lastElementChild,
    *   children, Node.nodes.add
    */
-  ElementList get elements();
+  ElementList get elements;
 
   void set elements(Collection<Element> value);
 
   /** @domName className, classList */
-  CSSClassSet get classes();
+  CSSClassSet get classes;
 
   void set classes(Collection<String> value);
 
-  AttributeMap get dataAttributes();
+  AttributeMap get dataAttributes;
   void set dataAttributes(Map<String, String> value);
 
   /**
@@ -23989,23 +24087,23 @@ interface Element extends Node, NodeSelector default _ElementFactoryProvider {
    * clientTop, clientLeft, offsetHeight, offsetWidth, offsetTop, offsetLeft,
    * scrollHeight, scrollWidth, scrollTop, scrollLeft
    */
-  Future<ElementRect> get rect();
+  Future<ElementRect> get rect;
 
   /** @domName Window.getComputedStyle */
-  Future<CSSStyleDeclaration> get computedStyle();
+  Future<CSSStyleDeclaration> get computedStyle;
 
   /** @domName Window.getComputedStyle */
   Future<CSSStyleDeclaration> getComputedStyle(String pseudoElement);
 
   Element clone(bool deep);
 
-  Element get parent();
+  Element get parent;
 
 
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  ElementEvents get on();
+  ElementEvents get on;
 
   /** @domName HTMLElement.children */
   final HTMLCollection $dom_children;
@@ -24196,101 +24294,101 @@ interface Element extends Node, NodeSelector default _ElementFactoryProvider {
 
 interface ElementEvents extends Events {
 
-  EventListenerList get abort();
+  EventListenerList get abort;
 
-  EventListenerList get beforeCopy();
+  EventListenerList get beforeCopy;
 
-  EventListenerList get beforeCut();
+  EventListenerList get beforeCut;
 
-  EventListenerList get beforePaste();
+  EventListenerList get beforePaste;
 
-  EventListenerList get blur();
+  EventListenerList get blur;
 
-  EventListenerList get change();
+  EventListenerList get change;
 
-  EventListenerList get click();
+  EventListenerList get click;
 
-  EventListenerList get contextMenu();
+  EventListenerList get contextMenu;
 
-  EventListenerList get copy();
+  EventListenerList get copy;
 
-  EventListenerList get cut();
+  EventListenerList get cut;
 
-  EventListenerList get doubleClick();
+  EventListenerList get doubleClick;
 
-  EventListenerList get drag();
+  EventListenerList get drag;
 
-  EventListenerList get dragEnd();
+  EventListenerList get dragEnd;
 
-  EventListenerList get dragEnter();
+  EventListenerList get dragEnter;
 
-  EventListenerList get dragLeave();
+  EventListenerList get dragLeave;
 
-  EventListenerList get dragOver();
+  EventListenerList get dragOver;
 
-  EventListenerList get dragStart();
+  EventListenerList get dragStart;
 
-  EventListenerList get drop();
+  EventListenerList get drop;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get focus();
+  EventListenerList get focus;
 
-  EventListenerList get fullscreenChange();
+  EventListenerList get fullscreenChange;
 
-  EventListenerList get fullscreenError();
+  EventListenerList get fullscreenError;
 
-  EventListenerList get input();
+  EventListenerList get input;
 
-  EventListenerList get invalid();
+  EventListenerList get invalid;
 
-  EventListenerList get keyDown();
+  EventListenerList get keyDown;
 
-  EventListenerList get keyPress();
+  EventListenerList get keyPress;
 
-  EventListenerList get keyUp();
+  EventListenerList get keyUp;
 
-  EventListenerList get load();
+  EventListenerList get load;
 
-  EventListenerList get mouseDown();
+  EventListenerList get mouseDown;
 
-  EventListenerList get mouseMove();
+  EventListenerList get mouseMove;
 
-  EventListenerList get mouseOut();
+  EventListenerList get mouseOut;
 
-  EventListenerList get mouseOver();
+  EventListenerList get mouseOver;
 
-  EventListenerList get mouseUp();
+  EventListenerList get mouseUp;
 
-  EventListenerList get mouseWheel();
+  EventListenerList get mouseWheel;
 
-  EventListenerList get paste();
+  EventListenerList get paste;
 
-  EventListenerList get reset();
+  EventListenerList get reset;
 
-  EventListenerList get scroll();
+  EventListenerList get scroll;
 
-  EventListenerList get search();
+  EventListenerList get search;
 
-  EventListenerList get select();
+  EventListenerList get select;
 
-  EventListenerList get selectStart();
+  EventListenerList get selectStart;
 
-  EventListenerList get submit();
+  EventListenerList get submit;
 
-  EventListenerList get touchCancel();
+  EventListenerList get touchCancel;
 
-  EventListenerList get touchEnd();
+  EventListenerList get touchEnd;
 
-  EventListenerList get touchEnter();
+  EventListenerList get touchEnter;
 
-  EventListenerList get touchLeave();
+  EventListenerList get touchLeave;
 
-  EventListenerList get touchMove();
+  EventListenerList get touchMove;
 
-  EventListenerList get touchStart();
+  EventListenerList get touchStart;
 
-  EventListenerList get transitionEnd();
+  EventListenerList get transitionEnd;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -24690,7 +24788,7 @@ interface EventSource extends EventTarget default _EventSourceFactoryProvider {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  EventSourceEvents get on();
+  EventSourceEvents get on;
 
   static const int CLOSED = 2;
 
@@ -24722,11 +24820,11 @@ interface EventSource extends EventTarget default _EventSourceFactoryProvider {
 
 interface EventSourceEvents extends Events {
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get message();
+  EventListenerList get message;
 
-  EventListenerList get open();
+  EventListenerList get open;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -24968,7 +25066,7 @@ interface FileReader extends EventTarget default _FileReaderFactoryProvider {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  FileReaderEvents get on();
+  FileReaderEvents get on;
 
   static const int DONE = 2;
 
@@ -25012,17 +25110,17 @@ interface FileReader extends EventTarget default _FileReaderFactoryProvider {
 
 interface FileReaderEvents extends Events {
 
-  EventListenerList get abort();
+  EventListenerList get abort;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get load();
+  EventListenerList get load;
 
-  EventListenerList get loadEnd();
+  EventListenerList get loadEnd;
 
-  EventListenerList get loadStart();
+  EventListenerList get loadStart;
 
-  EventListenerList get progress();
+  EventListenerList get progress;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -25066,7 +25164,7 @@ interface FileWriter extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  FileWriterEvents get on();
+  FileWriterEvents get on;
 
   static const int DONE = 2;
 
@@ -25110,17 +25208,17 @@ interface FileWriter extends EventTarget {
 
 interface FileWriterEvents extends Events {
 
-  EventListenerList get abort();
+  EventListenerList get abort;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get progress();
+  EventListenerList get progress;
 
-  EventListenerList get write();
+  EventListenerList get write;
 
-  EventListenerList get writeEnd();
+  EventListenerList get writeEnd;
 
-  EventListenerList get writeStart();
+  EventListenerList get writeStart;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -25350,7 +25448,7 @@ interface FrameSetElement extends Element {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  FrameSetElementEvents get on();
+  FrameSetElementEvents get on;
 
   /** @domName HTMLFrameSetElement.cols */
   String cols;
@@ -25361,31 +25459,31 @@ interface FrameSetElement extends Element {
 
 interface FrameSetElementEvents extends ElementEvents {
 
-  EventListenerList get beforeUnload();
+  EventListenerList get beforeUnload;
 
-  EventListenerList get blur();
+  EventListenerList get blur;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get focus();
+  EventListenerList get focus;
 
-  EventListenerList get hashChange();
+  EventListenerList get hashChange;
 
-  EventListenerList get load();
+  EventListenerList get load;
 
-  EventListenerList get message();
+  EventListenerList get message;
 
-  EventListenerList get offline();
+  EventListenerList get offline;
 
-  EventListenerList get online();
+  EventListenerList get online;
 
-  EventListenerList get popState();
+  EventListenerList get popState;
 
-  EventListenerList get resize();
+  EventListenerList get resize;
 
-  EventListenerList get storage();
+  EventListenerList get storage;
 
-  EventListenerList get unload();
+  EventListenerList get unload;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -25653,7 +25751,7 @@ interface HttpRequest extends EventTarget default _HttpRequestFactoryProvider {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  HttpRequestEvents get on();
+  HttpRequestEvents get on;
 
   static const int DONE = 4;
 
@@ -25725,19 +25823,19 @@ interface HttpRequest extends EventTarget default _HttpRequestFactoryProvider {
 
 interface HttpRequestEvents extends Events {
 
-  EventListenerList get abort();
+  EventListenerList get abort;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get load();
+  EventListenerList get load;
 
-  EventListenerList get loadEnd();
+  EventListenerList get loadEnd;
 
-  EventListenerList get loadStart();
+  EventListenerList get loadStart;
 
-  EventListenerList get progress();
+  EventListenerList get progress;
 
-  EventListenerList get readyStateChange();
+  EventListenerList get readyStateChange;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -25791,7 +25889,7 @@ interface HttpRequestUpload extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  HttpRequestUploadEvents get on();
+  HttpRequestUploadEvents get on;
 
   /** @domName XMLHttpRequestUpload.addEventListener */
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]);
@@ -25805,17 +25903,17 @@ interface HttpRequestUpload extends EventTarget {
 
 interface HttpRequestUploadEvents extends Events {
 
-  EventListenerList get abort();
+  EventListenerList get abort;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get load();
+  EventListenerList get load;
 
-  EventListenerList get loadEnd();
+  EventListenerList get loadEnd;
 
-  EventListenerList get loadStart();
+  EventListenerList get loadStart;
 
-  EventListenerList get progress();
+  EventListenerList get progress;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -25891,7 +25989,7 @@ interface IDBDatabase extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  IDBDatabaseEvents get on();
+  IDBDatabaseEvents get on;
 
   /** @domName IDBDatabase.name */
   final String name;
@@ -25929,11 +26027,11 @@ interface IDBDatabase extends EventTarget {
 
 interface IDBDatabaseEvents extends Events {
 
-  EventListenerList get abort();
+  EventListenerList get abort;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get versionChange();
+  EventListenerList get versionChange;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -26160,14 +26258,14 @@ interface IDBOpenDBRequest extends IDBRequest, EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  IDBOpenDBRequestEvents get on();
+  IDBOpenDBRequestEvents get on;
 }
 
 interface IDBOpenDBRequestEvents extends IDBRequestEvents {
 
-  EventListenerList get blocked();
+  EventListenerList get blocked;
 
-  EventListenerList get upgradeNeeded();
+  EventListenerList get upgradeNeeded;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -26181,7 +26279,7 @@ interface IDBRequest extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  IDBRequestEvents get on();
+  IDBRequestEvents get on;
 
   /** @domName IDBRequest.error */
   final DOMError error;
@@ -26216,9 +26314,9 @@ interface IDBRequest extends EventTarget {
 
 interface IDBRequestEvents extends Events {
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get success();
+  EventListenerList get success;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -26232,7 +26330,7 @@ interface IDBTransaction extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  IDBTransactionEvents get on();
+  IDBTransactionEvents get on;
 
   static const int READ_ONLY = 0;
 
@@ -26267,11 +26365,11 @@ interface IDBTransaction extends EventTarget {
 
 interface IDBTransactionEvents extends Events {
 
-  EventListenerList get abort();
+  EventListenerList get abort;
 
-  EventListenerList get complete();
+  EventListenerList get complete;
 
-  EventListenerList get error();
+  EventListenerList get error;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -26312,12 +26410,12 @@ interface IDBVersionChangeRequest extends IDBRequest, EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  IDBVersionChangeRequestEvents get on();
+  IDBVersionChangeRequestEvents get on;
 }
 
 interface IDBVersionChangeRequestEvents extends IDBRequestEvents {
 
-  EventListenerList get blocked();
+  EventListenerList get blocked;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -26496,7 +26594,7 @@ interface InputElement extends Element default _Elements {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  InputElementEvents get on();
+  InputElementEvents get on;
 
   /** @domName HTMLInputElement.accept */
   String accept;
@@ -26666,7 +26764,7 @@ interface InputElement extends Element default _Elements {
 
 interface InputElementEvents extends ElementEvents {
 
-  EventListenerList get speechChange();
+  EventListenerList get speechChange;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -26758,7 +26856,7 @@ interface JavaScriptAudioNode extends AudioNode, EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  JavaScriptAudioNodeEvents get on();
+  JavaScriptAudioNodeEvents get on;
 
   /** @domName JavaScriptAudioNode.bufferSize */
   final int bufferSize;
@@ -26766,7 +26864,7 @@ interface JavaScriptAudioNode extends AudioNode, EventTarget {
 
 interface JavaScriptAudioNodeEvents extends Events {
 
-  EventListenerList get audioProcess();
+  EventListenerList get audioProcess;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -27197,7 +27295,7 @@ interface MediaElement extends Element {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  MediaElementEvents get on();
+  MediaElementEvents get on;
 
   static const int HAVE_CURRENT_DATA = 2;
 
@@ -27340,55 +27438,55 @@ interface MediaElement extends Element {
 
 interface MediaElementEvents extends ElementEvents {
 
-  EventListenerList get canPlay();
+  EventListenerList get canPlay;
 
-  EventListenerList get canPlayThrough();
+  EventListenerList get canPlayThrough;
 
-  EventListenerList get durationChange();
+  EventListenerList get durationChange;
 
-  EventListenerList get emptied();
+  EventListenerList get emptied;
 
-  EventListenerList get ended();
+  EventListenerList get ended;
 
-  EventListenerList get keyAdded();
+  EventListenerList get keyAdded;
 
-  EventListenerList get keyError();
+  EventListenerList get keyError;
 
-  EventListenerList get keyMessage();
+  EventListenerList get keyMessage;
 
-  EventListenerList get loadStart();
+  EventListenerList get loadStart;
 
-  EventListenerList get loadedData();
+  EventListenerList get loadedData;
 
-  EventListenerList get loadedMetadata();
+  EventListenerList get loadedMetadata;
 
-  EventListenerList get needKey();
+  EventListenerList get needKey;
 
-  EventListenerList get pause();
+  EventListenerList get pause;
 
-  EventListenerList get play();
+  EventListenerList get play;
 
-  EventListenerList get playing();
+  EventListenerList get playing;
 
-  EventListenerList get progress();
+  EventListenerList get progress;
 
-  EventListenerList get rateChange();
+  EventListenerList get rateChange;
 
-  EventListenerList get seeked();
+  EventListenerList get seeked;
 
-  EventListenerList get seeking();
+  EventListenerList get seeking;
 
-  EventListenerList get show();
+  EventListenerList get show;
 
-  EventListenerList get stalled();
+  EventListenerList get stalled;
 
-  EventListenerList get suspend();
+  EventListenerList get suspend;
 
-  EventListenerList get timeUpdate();
+  EventListenerList get timeUpdate;
 
-  EventListenerList get volumeChange();
+  EventListenerList get volumeChange;
 
-  EventListenerList get waiting();
+  EventListenerList get waiting;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -27549,6 +27647,9 @@ interface MediaSource extends EventTarget default _MediaSourceFactoryProvider {
   /** @domName MediaSource.activeSourceBuffers */
   final SourceBufferList activeSourceBuffers;
 
+  /** @domName MediaSource.duration */
+  num duration;
+
   /** @domName MediaSource.readyState */
   final String readyState;
 
@@ -27587,7 +27688,7 @@ interface MediaStream extends EventTarget default _MediaStreamFactoryProvider {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  MediaStreamEvents get on();
+  MediaStreamEvents get on;
 
   static const int ENDED = 2;
 
@@ -27617,7 +27718,7 @@ interface MediaStream extends EventTarget default _MediaStreamFactoryProvider {
 
 interface MediaStreamEvents extends Events {
 
-  EventListenerList get ended();
+  EventListenerList get ended;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -27670,7 +27771,7 @@ interface MediaStreamTrack extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  MediaStreamTrackEvents get on();
+  MediaStreamTrackEvents get on;
 
   static const int ENDED = 2;
 
@@ -27702,11 +27803,11 @@ interface MediaStreamTrack extends EventTarget {
 
 interface MediaStreamTrackEvents extends Events {
 
-  EventListenerList get ended();
+  EventListenerList get ended;
 
-  EventListenerList get mute();
+  EventListenerList get mute;
 
-  EventListenerList get unmute();
+  EventListenerList get unmute;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -27732,7 +27833,7 @@ interface MediaStreamTrackList extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  MediaStreamTrackListEvents get on();
+  MediaStreamTrackListEvents get on;
 
   /** @domName MediaStreamTrackList.length */
   final int length;
@@ -27758,9 +27859,9 @@ interface MediaStreamTrackList extends EventTarget {
 
 interface MediaStreamTrackListEvents extends Events {
 
-  EventListenerList get addTrack();
+  EventListenerList get addTrack;
 
-  EventListenerList get removeTrack();
+  EventListenerList get removeTrack;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -27853,7 +27954,7 @@ interface MessagePort extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  MessagePortEvents get on();
+  MessagePortEvents get on;
 
   /** @domName MessagePort.addEventListener */
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]);
@@ -27865,7 +27966,7 @@ interface MessagePort extends EventTarget {
   bool $dom_dispatchEvent(Event evt);
 
   /** @domName MessagePort.postMessage */
-  void postMessage(String message, [List messagePorts]);
+  void postMessage(Object message, [List messagePorts]);
 
   /** @domName MessagePort.removeEventListener */
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]);
@@ -27874,12 +27975,12 @@ interface MessagePort extends EventTarget {
   void start();
 
   /** @domName MessagePort.webkitPostMessage */
-  void webkitPostMessage(String message, [List transfer]);
+  void webkitPostMessage(Object message, [List transfer]);
 }
 
 interface MessagePortEvents extends Events {
 
-  EventListenerList get message();
+  EventListenerList get message;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -28287,7 +28388,7 @@ typedef bool NavigatorUserMediaSuccessCallback(LocalMediaStream stream);
 
 /// @domName Node
 interface Node extends EventTarget {
-  NodeList get nodes();
+  NodeList get nodes;
 
   void set nodes(Collection<Node> value);
 
@@ -28494,7 +28595,7 @@ interface NodeList extends List<Node> {
 
   NodeList getRange(int start, int length);
 
-  Node get first();
+  Node get first;
 
 
   /** @domName NodeList.length */
@@ -28530,7 +28631,7 @@ interface Notification extends EventTarget default _NotificationFactoryProvider 
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  NotificationEvents get on();
+  NotificationEvents get on;
 
   /** @domName Notification.dir */
   String dir;
@@ -28565,15 +28666,15 @@ interface Notification extends EventTarget default _NotificationFactoryProvider 
 
 interface NotificationEvents extends Events {
 
-  EventListenerList get click();
+  EventListenerList get click;
 
-  EventListenerList get close();
+  EventListenerList get close;
 
-  EventListenerList get display();
+  EventListenerList get display;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get show();
+  EventListenerList get show;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -29007,7 +29108,7 @@ interface PeerConnection00 extends EventTarget default _PeerConnection00FactoryP
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  PeerConnection00Events get on();
+  PeerConnection00Events get on;
 
   static const int ACTIVE = 2;
 
@@ -29094,15 +29195,15 @@ interface PeerConnection00 extends EventTarget default _PeerConnection00FactoryP
 
 interface PeerConnection00Events extends Events {
 
-  EventListenerList get addStream();
+  EventListenerList get addStream;
 
-  EventListenerList get connecting();
+  EventListenerList get connecting;
 
-  EventListenerList get open();
+  EventListenerList get open;
 
-  EventListenerList get removeStream();
+  EventListenerList get removeStream;
 
-  EventListenerList get stateChange();
+  EventListenerList get stateChange;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -29396,20 +29497,148 @@ interface RGBColor {
 
 // WARNING: Do not edit - generated code.
 
+typedef bool RTCErrorCallback(String errorInformation);
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// WARNING: Do not edit - generated code.
+
+/// @domName RTCIceCandidate
+interface RTCIceCandidate default _RTCIceCandidateFactoryProvider {
+
+  RTCIceCandidate(Map dictionary);
+
+  /** @domName RTCIceCandidate.candidate */
+  final String candidate;
+
+  /** @domName RTCIceCandidate.sdpMLineIndex */
+  final int sdpMLineIndex;
+
+  /** @domName RTCIceCandidate.sdpMid */
+  final String sdpMid;
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// WARNING: Do not edit - generated code.
+
+/// @domName RTCIceCandidateEvent
+interface RTCIceCandidateEvent extends Event {
+
+  /** @domName RTCIceCandidateEvent.candidate */
+  final RTCIceCandidate candidate;
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// WARNING: Do not edit - generated code.
+
 /// @domName RTCPeerConnection
 interface RTCPeerConnection extends EventTarget default _RTCPeerConnectionFactoryProvider {
 
-  RTCPeerConnection(Map rtcICEServers, [Map mediaConstraints]);
+  RTCPeerConnection(Map rtcIceServers, [Map mediaConstraints]);
+
+  /**
+   * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
+   */
+  RTCPeerConnectionEvents get on;
+
+  /** @domName RTCPeerConnection.iceState */
+  final String iceState;
+
+  /** @domName RTCPeerConnection.localDescription */
+  final RTCSessionDescription localDescription;
+
+  /** @domName RTCPeerConnection.localStreams */
+  final MediaStreamList localStreams;
+
+  /** @domName RTCPeerConnection.readyState */
+  final String readyState;
+
+  /** @domName RTCPeerConnection.remoteDescription */
+  final RTCSessionDescription remoteDescription;
+
+  /** @domName RTCPeerConnection.remoteStreams */
+  final MediaStreamList remoteStreams;
 
   /** @domName RTCPeerConnection.addEventListener */
   void $dom_addEventListener(String type, EventListener listener, [bool useCapture]);
+
+  /** @domName RTCPeerConnection.addIceCandidate */
+  void addIceCandidate(RTCIceCandidate candidate);
+
+  /** @domName RTCPeerConnection.addStream */
+  void addStream(MediaStream stream, Map mediaConstraints);
+
+  /** @domName RTCPeerConnection.close */
+  void close();
+
+  /** @domName RTCPeerConnection.createAnswer */
+  void createAnswer(RTCSessionDescriptionCallback successCallback, [RTCErrorCallback failureCallback, Map mediaConstraints]);
+
+  /** @domName RTCPeerConnection.createOffer */
+  void createOffer(RTCSessionDescriptionCallback successCallback, [RTCErrorCallback failureCallback, Map mediaConstraints]);
 
   /** @domName RTCPeerConnection.dispatchEvent */
   bool $dom_dispatchEvent(Event event);
 
   /** @domName RTCPeerConnection.removeEventListener */
   void $dom_removeEventListener(String type, EventListener listener, [bool useCapture]);
+
+  /** @domName RTCPeerConnection.removeStream */
+  void removeStream(MediaStream stream);
+
+  /** @domName RTCPeerConnection.setLocalDescription */
+  void setLocalDescription(RTCSessionDescription description, [VoidCallback successCallback, RTCErrorCallback failureCallback]);
+
+  /** @domName RTCPeerConnection.setRemoteDescription */
+  void setRemoteDescription(RTCSessionDescription description, [VoidCallback successCallback, RTCErrorCallback failureCallback]);
+
+  /** @domName RTCPeerConnection.updateIce */
+  void updateIce(Map configuration, Map mediaConstraints);
 }
+
+interface RTCPeerConnectionEvents extends Events {
+
+  EventListenerList get addStream;
+
+  EventListenerList get iceCandidate;
+
+  EventListenerList get iceChange;
+
+  EventListenerList get open;
+
+  EventListenerList get removeStream;
+
+  EventListenerList get stateChange;
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// WARNING: Do not edit - generated code.
+
+/// @domName RTCSessionDescription
+interface RTCSessionDescription default _RTCSessionDescriptionFactoryProvider {
+
+  RTCSessionDescription(Map dictionary);
+
+  /** @domName RTCSessionDescription.sdp */
+  String sdp;
+
+  /** @domName RTCSessionDescription.type */
+  String type;
+}
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// WARNING: Do not edit - generated code.
+
+typedef bool RTCSessionDescriptionCallback(RTCSessionDescription sdp);
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
@@ -30289,7 +30518,7 @@ interface SVGElementInstance extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  SVGElementInstanceEvents get on();
+  SVGElementInstanceEvents get on;
 
   /** @domName SVGElementInstance.childNodes */
   final SVGElementInstanceList childNodes;
@@ -30318,85 +30547,85 @@ interface SVGElementInstance extends EventTarget {
 
 interface SVGElementInstanceEvents extends Events {
 
-  EventListenerList get abort();
+  EventListenerList get abort;
 
-  EventListenerList get beforeCopy();
+  EventListenerList get beforeCopy;
 
-  EventListenerList get beforeCut();
+  EventListenerList get beforeCut;
 
-  EventListenerList get beforePaste();
+  EventListenerList get beforePaste;
 
-  EventListenerList get blur();
+  EventListenerList get blur;
 
-  EventListenerList get change();
+  EventListenerList get change;
 
-  EventListenerList get click();
+  EventListenerList get click;
 
-  EventListenerList get contextMenu();
+  EventListenerList get contextMenu;
 
-  EventListenerList get copy();
+  EventListenerList get copy;
 
-  EventListenerList get cut();
+  EventListenerList get cut;
 
-  EventListenerList get doubleClick();
+  EventListenerList get doubleClick;
 
-  EventListenerList get drag();
+  EventListenerList get drag;
 
-  EventListenerList get dragEnd();
+  EventListenerList get dragEnd;
 
-  EventListenerList get dragEnter();
+  EventListenerList get dragEnter;
 
-  EventListenerList get dragLeave();
+  EventListenerList get dragLeave;
 
-  EventListenerList get dragOver();
+  EventListenerList get dragOver;
 
-  EventListenerList get dragStart();
+  EventListenerList get dragStart;
 
-  EventListenerList get drop();
+  EventListenerList get drop;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get focus();
+  EventListenerList get focus;
 
-  EventListenerList get input();
+  EventListenerList get input;
 
-  EventListenerList get keyDown();
+  EventListenerList get keyDown;
 
-  EventListenerList get keyPress();
+  EventListenerList get keyPress;
 
-  EventListenerList get keyUp();
+  EventListenerList get keyUp;
 
-  EventListenerList get load();
+  EventListenerList get load;
 
-  EventListenerList get mouseDown();
+  EventListenerList get mouseDown;
 
-  EventListenerList get mouseMove();
+  EventListenerList get mouseMove;
 
-  EventListenerList get mouseOut();
+  EventListenerList get mouseOut;
 
-  EventListenerList get mouseOver();
+  EventListenerList get mouseOver;
 
-  EventListenerList get mouseUp();
+  EventListenerList get mouseUp;
 
-  EventListenerList get mouseWheel();
+  EventListenerList get mouseWheel;
 
-  EventListenerList get paste();
+  EventListenerList get paste;
 
-  EventListenerList get reset();
+  EventListenerList get reset;
 
-  EventListenerList get resize();
+  EventListenerList get resize;
 
-  EventListenerList get scroll();
+  EventListenerList get scroll;
 
-  EventListenerList get search();
+  EventListenerList get search;
 
-  EventListenerList get select();
+  EventListenerList get select;
 
-  EventListenerList get selectStart();
+  EventListenerList get selectStart;
 
-  EventListenerList get submit();
+  EventListenerList get submit;
 
-  EventListenerList get unload();
+  EventListenerList get unload;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -33354,6 +33583,9 @@ interface ShadowRoot extends DocumentFragment default _ShadowRootFactoryProvider
   /** @domName ShadowRoot.resetStyleInheritance */
   bool resetStyleInheritance;
 
+  /** @domName ShadowRoot.cloneNode */
+  Node clone(bool deep);
+
   /** @domName ShadowRoot.getElementById */
   Element getElementById(String elementId);
 
@@ -33395,7 +33627,7 @@ interface SharedWorkerContext extends WorkerContext {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  SharedWorkerContextEvents get on();
+  SharedWorkerContextEvents get on;
 
   /** @domName SharedWorkerContext.name */
   final String name;
@@ -33403,7 +33635,7 @@ interface SharedWorkerContext extends WorkerContext {
 
 interface SharedWorkerContextEvents extends WorkerContextEvents {
 
-  EventListenerList get connect();
+  EventListenerList get connect;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -33577,7 +33809,7 @@ interface SpeechRecognition extends EventTarget default _SpeechRecognitionFactor
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  SpeechRecognitionEvents get on();
+  SpeechRecognitionEvents get on;
 
   /** @domName SpeechRecognition.continuous */
   bool continuous;
@@ -33612,29 +33844,29 @@ interface SpeechRecognition extends EventTarget default _SpeechRecognitionFactor
 
 interface SpeechRecognitionEvents extends Events {
 
-  EventListenerList get audioEnd();
+  EventListenerList get audioEnd;
 
-  EventListenerList get audioStart();
+  EventListenerList get audioStart;
 
-  EventListenerList get end();
+  EventListenerList get end;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get noMatch();
+  EventListenerList get noMatch;
 
-  EventListenerList get result();
+  EventListenerList get result;
 
-  EventListenerList get resultDeleted();
+  EventListenerList get resultDeleted;
 
-  EventListenerList get soundEnd();
+  EventListenerList get soundEnd;
 
-  EventListenerList get soundStart();
+  EventListenerList get soundStart;
 
-  EventListenerList get speechEnd();
+  EventListenerList get speechEnd;
 
-  EventListenerList get speechStart();
+  EventListenerList get speechStart;
 
-  EventListenerList get start();
+  EventListenerList get start;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -34322,13 +34554,7 @@ interface TextTrack extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  TextTrackEvents get on();
-
-  static const int DISABLED = 0;
-
-  static const int HIDDEN = 1;
-
-  static const int SHOWING = 2;
+  TextTrackEvents get on;
 
   /** @domName TextTrack.activeCues */
   final TextTrackCueList activeCues;
@@ -34346,7 +34572,7 @@ interface TextTrack extends EventTarget {
   final String language;
 
   /** @domName TextTrack.mode */
-  int mode;
+  String mode;
 
   /** @domName TextTrack.addCue */
   void addCue(TextTrackCue cue);
@@ -34366,7 +34592,7 @@ interface TextTrack extends EventTarget {
 
 interface TextTrackEvents extends Events {
 
-  EventListenerList get cueChange();
+  EventListenerList get cueChange;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -34377,12 +34603,12 @@ interface TextTrackEvents extends Events {
 /// @domName TextTrackCue
 interface TextTrackCue extends EventTarget default _TextTrackCueFactoryProvider {
 
-  TextTrackCue(String id, num startTime, num endTime, String text, [String settings, bool pauseOnExit]);
+  TextTrackCue(num startTime, num endTime, String text);
 
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  TextTrackCueEvents get on();
+  TextTrackCueEvents get on;
 
   /** @domName TextTrackCue.align */
   String align;
@@ -34435,9 +34661,9 @@ interface TextTrackCue extends EventTarget default _TextTrackCueFactoryProvider 
 
 interface TextTrackCueEvents extends Events {
 
-  EventListenerList get enter();
+  EventListenerList get enter;
 
-  EventListenerList get exit();
+  EventListenerList get exit;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -34469,7 +34695,7 @@ interface TextTrackList extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  TextTrackListEvents get on();
+  TextTrackListEvents get on;
 
   /** @domName TextTrackList.length */
   final int length;
@@ -34489,7 +34715,7 @@ interface TextTrackList extends EventTarget {
 
 interface TextTrackListEvents extends Events {
 
-  EventListenerList get addTrack();
+  EventListenerList get addTrack;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -36330,7 +36556,7 @@ interface WebSocket extends EventTarget default _WebSocketFactoryProvider {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  WebSocketEvents get on();
+  WebSocketEvents get on;
 
   static const int CLOSED = 3;
 
@@ -36379,13 +36605,13 @@ interface WebSocket extends EventTarget default _WebSocketFactoryProvider {
 
 interface WebSocketEvents extends Events {
 
-  EventListenerList get close();
+  EventListenerList get close;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get message();
+  EventListenerList get message;
 
-  EventListenerList get open();
+  EventListenerList get open;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -36446,7 +36672,7 @@ interface Window extends EventTarget {
 
   void cancelAnimationFrame(int id);
 
-  IDBFactory get indexedDB();
+  IDBFactory get indexedDB;
 
   /**
    * Creates a new object URL for the specified object. The URL will be
@@ -36462,7 +36688,7 @@ interface Window extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  WindowEvents get on();
+  WindowEvents get on;
 
   static const int PERSISTENT = 1;
 
@@ -36751,153 +36977,153 @@ interface Window extends EventTarget {
 
 interface WindowEvents extends Events {
 
-  EventListenerList get abort();
+  EventListenerList get abort;
 
-  EventListenerList get animationEnd();
+  EventListenerList get animationEnd;
 
-  EventListenerList get animationIteration();
+  EventListenerList get animationIteration;
 
-  EventListenerList get animationStart();
+  EventListenerList get animationStart;
 
-  EventListenerList get beforeUnload();
+  EventListenerList get beforeUnload;
 
-  EventListenerList get blur();
+  EventListenerList get blur;
 
-  EventListenerList get canPlay();
+  EventListenerList get canPlay;
 
-  EventListenerList get canPlayThrough();
+  EventListenerList get canPlayThrough;
 
-  EventListenerList get change();
+  EventListenerList get change;
 
-  EventListenerList get click();
+  EventListenerList get click;
 
-  EventListenerList get contentLoaded();
+  EventListenerList get contentLoaded;
 
-  EventListenerList get contextMenu();
+  EventListenerList get contextMenu;
 
-  EventListenerList get deviceMotion();
+  EventListenerList get deviceMotion;
 
-  EventListenerList get deviceOrientation();
+  EventListenerList get deviceOrientation;
 
-  EventListenerList get doubleClick();
+  EventListenerList get doubleClick;
 
-  EventListenerList get drag();
+  EventListenerList get drag;
 
-  EventListenerList get dragEnd();
+  EventListenerList get dragEnd;
 
-  EventListenerList get dragEnter();
+  EventListenerList get dragEnter;
 
-  EventListenerList get dragLeave();
+  EventListenerList get dragLeave;
 
-  EventListenerList get dragOver();
+  EventListenerList get dragOver;
 
-  EventListenerList get dragStart();
+  EventListenerList get dragStart;
 
-  EventListenerList get drop();
+  EventListenerList get drop;
 
-  EventListenerList get durationChange();
+  EventListenerList get durationChange;
 
-  EventListenerList get emptied();
+  EventListenerList get emptied;
 
-  EventListenerList get ended();
+  EventListenerList get ended;
 
-  EventListenerList get error();
+  EventListenerList get error;
 
-  EventListenerList get focus();
+  EventListenerList get focus;
 
-  EventListenerList get hashChange();
+  EventListenerList get hashChange;
 
-  EventListenerList get input();
+  EventListenerList get input;
 
-  EventListenerList get invalid();
+  EventListenerList get invalid;
 
-  EventListenerList get keyDown();
+  EventListenerList get keyDown;
 
-  EventListenerList get keyPress();
+  EventListenerList get keyPress;
 
-  EventListenerList get keyUp();
+  EventListenerList get keyUp;
 
-  EventListenerList get load();
+  EventListenerList get load;
 
-  EventListenerList get loadStart();
+  EventListenerList get loadStart;
 
-  EventListenerList get loadedData();
+  EventListenerList get loadedData;
 
-  EventListenerList get loadedMetadata();
+  EventListenerList get loadedMetadata;
 
-  EventListenerList get message();
+  EventListenerList get message;
 
-  EventListenerList get mouseDown();
+  EventListenerList get mouseDown;
 
-  EventListenerList get mouseMove();
+  EventListenerList get mouseMove;
 
-  EventListenerList get mouseOut();
+  EventListenerList get mouseOut;
 
-  EventListenerList get mouseOver();
+  EventListenerList get mouseOver;
 
-  EventListenerList get mouseUp();
+  EventListenerList get mouseUp;
 
-  EventListenerList get mouseWheel();
+  EventListenerList get mouseWheel;
 
-  EventListenerList get offline();
+  EventListenerList get offline;
 
-  EventListenerList get online();
+  EventListenerList get online;
 
-  EventListenerList get pageHide();
+  EventListenerList get pageHide;
 
-  EventListenerList get pageShow();
+  EventListenerList get pageShow;
 
-  EventListenerList get pause();
+  EventListenerList get pause;
 
-  EventListenerList get play();
+  EventListenerList get play;
 
-  EventListenerList get playing();
+  EventListenerList get playing;
 
-  EventListenerList get popState();
+  EventListenerList get popState;
 
-  EventListenerList get progress();
+  EventListenerList get progress;
 
-  EventListenerList get rateChange();
+  EventListenerList get rateChange;
 
-  EventListenerList get reset();
+  EventListenerList get reset;
 
-  EventListenerList get resize();
+  EventListenerList get resize;
 
-  EventListenerList get scroll();
+  EventListenerList get scroll;
 
-  EventListenerList get search();
+  EventListenerList get search;
 
-  EventListenerList get seeked();
+  EventListenerList get seeked;
 
-  EventListenerList get seeking();
+  EventListenerList get seeking;
 
-  EventListenerList get select();
+  EventListenerList get select;
 
-  EventListenerList get stalled();
+  EventListenerList get stalled;
 
-  EventListenerList get storage();
+  EventListenerList get storage;
 
-  EventListenerList get submit();
+  EventListenerList get submit;
 
-  EventListenerList get suspend();
+  EventListenerList get suspend;
 
-  EventListenerList get timeUpdate();
+  EventListenerList get timeUpdate;
 
-  EventListenerList get touchCancel();
+  EventListenerList get touchCancel;
 
-  EventListenerList get touchEnd();
+  EventListenerList get touchEnd;
 
-  EventListenerList get touchMove();
+  EventListenerList get touchMove;
 
-  EventListenerList get touchStart();
+  EventListenerList get touchStart;
 
-  EventListenerList get transitionEnd();
+  EventListenerList get transitionEnd;
 
-  EventListenerList get unload();
+  EventListenerList get unload;
 
-  EventListenerList get volumeChange();
+  EventListenerList get volumeChange;
 
-  EventListenerList get waiting();
+  EventListenerList get waiting;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -36913,7 +37139,7 @@ interface Worker extends AbstractWorker default _WorkerFactoryProvider {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  WorkerEvents get on();
+  WorkerEvents get on;
 
   /** @domName Worker.postMessage */
   void postMessage(/*SerializedScriptValue*/ message, [List messagePorts]);
@@ -36927,7 +37153,7 @@ interface Worker extends AbstractWorker default _WorkerFactoryProvider {
 
 interface WorkerEvents extends AbstractWorkerEvents {
 
-  EventListenerList get message();
+  EventListenerList get message;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
@@ -36941,7 +37167,7 @@ interface WorkerContext extends EventTarget {
   /**
    * @domName EventTarget.addEventListener, EventTarget.removeEventListener, EventTarget.dispatchEvent
    */
-  WorkerContextEvents get on();
+  WorkerContextEvents get on;
 
   static const int PERSISTENT = 1;
 
@@ -37010,7 +37236,7 @@ interface WorkerContext extends EventTarget {
 
 interface WorkerContextEvents extends Events {
 
-  EventListenerList get error();
+  EventListenerList get error;
 }
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a

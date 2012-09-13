@@ -4,18 +4,6 @@
 
 // Patch file for dart:coreimpl classes.
 
-// Patch for 'print' function.
-patch class PrintImplementation {
-  patch static void print(var obj) {
-    if (obj is String) {
-      Primitives.printString(obj);
-    } else {
-      Primitives.printString(obj.toString());
-    }
-  }
-}
-
-
 // Patch for String implementation.
 // TODO(ager): Split out into date_patch.dart and allow #source
 // in patch files?
@@ -118,7 +106,7 @@ patch class DateImplementation {
   }
 
   patch Duration get timeZoneOffset {
-    if (isUtc) return new Duration(0);
+    if (isUtc) return new Duration();
     return new Duration(minutes: Primitives.getTimeZoneOffsetInMinutes(this));
   }
 
@@ -158,8 +146,8 @@ patch class JSSyntaxRegExp {
   final bool _ignoreCase;
 
   patch const JSSyntaxRegExp(String pattern,
-                             [bool multiLine = false,
-                              bool ignoreCase = false])
+                             {bool multiLine: false,
+                              bool ignoreCase: false})
       : _pattern = pattern,
         _multiLine = multiLine,
         _ignoreCase = ignoreCase;
@@ -191,8 +179,8 @@ patch class JSSyntaxRegExp {
 
   static JSSyntaxRegExp _globalVersionOf(JSSyntaxRegExp other) {
     JSSyntaxRegExp re = new JSSyntaxRegExp(other.pattern,
-                                           other.multiLine,
-                                           other.ignoreCase);
+                                           multiLine: other.multiLine,
+                                           ignoreCase: other.ignoreCase);
     regExpAttachGlobalNative(re);
     return re;
   }
@@ -275,37 +263,4 @@ class _AllMatchesIterator implements Iterator<Match> {
       return true;
     }
   }
-}
-
-// Patch for Expando implementation.
-// TODO(ager): Split out into expando_patch.dart and allow #source in
-// patch files?
-patch class ExpandoImplementation<T> {
-
-  patch T operator[](Object object) {
-    var values = Primitives.getProperty(object, _EXPANDO_PROPERTY_NAME);
-    return (values === null) ? null : Primitives.getProperty(values, _getKey());
-  }
-
-  patch void operator[]=(Object object, T value) {
-    var values = Primitives.getProperty(object, _EXPANDO_PROPERTY_NAME);
-    if (values === null) {
-      values = new Object();
-      Primitives.setProperty(object, _EXPANDO_PROPERTY_NAME, values);
-    }
-    Primitives.setProperty(values, _getKey(), value);
-  }
-
-  String _getKey() {
-    String key = Primitives.getProperty(this, _KEY_PROPERTY_NAME);
-    if (key === null) {
-      key = "expando\$key\$${_keyCount++}";
-      Primitives.setProperty(this, _KEY_PROPERTY_NAME, key);
-    }
-    return key;
-  }
-
-  static const String _KEY_PROPERTY_NAME = 'expando\$key';
-  static const String _EXPANDO_PROPERTY_NAME = 'expando\$values';
-  static int _keyCount = 0;
 }

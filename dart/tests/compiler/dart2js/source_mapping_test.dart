@@ -11,7 +11,7 @@
 
 CodeBuffer compileAll(SourceFile sourceFile) {
   MockCompiler compiler = new MockCompiler();
-  Uri uri = new Uri.fromComponents(sourceFile.filename);
+  Uri uri = new Uri.fromComponents(path: sourceFile.filename);
   compiler.sourceFiles[uri.toString()] = sourceFile;
   compiler.runCompiler(uri);
   return compiler.backend.emitter.mainBuffer;
@@ -30,10 +30,9 @@ void testSourceMapLocations(String codeWithMarkers) {
   CodeBuffer buffer = compileAll(sourceFile);
 
   Set<int> locations = new Set<int>();
-  buffer.forEachSourceLocation((var element, var token, int offset) {
-    if (element != null &&
-        element.getCompilationUnit().script.file == sourceFile) {
-      locations.add(token.charOffset);
+  buffer.forEachSourceLocation((int offset, var sourcePosition) {
+    if (sourcePosition != null && sourcePosition.sourceFile == sourceFile) {
+      locations.add(sourcePosition.token.charOffset);
     }
   });
 

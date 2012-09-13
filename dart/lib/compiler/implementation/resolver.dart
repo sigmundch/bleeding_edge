@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-interface TreeElements {
+abstract class TreeElements {
   Element operator[](Node node);
   Selector getSelector(Send send);
   DartType getType(TypeAnnotation annotation);
@@ -212,6 +212,14 @@ class ResolverTask extends CompilerTask {
   }
 
   DartType resolveTypeAnnotation(Element element, TypeAnnotation annotation) {
+    DartType type = resolveReturnType(element, annotation);
+    if (type == compiler.types.voidType) {
+      error(annotation, MessageKind.VOID_NOT_ALLOWED);
+    }
+    return type;
+  }
+
+  DartType resolveReturnType(Element element, TypeAnnotation annotation) {
     if (annotation === null) return compiler.types.dynamicType;
     ResolverVisitor visitor = new ResolverVisitor(compiler, element);
     DartType result = visitor.resolveTypeAnnotation(annotation);
@@ -283,6 +291,8 @@ class ResolverTask extends CompilerTask {
   void checkMembers(ClassElement cls) {
     if (cls === compiler.objectClass) return;
     cls.forEachMember((holder, member) {
+      // Perform various checks as side effect of "computing" the type.
+      member.computeType(compiler);
 
       // Check modifiers.
       if (member.isFunction() && member.modifiers.isFinal()) {
@@ -715,7 +725,7 @@ class CommonResolverVisitor<R> extends AbstractVisitor<R> {
   }
 }
 
-interface LabelScope {
+abstract class LabelScope {
   LabelScope get outer;
   LabelElement lookup(String label);
 }
@@ -828,6 +838,8 @@ class TypeResolver {
     }
     if (typeName.source.stringValue === 'void') {
       return compiler.types.voidType.element;
+    } else if (typeName.source.stringValue === 'Dynamic') {
+      return compiler.dynamicClass;
     } else if (send !== null) {
       Element e = scope.lookup(send.receiver.asIdentifier().source);
       if (e !== null && e.kind === ElementKind.PREFIX) {
@@ -1519,10 +1531,8 @@ class ResolverVisitor extends CommonResolverVisitor<Element> {
       if (!target.isClass()) world.registerStaticUse(target);
     }
 
-    // TODO(kasperl): Pass the selector directly.
-    var interceptor = new Interceptors(compiler).getStaticInterceptor(
-        selector.name,
-        selector.argumentCount);
+    var interceptor =
+        new Interceptors(compiler).getStaticInterceptorBySelector(selector);
     if (interceptor !== null) {
       world.registerStaticUse(interceptor);
     }
@@ -1903,34 +1913,38 @@ class ResolverVisitor extends CommonResolverVisitor<Element> {
   }
 
   visitCatchBlock(CatchBlock node) {
-    // Check that the catch has one or two formal parameters.
-    if (node.formals.isEmpty()) {
-      error(node, MessageKind.EMPTY_CATCH_DECLARATION);
-    } else if (!node.formals.nodes.tail.isEmpty()
-               && !node.formals.nodes.tail.tail.isEmpty()) {
-      for (Node extra in node.formals.nodes.tail.tail) {
-        error(extra, MessageKind.EXTRA_CATCH_DECLARATION);
+    // Check that if catch part is present, then
+    // it has one or two formal parameters.
+    if (node.formals !== null) {
+      if (node.formals.isEmpty()) {
+        error(node, MessageKind.EMPTY_CATCH_DECLARATION);
       }
-    }
-
-    // Check that the formals aren't optional and that they have no
-    // modifiers or type.
-    for (Link<Node> link = node.formals.nodes;
-         !link.isEmpty();
-         link = link.tail) {
-      // If the formal parameter is a node list, it means that it is a
-      // sequence of optional parameters.
-      NodeList nodeList = link.head.asNodeList();
-      if (nodeList !== null) {
-        error(nodeList, MessageKind.OPTIONAL_PARAMETER_IN_CATCH);
-      } else {
-        VariableDefinitions declaration = link.head;
-        for (Node modifier in declaration.modifiers.nodes) {
-          error(modifier, MessageKind.PARAMETER_WITH_MODIFIER_IN_CATCH);
+      if (!node.formals.nodes.tail.isEmpty() &&
+          !node.formals.nodes.tail.tail.isEmpty()) {
+        for (Node extra in node.formals.nodes.tail.tail) {
+          error(extra, MessageKind.EXTRA_CATCH_DECLARATION);
         }
-        TypeAnnotation type = declaration.type;
-        if (type !== null) {
-          error(type, MessageKind.PARAMETER_WITH_TYPE_IN_CATCH);
+      }
+
+      // Check that the formals aren't optional and that they have no
+      // modifiers or type.
+      for (Link<Node> link = node.formals.nodes;
+           !link.isEmpty();
+           link = link.tail) {
+        // If the formal parameter is a node list, it means that it is a
+        // sequence of optional parameters.
+        NodeList nodeList = link.head.asNodeList();
+        if (nodeList !== null) {
+          error(nodeList, MessageKind.OPTIONAL_PARAMETER_IN_CATCH);
+        } else {
+        VariableDefinitions declaration = link.head;
+          for (Node modifier in declaration.modifiers.nodes) {
+            error(modifier, MessageKind.PARAMETER_WITH_MODIFIER_IN_CATCH);
+          }
+          TypeAnnotation type = declaration.type;
+          if (type !== null) {
+            error(type, MessageKind.PARAMETER_WITH_TYPE_IN_CATCH);
+          }
         }
       }
     }
@@ -2326,15 +2340,18 @@ class SignatureResolver extends CommonResolverVisitor<Element> {
   final Element enclosingElement;
   Link<Element> optionalParameters = const EmptyLink<Element>();
   int optionalParameterCount = 0;
+  bool optionalParametersAreNamed = false;
   VariableDefinitions currentDefinitions;
 
   SignatureResolver(Compiler compiler, this.enclosingElement) : super(compiler);
 
   Element visitNodeList(NodeList node) {
     // This must be a list of optional arguments.
-    if (node.beginToken.stringValue !== '[') {
+    String value = node.beginToken.stringValue;
+    if ((value !== '[') && (value !== '{')) {
       internalError(node, "expected optional parameters");
     }
+    optionalParametersAreNamed = (value === '{');
     LinkBuilder<Element> elements = analyzeNodes(node.nodes);
     optionalParameterCount = elements.length;
     optionalParameters = elements.toLink();
@@ -2368,6 +2385,8 @@ class SignatureResolver extends CommonResolverVisitor<Element> {
   Element visitIdentifier(Identifier node) {
     Element variables = new VariableListElement.node(currentDefinitions,
         ElementKind.VARIABLE_LIST, enclosingElement);
+    // Ensure a parameter is not typed 'void'.
+    variables.computeType(compiler);
     return new VariableElement(node.source, variables,
         ElementKind.PARAMETER, enclosingElement, node: node);
   }
@@ -2487,11 +2506,12 @@ class SignatureResolver extends CommonResolverVisitor<Element> {
       requiredParameterCount  = parametersBuilder.length;
       parameters = parametersBuilder.toLink();
     }
-    DartType returnType = compiler.resolveTypeAnnotation(element, returnNode);
+    DartType returnType = compiler.resolveReturnType(element, returnNode);
     return new FunctionSignature(parameters,
                                  visitor.optionalParameters,
                                  requiredParameterCount,
                                  visitor.optionalParameterCount,
+                                 visitor.optionalParametersAreNamed,
                                  returnType);
   }
 

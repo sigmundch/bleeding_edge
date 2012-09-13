@@ -58,9 +58,12 @@ bool Intrinsifier::ObjectArray_Allocate(Assembler* assembler) {
   Isolate* isolate = Isolate::Current();
   Heap* heap = isolate->heap();
 
-  // EDI: allocation size.
   __ movl(EAX, Address::Absolute(heap->TopAddress()));
-  __ leal(EBX, Address(EAX, EDI, TIMES_1, 0));
+  __ movl(EBX, EAX);
+
+  // EDI: allocation size.
+  __ addl(EBX, EDI);
+  __ j(CARRY, &fall_through);
 
   // Check if the allocation fits into the remaining space.
   // EAX: potential new object start.
@@ -215,7 +218,7 @@ bool Intrinsifier::Array_setIndexed(Assembler* assembler) {
     // Check for int and num.
     __ testl(EDI, Immediate(kSmiTagMask));  // Value is Smi?
     __ j(NOT_ZERO, &fall_through, Assembler::kNearJump);  // Non-smi value.
-    __ CompareObject(EAX, Type::ZoneHandle(Type::IntInterface()));
+    __ CompareObject(EAX, Type::ZoneHandle(Type::IntType()));
     __ j(EQUAL,  &checked_ok, Assembler::kNearJump);
     __ CompareObject(EAX, Type::ZoneHandle(Type::Number()));
     __ j(NOT_EQUAL, &fall_through, Assembler::kNearJump);

@@ -10,14 +10,12 @@
 #source("dual_pivot_quicksort.dart");
 #source("duration_implementation.dart");
 #source("exceptions.dart");
-#source("expando.dart");
 #source("future_implementation.dart");
 #source("hash_map_set.dart");
 #source("linked_hash_map.dart");
 #source("list.dart");
 #source("maps.dart");
 #source("options.dart");
-#source("print.dart");
 #source("queue.dart");
 #source("regexp.dart");
 #source("splay_tree.dart");

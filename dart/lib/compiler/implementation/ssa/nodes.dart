@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-interface HVisitor<R> {
+abstract class HVisitor<R> {
   R visitAdd(HAdd node);
   R visitBailoutTarget(HBailoutTarget node);
   R visitBitAnd(HBitAnd node);
@@ -741,7 +741,7 @@ class HBasicBlock extends HInstructionList implements Hashable {
 
 class HInstruction implements Hashable {
   Element sourceElement;
-  Token sourcePosition;
+  SourceFileLocation sourcePosition;
 
   final int id;
   static int idCounter;
@@ -797,6 +797,7 @@ class HInstruction implements Hashable {
   static const int TYPE_CONVERSION_TYPECODE = 28;
   static const int BAILOUT_TARGET_TYPECODE = 29;
   static const int INVOKE_STATIC_TYPECODE = 30;
+  static const int INVOKE_DYNAMIC_GETTER_TYPECODE = 31;
 
   HInstruction(this.inputs)
       : id = idCounter++,
@@ -1304,10 +1305,26 @@ class HInvokeDynamicField extends HInvokeDynamic {
 }
 
 class HInvokeDynamicGetter extends HInvokeDynamicField {
-  HInvokeDynamicGetter(selector, element, receiver)
+  final bool isSideEffectFree;
+  HInvokeDynamicGetter(
+      selector, element, receiver, this.isSideEffectFree)
     : super(selector, element,[receiver]);
   toString() => 'invoke dynamic getter: $selector';
   accept(HVisitor visitor) => visitor.visitInvokeDynamicGetter(this);
+
+  void prepareGvn(HTypeMap types) {
+    if (isSideEffectFree) {
+      setUseGvn();
+      clearAllSideEffects();
+      setDependsOnSomething();
+    } else {
+      setAllSideEffects();
+    }
+  }
+
+  int typeCode() => HInstruction.INVOKE_DYNAMIC_GETTER_TYPECODE;
+  bool typeEquals(other) => other is HInvokeDynamicGetter;
+  bool dataEquals(HInvokeDynamicGetter other) => selector == other.selector;
 }
 
 class HInvokeDynamicSetter extends HInvokeDynamicField {
@@ -1356,11 +1373,12 @@ class HInvokeSuper extends HInvokeStatic {
 
 class HInvokeInterceptor extends HInvokeStatic {
   final Selector selector;
+  final bool isSideEffectFree;
 
   HInvokeInterceptor(this.selector,
                      List<HInstruction> inputs,
-                     [HType knownType = HType.UNKNOWN])
-      : super(inputs, knownType);
+                     [bool this.isSideEffectFree = false])
+      : super(inputs);
 
   toString() => 'invoke interceptor: ${element.name}';
   accept(HVisitor visitor) => visitor.visitInvokeInterceptor(this);
@@ -1368,6 +1386,13 @@ class HInvokeInterceptor extends HInvokeStatic {
   bool isLengthGetter() {
     return selector.isGetter() &&
         selector.name == const SourceString('length');
+  }
+
+  bool isPopCall(HTypeMap types) {
+    return selector.isCall()
+        && inputs[1].isExtendableArray(types)
+        && selector.name == const SourceString('removeLast')
+        && selector.argumentCount == 0;
   }
 
   bool isLengthGetterOnStringOrArray(HTypeMap types) {
@@ -1409,6 +1434,10 @@ class HInvokeInterceptor extends HInvokeStatic {
       // we don't express that type yet: a mutable array might be
       // extendable.
       if (!inputs[1].isString(types)) setDependsOnSomething();
+    } else if (isSideEffectFree) {
+      setUseGvn();
+      clearAllSideEffects();
+      setDependsOnSomething();
     } else {
       setAllSideEffects();
     }
@@ -2498,6 +2527,7 @@ class HTypeConversion extends HCheck {
   static const int CHECKED_MODE_CHECK = 1;
   static const int ARGUMENT_TYPE_CHECK = 2;
   static const int CAST_TYPE_CHECK = 3;
+  static const int BOOLEAN_CONVERSION_CHECK = 4;
 
   HTypeConversion(this.type, HInstruction input, [this.kind = NO_CHECK])
       : super(<HInstruction>[input]) {
@@ -2512,9 +2542,12 @@ class HTypeConversion extends HCheck {
 
 
   bool get isChecked => kind != NO_CHECK;
-  bool get isCheckedModeCheck => kind == CHECKED_MODE_CHECK;
+  bool get isCheckedModeCheck {
+    return kind == CHECKED_MODE_CHECK || kind == BOOLEAN_CONVERSION_CHECK;
+  }
   bool get isArgumentTypeCheck => kind == ARGUMENT_TYPE_CHECK;
   bool get isCastTypeCheck => kind == CAST_TYPE_CHECK;
+  bool get isBooleanConversionCheck => kind == BOOLEAN_CONVERSION_CHECK;
 
   HType get guaranteedType => type;
 
@@ -2612,7 +2645,7 @@ class HBlockFlow {
 /**
  * Information about a syntactic-like structure.
  */
-interface HBlockInformation {
+abstract class HBlockInformation {
   HBasicBlock get start;
   HBasicBlock get end;
   bool accept(HBlockInformationVisitor visitor);
@@ -2622,7 +2655,7 @@ interface HBlockInformation {
 /**
  * Information about a statement-like structure.
  */
-interface HStatementInformation extends HBlockInformation {
+abstract class HStatementInformation extends HBlockInformation {
   bool accept(HStatementInformationVisitor visitor);
 }
 
@@ -2630,13 +2663,13 @@ interface HStatementInformation extends HBlockInformation {
 /**
  * Information about an expression-like structure.
  */
-interface HExpressionInformation extends HBlockInformation {
+abstract class HExpressionInformation extends HBlockInformation {
   bool accept(HExpressionInformationVisitor visitor);
   HInstruction get conditionExpression;
 }
 
 
-interface HStatementInformationVisitor {
+abstract class HStatementInformationVisitor {
   bool visitLabeledBlockInfo(HLabeledBlockInformation info);
   bool visitLoopInfo(HLoopBlockInformation info);
   bool visitIfInfo(HIfBlockInformation info);
@@ -2649,14 +2682,14 @@ interface HStatementInformationVisitor {
 }
 
 
-interface HExpressionInformationVisitor {
+abstract class HExpressionInformationVisitor {
   bool visitAndOrInfo(HAndOrBlockInformation info);
   bool visitSubExpressionInfo(HSubExpressionBlockInformation info);
 }
 
 
-interface HBlockInformationVisitor extends HStatementInformationVisitor,
-                                           HExpressionInformationVisitor {
+abstract class HBlockInformationVisitor
+    implements HStatementInformationVisitor, HExpressionInformationVisitor {
 }
 
 
@@ -2753,7 +2786,8 @@ class HLoopBlockInformation implements HStatementInformation {
   final HExpressionInformation updates;
   final TargetElement target;
   final List<LabelElement> labels;
-  final Node sourcePosition;
+  final SourceFileLocation sourcePosition;
+  final SourceFileLocation endSourcePosition;
 
   HLoopBlockInformation(this.kind,
                         this.initializer,
@@ -2762,7 +2796,8 @@ class HLoopBlockInformation implements HStatementInformation {
                         this.updates,
                         this.target,
                         this.labels,
-                        this.sourcePosition);
+                        this.sourcePosition,
+                        this.endSourcePosition);
 
   HBasicBlock get start {
     if (initializer !== null) return initializer.start;

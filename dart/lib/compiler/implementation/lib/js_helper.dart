@@ -792,7 +792,7 @@ unwrapException(ex) {
       if (name is String && name.startsWith(@'call$')) {
         return new ObjectNotClosureException();
       } else {
-        return new NoSuchMethodException('', name, []);
+        return new NoSuchMethodError('', name, []);
       }
     }
 
@@ -814,7 +814,7 @@ unwrapException(ex) {
         // Object doesn't support property or method 'foo' which sets the error
         // code 438 in IE.
         // TODO(kasperl): Compute the right name if possible.
-        return new NoSuchMethodException('', '<unknown>', []);
+        return new NoSuchMethodError('', '<unknown>', []);
       }
     }
 
@@ -942,7 +942,7 @@ getFallThroughError() => const FallThroughErrorImplementation();
 /**
  * Represents the type Dynamic. The compiler treats this specially.
  */
-interface Dynamic {
+abstract class Dynamic_ {
 }
 
 /**
@@ -977,6 +977,12 @@ getRuntimeTypeInfo(target) {
  * checked mode and casts. We specialize each primitive type (eg int, bool), and
  * use the compiler's convention to do is-checks on regular objects.
  */
+boolConversionCheck(value) {
+  boolTypeCheck(value);
+  assert(value !== null);
+  return value;
+}
+
 stringTypeCheck(value) {
   if (value === null) return value;
   if (value is String) return value;
@@ -1221,7 +1227,7 @@ listSuperNativeTypeCast(value, property) {
  * objects that support integer indexing. This interface is not
  * visible to anyone, and is only injected into special libraries.
  */
-interface JavaScriptIndexingBehavior {
+abstract class JavaScriptIndexingBehavior {
 }
 
 // TODO(lrn): These exceptions should be implemented in core.
@@ -1260,7 +1266,12 @@ class FallThroughErrorImplementation implements FallThroughError {
  */
 void assert(condition) {
   if (condition is Function) condition = condition();
-  if (!condition) throw new AssertionError();
+  if (condition is !bool) {
+    throw new TypeErrorImplementation('$condition does not implement bool');
+  }
+  // Compare to true to avoid boolean conversion check in checked
+  // mode.
+  if (condition !== true) throw new AssertionError();
 }
 
 /**
@@ -1268,7 +1279,7 @@ void assert(condition) {
  * resolved cannot be found.
  */
 void throwNoSuchMethod(obj, name, arguments) {
-  throw new NoSuchMethodException(obj, name, arguments);
+  throw new NoSuchMethodError(obj, name, arguments);
 }
 
 /**

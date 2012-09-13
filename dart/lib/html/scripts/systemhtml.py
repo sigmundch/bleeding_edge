@@ -139,6 +139,7 @@ _html_event_names = {
   'mouseup': 'mouseUp',
   'mousewheel': 'mouseWheel',
   'mute': 'mute',
+  'negotationneeded': 'negotationNeeded',
   'nomatch': 'noMatch',
   'noupdate': 'noUpdate',
   'obsolete': 'obsolete',
@@ -716,11 +717,11 @@ class HtmlDartInterfaceGenerator(BaseGenerator):
     event_attrs = DomToHtmlEvents(self._html_interface_name, event_attrs)
     for event_name in event_attrs:
       if event_name in _html_event_names:
-        events_members.Emit('\n  EventListenerList get $NAME();\n',
+        events_members.Emit('\n  EventListenerList get $NAME;\n',
           NAME=_html_event_names[event_name])
         implementation_events_members.Emit(
             "\n"
-            "  EventListenerList get $NAME() => this['$DOM_NAME'];\n",
+            "  EventListenerList get $NAME => this['$DOM_NAME'];\n",
             NAME=_html_event_names[event_name],
             DOM_NAME=event_name)
       else:
@@ -732,11 +733,11 @@ class HtmlDartInterfaceGenerator(BaseGenerator):
         '\n   * @domName EventTarget.addEventListener, '
         'EventTarget.removeEventListener, EventTarget.dispatchEvent'
         '\n   */'
-        '\n  $TYPE get on();\n',
+        '\n  $TYPE get on;\n',
         TYPE=events_interface)
 
     self._implementation_members_emitter.Emit(
-        '\n  $TYPE get on() =>\n    new $TYPE(this);\n',
+        '\n  $TYPE get on =>\n    new $TYPE(this);\n',
         TYPE=events_class)
 
 
@@ -856,7 +857,7 @@ class HtmlDart2JSClassGenerator(Dart2JSInterfaceGenerator):
   def AddIndexer(self, element_type):
     """Adds all the methods required to complete implementation of List."""
     # We would like to simply inherit the implementation of everything except
-    # get length(), [], and maybe []=.  It is possible to extend from a base
+    # length, [], and maybe []=.  It is possible to extend from a base
     # array implementation class only when there is no other implementation
     # inheritance.  There might be no implementation inheritance other than
     # DOMBaseWrapper for many classes, but there might be some where the
@@ -983,7 +984,7 @@ class HtmlDart2JSClassGenerator(Dart2JSInterfaceGenerator):
 
   def _AddConvertingGetter(self, attr, html_name, conversion):
     self._members_emitter.Emit(
-        '\n  $RETURN_TYPE get $HTML_NAME() => $CONVERT(this._$(HTML_NAME));'
+        '\n  $RETURN_TYPE get $HTML_NAME => $CONVERT(this._$(HTML_NAME));'
         '\n  $NATIVE_TYPE get _$HTML_NAME() native "return this.$NAME;";'
         '\n',
         CONVERT=conversion.function_name,
@@ -1076,7 +1077,7 @@ class HtmlDart2JSClassGenerator(Dart2JSInterfaceGenerator):
         '  }\n',
         TYPE=return_type,
         HTML_NAME=html_name,
-        PARAMS=info.ParametersImplementationDeclaration(InputType, '_default'))
+        PARAMS=info.ParametersImplementationDeclaration(InputType))
 
     parameter_names = [param_info.name for param_info in info.param_infos]
     parameter_types = [InputType(param_info.dart_type)
@@ -1153,19 +1154,19 @@ class HtmlDart2JSClassGenerator(Dart2JSInterfaceGenerator):
           NATIVE=info.declared_name)
 
     def GenerateChecksAndCall(operation, argument_count):
-      checks = ['_default == %s' % name for name in parameter_names]
+      checks = ['!?%s' % name for name in parameter_names]
       for i in range(0, argument_count):
         argument = operation.arguments[i]
         parameter_name = parameter_names[i]
         test_type = self._DartType(argument.type.id)
         if test_type in ['Dynamic', 'Object']:
-          checks[i] = '_default != %s' % parameter_name
+          checks[i] = '?%s' % parameter_name
         elif test_type == parameter_types[i]:
           checks[i] = 'true'
         else:
-          checks[i] = '(%s is %s || %s == null)' % (
+          checks[i] = '(%s is %s || %s === null)' % (
               parameter_name, test_type, parameter_name)
-      # There can be multiple _default checks.  We need them all since a later
+      # There can be multiple presence checks.  We need them all since a later
       # optional argument could have been passed by name, leaving 'holes'.
       GenerateCall(operation, argument_count, checks)
 
@@ -1184,7 +1185,7 @@ class HtmlDart2JSClassGenerator(Dart2JSInterfaceGenerator):
       argument_count = len(operation.arguments)
       for position, argument in list(enumerate(operation.arguments))[::-1]:
         if self._IsOptional(operation, argument):
-          check = '_default != %s' % parameter_names[position]
+          check = '?%s' % parameter_names[position]
           GenerateCall(operation, position + 1, [check])
           argument_count = position
       GenerateCall(operation, argument_count, [])

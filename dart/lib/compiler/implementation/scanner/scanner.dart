@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-interface Scanner {
+abstract class Scanner {
   Token tokenize();
 }
 
@@ -104,6 +104,10 @@ class AbstractScanner<T extends SourceString> implements Scanner {
     if (next === $TAB || next === $LF || next === $CR || next === $SPACE) {
       appendWhiteSpace(next);
       return advance();
+    }
+
+    if ($r === next) {
+      return tokenizeRawStringKeywordOrIdentifier(next);
     }
 
     if ($a <= next && next <= $z) {
@@ -230,6 +234,7 @@ class AbstractScanner<T extends SourceString> implements Scanner {
       return tokenizeSlashOrComment(next);
     }
 
+    // TODO(aprelev@gmail.com) Remove deprecated raw string literals
     if (next === $AT) {
       return tokenizeAtOrRawString(next);
     }
@@ -256,7 +261,7 @@ class AbstractScanner<T extends SourceString> implements Scanner {
       return $EOF;
     }
     if (next < 0x1f) {
-      throw new MalformedInputException("illegal character $next", charOffset);
+      return error(new SourceString("unexpected character $next"));
     }
 
     // The following are non-ASCII characters.
@@ -299,7 +304,7 @@ class AbstractScanner<T extends SourceString> implements Scanner {
     next = advance();
     if (next === $CLOSE_SQUARE_BRACKET) {
       Token token = previousToken();
-      if (token is KeywordToken && token.value == Keyword.OPERATOR) {
+      if (token is KeywordToken && token.value.stringValue === 'operator') {
         return select($EQ, INDEX_EQ_INFO, INDEX_INFO);
       }
     }
@@ -492,7 +497,7 @@ class AbstractScanner<T extends SourceString> implements Scanner {
         hasDigits = true;
       } else {
         if (!hasDigits) {
-          throw new MalformedInputException("hex digit expected", charOffset);
+          return error(const SourceString("hex digit expected"));
         }
         appendByteStringToken(HEXADECIMAL_INFO, asciiString(start, 0));
         return next;
@@ -556,7 +561,7 @@ class AbstractScanner<T extends SourceString> implements Scanner {
         hasDigits = true;
       } else {
         if (!hasDigits) {
-          throw new MalformedInputException("digit expected", charOffset);
+          return error(const SourceString("digit expected"));
         }
         return next;
       }
@@ -620,6 +625,16 @@ class AbstractScanner<T extends SourceString> implements Scanner {
     }
   }
 
+  int tokenizeRawStringKeywordOrIdentifier(int next) {
+    int nextnext = peek();
+    if (nextnext === $DQ || nextnext === $SQ) {
+      int start = byteOffset;
+      next = advance();
+      return tokenizeString(next, start, true);
+    }
+    return tokenizeKeywordOrIdentifier(next, true);
+  }
+
   int tokenizeKeywordOrIdentifier(int next, bool allowDollar) {
     KeywordState state = KeywordState.KEYWORD_STATE;
     int start = byteOffset;
@@ -645,29 +660,57 @@ class AbstractScanner<T extends SourceString> implements Scanner {
 
   int tokenizeIdentifier(int next, int start, bool allowDollar) {
     bool isAscii = true;
+    bool isDynamicBuiltIn = false;
+
+    if (next === $D) {
+      next = advance();
+      if (next === $y) {
+        next = advance();
+        if (next === $n) {
+          next = advance();
+          if (next === $a) {
+            next = advance();
+            if (next === $m) {
+              next = advance();
+              if (next === $i) {
+                next = advance();
+                if (next === $c) {
+                  isDynamicBuiltIn = true;
+                  next = advance();
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     while (true) {
       if (($a <= next && next <= $z) ||
           ($A <= next && next <= $Z) ||
           ($0 <= next && next <= $9) ||
           next === $_ ||
           (next === $$ && allowDollar)) {
+        isDynamicBuiltIn = false;
         next = advance();
-      } else if (next < 128) {
+      } else if ((next < 128) || (next === $NBSP)) {
         // Identifier ends here.
         if (start == byteOffset) {
-          throw new MalformedInputException("expected identifier not found",
-                                            charOffset);
-        }
-        if (isAscii) {
+          return error(const SourceString("expected identifier"));
+        } else if (isDynamicBuiltIn) {
+          appendKeywordToken(Keyword.DYNAMIC);
+        } else if (isAscii) {
           appendByteStringToken(IDENTIFIER_INFO, asciiString(start, 0));
         } else {
-          appendByteStringToken(IDENTIFIER_INFO, utf8String(start, -1));
+          appendByteStringToken(BAD_INPUT_INFO, utf8String(start, -1));
         }
         return next;
       } else {
+        isDynamicBuiltIn = false;
         int nonAsciiStart = byteOffset;
         do {
           next = nextByte();
+          if (next === $NBSP) break;
         } while (next > 127);
         String string = utf8String(nonAsciiStart, -1).slowToString();
         isAscii = false;
@@ -725,8 +768,7 @@ class AbstractScanner<T extends SourceString> implements Scanner {
         continue;
       }
       if (next <= $CR && (next === $LF || next === $CR || next === $EOF)) {
-        throw new MalformedInputException("unterminated string literal",
-                                          charOffset);
+        return error(const SourceString("unterminated string literal"));
       }
       next = advance();
     }
@@ -773,13 +815,11 @@ class AbstractScanner<T extends SourceString> implements Scanner {
         appendByteStringToken(STRING_INFO, utf8String(start, 0));
         return advance();
       } else if (next === $LF || next === $CR) {
-        throw new MalformedInputException("unterminated string literal",
-                                          charOffset);
+        return error(const SourceString("unterminated string literal"));
       }
       next = advance();
     }
-    throw new MalformedInputException("unterminated string literal",
-                                      charOffset);
+    return error(const SourceString("unterminated string literal"));
   }
 
   int tokenizeMultiLineRawString(int quoteChar, int start) {
@@ -798,8 +838,7 @@ class AbstractScanner<T extends SourceString> implements Scanner {
         }
       }
     }
-    throw new MalformedInputException("unterminated string literal",
-                                      charOffset);
+    return error(const SourceString("unterminated string literal"));
   }
 
   int tokenizeMultiLineString(int quoteChar, int start, bool raw) {
@@ -828,14 +867,11 @@ class AbstractScanner<T extends SourceString> implements Scanner {
       }
       next = advance();
     }
-    throw new MalformedInputException("unterminated string literal",
-                                      charOffset);
+    return error(const SourceString("unterminated string literal"));
   }
-}
 
-class MalformedInputException {
-  final String message;
-  final position;
-  MalformedInputException(this.message, this.position);
-  toString() => message;
+  int error(SourceString message) {
+    appendByteStringToken(BAD_INPUT_INFO, message);
+    return advance(); // Ensure progress.
+  }
 }

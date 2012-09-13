@@ -89,7 +89,7 @@ public class DartServerLaunchConfigurationDelegate extends LaunchConfigurationDe
 
     String scriptPath = launchConfig.getApplicationName();
 
-    scriptPath = translateToFilePath(scriptPath);
+    scriptPath = translateToFilePath(currentWorkingDirectory, scriptPath);
 
     String vmExecPath = "";
 
@@ -204,7 +204,8 @@ public class DartServerLaunchConfigurationDelegate extends LaunchConfigurationDe
       }
 
       // Shorten the long path to the dart vm - just show "dart".
-      if (arg.endsWith(File.separator + "dart")) {
+      if (arg.endsWith(File.separator
+          + DartSdkManager.getManager().getSdk().getVmExecutable().getName())) {
         builder.append("dart");
       } else {
         builder.append(arg);
@@ -290,11 +291,29 @@ public class DartServerLaunchConfigurationDelegate extends LaunchConfigurationDe
     }
   }
 
-  private String translateToFilePath(String scriptPath) {
+  /**
+   * Return either a path relative to the cwd, if possible, or an absolute path to the given script.
+   * 
+   * @param cwd the current working directory for the launch
+   * @param scriptPath the path to the script (a workspace path)
+   * @return either a cwd relative path or an absolute path
+   */
+  private String translateToFilePath(File cwd, String scriptPath) {
     IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(scriptPath);
 
     if (resource != null) {
-      return resource.getLocation().toFile().getAbsolutePath();
+      String path = resource.getLocation().toFile().getAbsolutePath();
+      String cwdPath = cwd.getAbsolutePath();
+
+      if (!cwdPath.endsWith(File.separator)) {
+        cwdPath = cwdPath + File.separator;
+      }
+
+      if (path.startsWith(cwdPath)) {
+        path = path.substring(cwdPath.length());
+      }
+
+      return path;
     } else {
       return scriptPath;
     }

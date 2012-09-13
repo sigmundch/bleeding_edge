@@ -19,6 +19,7 @@ import com.google.dart.tools.debug.ui.internal.view.DebuggerView;
 import com.google.dart.tools.debug.ui.launch.DartRunAction;
 import com.google.dart.tools.ui.DartUI;
 import com.google.dart.tools.ui.actions.AboutDartAction;
+import com.google.dart.tools.ui.actions.GenerateDartdocAction;
 import com.google.dart.tools.ui.actions.GenerateJavascriptAction;
 import com.google.dart.tools.ui.actions.OpenApiDocsAction;
 import com.google.dart.tools.ui.actions.OpenIntroEditorAction;
@@ -173,6 +174,8 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
   private DartRunAction dartRunAction;
 
   private GenerateJavascriptAction deployOptimizedAction;
+
+  private GenerateDartdocAction generateDartdocAction;
 
   private RunPubAction pubInstallAction;
 
@@ -479,14 +482,13 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 
     deployOptimizedAction = new GenerateJavascriptAction(window);
 
+    generateDartdocAction = new GenerateDartdocAction(window);
+
     pubInstallAction = RunPubAction.createPubInstallAction(window);
 
     pubUpdateAction = RunPubAction.createPubUpdateAction(window);
 
     newApplicationWizardAction = new OpenNewApplicationWizardAction();
-//TODO (pquitslund): deprecated libaries view support        
-//    newApplicationWizardAction = DartCoreDebug.PROJECTS_VIEW ? new OpenNewProjectWizardAction()
-//        : new OpenNewApplicationWizardAction();
 
     register(newApplicationWizardAction);
 
@@ -860,16 +862,6 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 
     menu.add(new Separator());
 
-    //TODO (pquitslund): deprecated libaries view support    
-//   {
-//
-//      /* New File and New Application are defined in plugin.xml */
-//      menu.add(new GroupMarker(IWorkbenchActionConstants.NEW_EXT));
-//      menu.add(new Separator());
-//      /* Open is defined in plugin.xml */
-//      menu.add(new GroupMarker(IWorkbenchActionConstants.OPEN_EXT));
-//    }
-
     menu.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
 
     menu.add(new Separator());
@@ -1023,6 +1015,8 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
     //addKeyboardShortcuts(menu);
 
     menu.add(deployOptimizedAction);
+
+    //menu.add(generateDartdocAction);
 
     if (DartCoreDebug.ENABLE_PUB) {
       menu.add(new Separator());

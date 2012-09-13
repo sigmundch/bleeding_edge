@@ -21,7 +21,7 @@ testUnparseMember(String member) {
   Expect.equals(member, unparse(node));
 }
 
-const coreLib = @'''
+const coreLib = r'''
 #library('corelib');
 class Object {}
 interface bool {}
@@ -33,14 +33,14 @@ interface Function {}
 interface List {}
 interface Map {}
 interface Closure {}
-interface Dynamic {}
+interface Dynamic_ {}
 interface Null {}
 class Math {
   static double parseDouble(String s) => 1.0;
 }
 ''';
 
-const ioLib = @'''
+const ioLib = r'''
 #library('io');
 class Platform {
   static int operatingSystem;

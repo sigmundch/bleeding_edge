@@ -16,36 +16,36 @@ interface Duration extends Comparable default DurationImplementation {
    * All individual parts are allowed to be negative.
    * All arguments are by default 0.
    */
-  const Duration([int days, int hours, int minutes, int seconds,
-                  int milliseconds]);
+  const Duration({int days, int hours, int minutes, int seconds,
+                  int milliseconds});
 
- /**
+  /**
    * Returns this [Duration] in days. Incomplete days are discarded.
    */
-  final int inDays;
+  int get inDays;
 
   /**
    * Returns this [Duration] in hours. Incomplete hours are discarded.
    * The returned value can be greater than 23.
    */
-  final int inHours;
+  int get inHours;
 
   /**
    * Returns this [Duration] in minutes. Incomplete minutes are discarded.
    * The returned value can be greater than 59.
    */
-  final int inMinutes;
+  int get inMinutes;
 
   /**
    * Returns this [Duration] in seconds. Incomplete seconds are discarded.
    * The returned value can be greater than 59.
    */
-  final int inSeconds;
+  int get inSeconds;
 
   /**
    * Returns this [Duration] in milliseconds.
    */
-  final int inMilliseconds;
+  int get inMilliseconds;
 
   static const int MILLISECONDS_PER_SECOND = 1000;
   static const int SECONDS_PER_MINUTE = 60;

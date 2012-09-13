@@ -136,11 +136,14 @@ class MessageKind {
       'super not allowed here');
   static const INVALID_CASE_DEFAULT = const MessageKind(
       'default only allowed on last case of a switch');
-  static const INVALID_CASE_EXPRESSION = const MessageKind(
-      'case expression is not a compile-time constant int or string.');
-  static const INVALID_CASE_EXPRESSION_TYPE = const MessageKind(
-      "case expressions don't all have the same type "
-      "(must be all int or String).");
+
+  static const SWITCH_CASE_TYPES_NOT_EQUAL = const MessageKind(
+      "case expressions don't all have the same type.");
+  static const SWITCH_CASE_VALUE_OVERRIDES_EQUALS = const MessageKind(
+      "case expression value overrides 'operator=='.");
+  static const SWITCH_INVALID = const MessageKind(
+      "switch cases contain invalid expressions.");
+
   static const INVALID_ARGUMENT_AFTER_NAMED = const MessageKind(
       'non-named argument after named argument');
 
@@ -239,10 +242,13 @@ class MessageKind {
       "Error: parameter name expected.");
 
   static const CANNOT_RESOLVE_GETTER = const MessageKind(
-      'Cannot resolve getter.');
+      'cannot resolve getter.');
 
   static const CANNOT_RESOLVE_SETTER = const MessageKind(
-      'Cannot resolve setter.');
+      'cannot resolve setter.');
+
+  static const VOID_NOT_ALLOWED = const MessageKind(
+      'type void is only allowed in a return type.');
 
   static const COMPILER_CRASHED = const MessageKind(
       "Error: The compiler crashed when compiling this element.");

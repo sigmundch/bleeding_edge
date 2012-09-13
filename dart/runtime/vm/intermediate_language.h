@@ -33,9 +33,10 @@ class LocalVariable;
   V(ObjectArray, get:length, ObjectArrayLength)                                \
   V(ImmutableArray, get:length, ImmutableArrayLength)                          \
   V(GrowableObjectArray, get:length, GrowableArrayLength)                      \
+  V(GrowableObjectArray, get:capacity, GrowableArrayCapacity)                  \
   V(StringBase, get:length, StringBaseLength)                                  \
-  V(IntegerImplementation, toDouble, IntegerToDouble)                          \
-  V(Double, toDouble, DoubleToDouble)                                          \
+  V(_IntegerImplementation, toDouble, IntegerToDouble)                         \
+  V(_Double, toDouble, DoubleToDouble)                                         \
   V(::, sqrt, MathSqrt)                                                        \
 
 // Class that recognizes the name and owner of a function and returns the
@@ -61,7 +62,8 @@ class Value : public ZoneAllocated {
       : definition_(definition),
         next_use_(NULL),
         instruction_(NULL),
-        use_index_(-1) { }
+        use_index_(-1),
+        reaching_cid_(kIllegalCid) { }
 
   Definition* definition() const { return definition_; }
   void set_definition(Definition* definition) { definition_ = definition; }
@@ -106,11 +108,16 @@ class Value : public ZoneAllocated {
 
   bool Equals(Value* other) const;
 
+  void set_reaching_cid(intptr_t cid) { reaching_cid_ = cid; }
+  intptr_t reaching_cid() const { return reaching_cid_; }
+
  private:
   Definition* definition_;
   Value* next_use_;
   Instruction* instruction_;
   intptr_t use_index_;
+
+  intptr_t reaching_cid_;
 
   DISALLOW_COPY_AND_ASSIGN(Value);
 };
@@ -207,7 +214,6 @@ class EmbeddedArray<T, 0> {
   M(NativeCall)                                                                \
   M(LoadIndexed)                                                               \
   M(StoreIndexed)                                                              \
-  M(LoadInstanceField)                                                         \
   M(StoreInstanceField)                                                        \
   M(LoadStaticField)                                                           \
   M(StoreStaticField)                                                          \
@@ -217,7 +223,7 @@ class EmbeddedArray<T, 0> {
   M(CreateClosure)                                                             \
   M(AllocateObject)                                                            \
   M(AllocateObjectWithBoundsCheck)                                             \
-  M(LoadVMField)                                                               \
+  M(LoadField)                                                                 \
   M(StoreVMField)                                                              \
   M(InstantiateTypeArguments)                                                  \
   M(ExtractConstructorTypeArguments)                                           \
@@ -238,6 +244,7 @@ class EmbeddedArray<T, 0> {
   M(Constant)                                                                  \
   M(CheckEitherNonSmi)                                                         \
   M(UnboxedDoubleBinaryOp)                                                     \
+  M(MathSqrt)                                                                  \
   M(UnboxDouble)                                                               \
   M(BoxDouble)                                                                 \
   M(CheckArrayBound)                                                           \
@@ -296,6 +303,10 @@ class Instruction : public ZoneAllocated {
   // Call instructions override this function and return the number of
   // pushed arguments.
   virtual intptr_t ArgumentCount() const = 0;
+  virtual PushArgumentInstr* ArgumentAt(intptr_t index) const {
+    UNREACHABLE();
+    return NULL;
+  };
 
   // Returns true, if this instruction can deoptimize.
   virtual bool CanDeoptimize() const = 0;
@@ -435,6 +446,7 @@ FOR_EACH_INSTRUCTION(INSTRUCTION_TYPE_CHECK)
   // Classes that set deopt_id_.
   friend class UnboxDoubleInstr;
   friend class UnboxedDoubleBinaryOpInstr;
+  friend class MathSqrtInstr;
   friend class CheckClassInstr;
   friend class CheckSmiInstr;
   friend class CheckArrayBoundInstr;
@@ -966,10 +978,12 @@ class Definition : public Instruction {
   // Returns true if the propagated cid has changed.
   bool SetPropagatedCid(intptr_t cid);
 
-  // Returns true if the definition may have side effects.
+  // Returns true if the definition is affected by side effects.
+  // Only instructions that are not affected by side effects can participate
+  // in redundancy elimination or loop invariant code motion.
   // TODO(fschneider): Make this abstract and implement for all definitions
   // instead of returning the safe default (true).
-  virtual bool HasSideEffect() const { return true; }
+  virtual bool AffectedBySideEffect() const { return true; }
 
   Value* input_use_list() { return input_use_list_; }
   void set_input_use_list(Value* head) { input_use_list_ = head; }
@@ -1737,6 +1751,9 @@ class PolymorphicInstanceCallInstr : public TemplateDefinition<0> {
   virtual intptr_t ArgumentCount() const {
     return instance_call()->ArgumentCount();
   }
+  PushArgumentInstr* ArgumentAt(intptr_t index) const {
+    return instance_call()->ArgumentAt(index);
+  }
 
   DECLARE_INSTRUCTION(PolymorphicInstanceCall)
   virtual RawAbstractType* CompileType() const;
@@ -1984,7 +2001,7 @@ class StaticCallInstr : public TemplateDefinition<0> {
         function_(function),
         argument_names_(argument_names),
         arguments_(arguments),
-        recognized_(MethodRecognizer::kUnknown) {
+        result_cid_(kDynamicCid) {
     ASSERT(function.IsZoneHandle());
     ASSERT(argument_names.IsZoneHandle());
   }
@@ -2002,20 +2019,18 @@ class StaticCallInstr : public TemplateDefinition<0> {
     return (*arguments_)[index];
   }
 
-  MethodRecognizer::Kind recognized() const { return recognized_; }
-  void set_recognized(MethodRecognizer::Kind kind) { recognized_ = kind; }
-
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
   virtual bool CanDeoptimize() const { return true; }
-  virtual intptr_t ResultCid() const { return kDynamicCid; }
+  virtual intptr_t ResultCid() const { return result_cid_; }
+  void set_result_cid(intptr_t value) { result_cid_ = value; }
 
  private:
   const intptr_t token_pos_;
   const Function& function_;
   const Array& argument_names_;
   ZoneGrowableArray<PushArgumentInstr*>* arguments_;
-  MethodRecognizer::Kind recognized_;
+  intptr_t result_cid_;  // For some library functions we know the result.
 
   DISALLOW_COPY_AND_ASSIGN(StaticCallInstr);
 };
@@ -2120,35 +2135,13 @@ class NativeCallInstr : public TemplateDefinition<0> {
 };
 
 
-class LoadInstanceFieldInstr : public TemplateDefinition<1> {
- public:
-  LoadInstanceFieldInstr(const Field& field, Value* instance) : field_(field) {
-    ASSERT(instance != NULL);
-    inputs_[0] = instance;
-  }
-
-  DECLARE_INSTRUCTION(LoadInstanceField)
-  virtual RawAbstractType* CompileType() const;
-
-  const Field& field() const { return field_; }
-  Value* instance() const { return inputs_[0]; }
-
-  virtual void PrintOperandsTo(BufferFormatter* f) const;
-
-  virtual bool CanDeoptimize() const { return false; }
-  virtual intptr_t ResultCid() const { return kDynamicCid; }
-
- private:
-  const Field& field_;
-
-  DISALLOW_COPY_AND_ASSIGN(LoadInstanceFieldInstr);
-};
-
-
 class StoreInstanceFieldInstr : public TemplateDefinition<2> {
  public:
-  StoreInstanceFieldInstr(const Field& field, Value* instance, Value* value)
-      : field_(field) {
+  StoreInstanceFieldInstr(const Field& field,
+                          Value* instance,
+                          Value* value,
+                          bool emit_store_barrier)
+      : field_(field), emit_store_barrier_(emit_store_barrier) {
     ASSERT(instance != NULL);
     ASSERT(value != NULL);
     inputs_[0] = instance;
@@ -2162,6 +2155,9 @@ class StoreInstanceFieldInstr : public TemplateDefinition<2> {
 
   Value* instance() const { return inputs_[0]; }
   Value* value() const { return inputs_[1]; }
+  bool ShouldEmitStoreBarrier() const {
+    return value()->NeedsStoreBuffer() && emit_store_barrier_;
+  }
 
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
@@ -2170,6 +2166,7 @@ class StoreInstanceFieldInstr : public TemplateDefinition<2> {
 
  private:
   const Field& field_;
+  const bool emit_store_barrier_;
 
   DISALLOW_COPY_AND_ASSIGN(StoreInstanceFieldInstr);
 };
@@ -2225,8 +2222,7 @@ class StoreStaticFieldInstr : public TemplateDefinition<1> {
 
 class LoadIndexedInstr : public TemplateDefinition<2> {
  public:
-  LoadIndexedInstr(Value* array, Value* index, intptr_t receiver_type)
-      : receiver_type_(receiver_type) {
+  LoadIndexedInstr(Value* array, Value* index) {
     ASSERT(array != NULL);
     ASSERT(index != NULL);
     inputs_[0] = array;
@@ -2239,14 +2235,10 @@ class LoadIndexedInstr : public TemplateDefinition<2> {
   Value* array() const { return inputs_[0]; }
   Value* index() const { return inputs_[1]; }
 
-  intptr_t receiver_type() const { return receiver_type_; }
-
   virtual bool CanDeoptimize() const { return false; }
   virtual intptr_t ResultCid() const { return kDynamicCid; }
 
  private:
-  intptr_t receiver_type_;
-
   DISALLOW_COPY_AND_ASSIGN(LoadIndexedInstr);
 };
 
@@ -2256,8 +2248,8 @@ class StoreIndexedInstr : public TemplateDefinition<3> {
   StoreIndexedInstr(Value* array,
                     Value* index,
                     Value* value,
-                    intptr_t receiver_type)
-        : receiver_type_(receiver_type) {
+                    bool emit_store_barrier)
+      : emit_store_barrier_(emit_store_barrier) {
     ASSERT(array != NULL);
     ASSERT(index != NULL);
     ASSERT(value != NULL);
@@ -2273,13 +2265,15 @@ class StoreIndexedInstr : public TemplateDefinition<3> {
   Value* index() const { return inputs_[1]; }
   Value* value() const { return inputs_[2]; }
 
-  intptr_t receiver_type() const { return receiver_type_; }
+  bool ShouldEmitStoreBarrier() const {
+    return value()->NeedsStoreBuffer() && emit_store_barrier_;
+  }
 
   virtual bool CanDeoptimize() const { return false; }
   virtual intptr_t ResultCid() const { return kDynamicCid; }
 
  private:
-  intptr_t receiver_type_;
+  const bool emit_store_barrier_;
 
   DISALLOW_COPY_AND_ASSIGN(StoreIndexedInstr);
 };
@@ -2493,20 +2487,22 @@ class CreateClosureInstr : public TemplateDefinition<0> {
 };
 
 
-class LoadVMFieldInstr : public TemplateDefinition<1> {
+class LoadFieldInstr : public TemplateDefinition<1> {
  public:
-  LoadVMFieldInstr(Value* value,
-                   intptr_t offset_in_bytes,
-                   const AbstractType& type)
+  LoadFieldInstr(Value* value,
+                 intptr_t offset_in_bytes,
+                 const AbstractType& type,
+                 bool immutable = false)
       : offset_in_bytes_(offset_in_bytes),
         type_(type),
-        result_cid_(kDynamicCid) {
+        result_cid_(kDynamicCid),
+        immutable_(immutable) {
     ASSERT(value != NULL);
     ASSERT(type.IsZoneHandle());  // May be null if field is not an instance.
     inputs_[0] = value;
   }
 
-  DECLARE_INSTRUCTION(LoadVMField)
+  DECLARE_INSTRUCTION(LoadField)
   virtual RawAbstractType* CompileType() const;
 
   Value* value() const { return inputs_[0]; }
@@ -2519,12 +2515,17 @@ class LoadVMFieldInstr : public TemplateDefinition<1> {
   virtual bool CanDeoptimize() const { return false; }
   virtual intptr_t ResultCid() const { return result_cid_; }
 
+  bool AttributesEqual(Definition* other) const;
+
+  virtual bool AffectedBySideEffect() const { return !immutable_; }
+
  private:
   const intptr_t offset_in_bytes_;
   const AbstractType& type_;
   intptr_t result_cid_;
+  const bool immutable_;
 
-  DISALLOW_COPY_AND_ASSIGN(LoadVMFieldInstr);
+  DISALLOW_COPY_AND_ASSIGN(LoadFieldInstr);
 };
 
 
@@ -2775,7 +2776,7 @@ class CheckEitherNonSmiInstr : public TemplateDefinition<2> {
 
   virtual bool AttributesEqual(Definition* other) const { return true; }
 
-  virtual bool HasSideEffect() const { return false; }
+  virtual bool AffectedBySideEffect() const { return false; }
 
   Value* left() const { return inputs_[0]; }
 
@@ -2801,7 +2802,7 @@ class BoxDoubleInstr : public TemplateDefinition<1> {
   intptr_t token_pos() const { return token_pos_; }
 
   virtual bool CanDeoptimize() const { return false; }
-  virtual bool HasSideEffect() const { return false; }
+  virtual bool AffectedBySideEffect() const { return false; }
   virtual bool AttributesEqual(Definition* other) const { return true; }
 
   virtual intptr_t ResultCid() const;
@@ -2842,7 +2843,7 @@ class UnboxDoubleInstr : public TemplateDefinition<1> {
     return kUnboxedDouble;
   }
 
-  virtual bool HasSideEffect() const { return false; }
+  virtual bool AffectedBySideEffect() const { return false; }
   virtual bool AttributesEqual(Definition* other) const { return true; }
 
   DECLARE_INSTRUCTION(UnboxDouble)
@@ -2850,6 +2851,49 @@ class UnboxDoubleInstr : public TemplateDefinition<1> {
 
  private:
   DISALLOW_COPY_AND_ASSIGN(UnboxDoubleInstr);
+};
+
+
+class MathSqrtInstr : public TemplateDefinition<1> {
+ public:
+  MathSqrtInstr(Value* value, StaticCallInstr* instance_call) {
+    ASSERT(value != NULL);
+    inputs_[0] = value;
+    deopt_id_ = instance_call->deopt_id();
+  }
+
+  Value* value() const { return inputs_[0]; }
+
+  virtual bool CanDeoptimize() const { return false; }
+  virtual bool HasSideEffect() const { return false; }
+
+  virtual bool AttributesEqual(Definition* other) const {
+    return true;
+  }
+
+  // The output is not an instance but when it is boxed it becomes double.
+  virtual intptr_t ResultCid() const { return kDoubleCid; }
+
+  virtual Representation representation() const {
+    return kUnboxedDouble;
+  }
+
+  virtual Representation RequiredInputRepresentation(intptr_t idx) const {
+    ASSERT(idx == 0);
+    return kUnboxedDouble;
+  }
+
+  virtual intptr_t DeoptimizationTarget() const {
+    // Direct access since this instuction cannot deoptimize, and the deopt-id
+    // was inherited from another instuction that could deoptimize.
+    return deopt_id_;
+  }
+
+  DECLARE_INSTRUCTION(MathSqrt)
+  virtual RawAbstractType* CompileType() const;
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(MathSqrtInstr);
 };
 
 
@@ -2875,7 +2919,7 @@ class UnboxedDoubleBinaryOpInstr : public TemplateDefinition<2> {
   virtual void PrintOperandsTo(BufferFormatter* f) const;
 
   virtual bool CanDeoptimize() const { return false; }
-  virtual bool HasSideEffect() const { return false; }
+  virtual bool AffectedBySideEffect() const { return false; }
 
   virtual bool AttributesEqual(Definition* other) const {
     return op_kind() == other->AsUnboxedDoubleBinaryOp()->op_kind();
@@ -3135,7 +3179,7 @@ class CheckClassInstr : public TemplateDefinition<1> {
 
   virtual bool AttributesEqual(Definition* other) const;
 
-  virtual bool HasSideEffect() const { return false; }
+  virtual bool AffectedBySideEffect() const { return false; }
 
   Value* value() const { return inputs_[0]; }
 
@@ -3169,7 +3213,7 @@ class CheckSmiInstr : public TemplateDefinition<1> {
 
   virtual bool AttributesEqual(Definition* other) const { return true; }
 
-  virtual bool HasSideEffect() const { return false; }
+  virtual bool AffectedBySideEffect() const { return false; }
 
   virtual Definition* Canonicalize();
 
@@ -3202,7 +3246,7 @@ class CheckArrayBoundInstr : public TemplateDefinition<2> {
 
   virtual bool AttributesEqual(Definition* other) const;
 
-  virtual bool HasSideEffect() const { return false; }
+  virtual bool AffectedBySideEffect() const { return false; }
 
   Value* array() const { return inputs_[0]; }
   Value* index() const { return inputs_[1]; }
@@ -3218,53 +3262,150 @@ class CheckArrayBoundInstr : public TemplateDefinition<2> {
 
 #undef DECLARE_INSTRUCTION
 
-
 class Environment : public ZoneAllocated {
  public:
+  // Iterate the non-NULL values in the innermost level of an environment.
+  class ShallowIterator : public ValueObject {
+   public:
+    explicit ShallowIterator(Environment* environment)
+        : environment_(environment), index_(0) { }
+
+    Environment* environment() const { return environment_; }
+
+    void Advance() {
+      ASSERT(!Done());
+      ++index_;
+    }
+
+    bool Done() const {
+      return (environment_ == NULL) || (index_ >= environment_->Length());
+    }
+
+    Value* CurrentValue() const {
+      ASSERT(!Done());
+      ASSERT(environment_->values_[index_] != NULL);
+      return environment_->values_[index_];
+    }
+
+    void SetCurrentValue(Value* value) {
+      ASSERT(!Done());
+      ASSERT(value != NULL);
+      environment_->values_[index_] = value;
+    }
+
+   private:
+    Environment* environment_;
+    intptr_t index_;
+  };
+
+  // Iterate all non-NULL values in an environment, including outer
+  // environments.  Note that the iterator skips empty environments.
+  class DeepIterator : public ValueObject {
+   public:
+    explicit DeepIterator(Environment* environment) : iterator_(environment) {
+      SkipDone();
+    }
+
+    void Advance() {
+      ASSERT(!Done());
+      iterator_.Advance();
+      SkipDone();
+    }
+
+    bool Done() const { return iterator_.environment() == NULL; }
+
+    Value* CurrentValue() const {
+      ASSERT(!Done());
+      return iterator_.CurrentValue();
+    }
+
+    void SetCurrentValue(Value* value) {
+      ASSERT(!Done());
+      iterator_.SetCurrentValue(value);
+    }
+
+   private:
+    void SkipDone() {
+      while (!Done() && iterator_.Done()) {
+        iterator_ = ShallowIterator(iterator_.environment()->outer());
+      }
+    }
+
+    ShallowIterator iterator_;
+  };
+
   // Construct an environment by constructing uses from an array of definitions.
-  Environment(const GrowableArray<Definition*>& definitions,
-              intptr_t fixed_parameter_count);
+  static Environment* From(const GrowableArray<Definition*>& definitions,
+                           intptr_t fixed_parameter_count,
+                           const Environment* outer);
 
   void set_locations(Location* locations) {
     ASSERT(locations_ == NULL);
     locations_ = locations;
   }
 
-  const GrowableArray<Value*>& values() const {
-    return values_;
+  void set_deopt_id(intptr_t deopt_id) { deopt_id_ = deopt_id; }
+  intptr_t deopt_id() const { return deopt_id_; }
+
+  Environment* outer() const { return outer_; }
+
+  Value* ValueAt(intptr_t ix) const {
+    return values_[ix];
   }
 
-  GrowableArray<Value*>* values_ptr() {
-    return &values_;
+  intptr_t Length() const {
+    return values_.length();
   }
 
-  Location LocationAt(intptr_t ix) const {
-    ASSERT((ix >= 0) && (ix < values_.length()));
-    return locations_[ix];
+  Location LocationAt(intptr_t index) const {
+    ASSERT((index >= 0) && (index < values_.length()));
+    return locations_[index];
   }
 
-  Location* LocationSlotAt(intptr_t ix) const {
-    ASSERT((ix >= 0) && (ix < values_.length()));
-    return &locations_[ix];
+  Location* LocationSlotAt(intptr_t index) const {
+    ASSERT((index >= 0) && (index < values_.length()));
+    return &locations_[index];
+  }
+
+  // The use index is the index in the flattened environment.
+  Value* ValueAtUseIndex(intptr_t index) const {
+    const Environment* env = this;
+    while (index >= env->Length()) {
+      ASSERT(env->outer_ != NULL);
+      index -= env->Length();
+      env = env->outer_;
+    }
+    return env->ValueAt(index);
   }
 
   intptr_t fixed_parameter_count() const {
     return fixed_parameter_count_;
   }
 
-  void CopyTo(Instruction* instr) const;
+  void DeepCopyTo(Instruction* instr) const;
 
   void PrintTo(BufferFormatter* f) const;
 
  private:
-  Environment(intptr_t length, intptr_t fixed_parameter_count)
+  friend class ShallowIterator;
+
+  Environment(intptr_t length,
+              intptr_t fixed_parameter_count,
+              intptr_t deopt_id,
+              Environment* outer)
       : values_(length),
         locations_(NULL),
-        fixed_parameter_count_(fixed_parameter_count) { }
+        fixed_parameter_count_(fixed_parameter_count),
+        deopt_id_(deopt_id),
+        outer_(outer) { }
+
+  Environment* DeepCopy() const;
 
   GrowableArray<Value*> values_;
   Location* locations_;
   const intptr_t fixed_parameter_count_;
+  intptr_t deopt_id_;
+  Environment* outer_;
 
   DISALLOW_COPY_AND_ASSIGN(Environment);
 };

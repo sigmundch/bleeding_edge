@@ -101,6 +101,9 @@ class Enqueuer {
     if (elements === null) {
       elements = getCachedElements(element);
     }
+    if (isResolutionQueue) {
+      compiler.world.registerUsedElement(element);
+    }
 
     queue.add(new WorkItem(element, elements, itemCompilationContextCreator()));
 
@@ -119,17 +122,8 @@ class Enqueuer {
     addToWorkList(element);
   }
 
-  bool canBeRecompiled(Element element) {
-    // Only member functions can be recompiled. An exception to this is members
-    // of closures. They are processed as part of the enclosing function and not
-    // present as a separate element (the call to the closure will be a member
-    // function).
-    return element.isMember() && !element.getEnclosingClass().isClosure();
-  }
-
   void registerRecompilationCandidate(Element element,
                                       [TreeElements elements]) {
-    if (!canBeRecompiled(element)) return;
     if (queueIsClosed) {
       compiler.internalErrorOnElement(element, "Work list is closed.");
     }
@@ -226,11 +220,11 @@ class Enqueuer {
         if (isResolutionQueue) {
           compiler.resolver.checkMembers(cls);
         }
-       
+
         if (compiler.enableTypeAssertions) {
           // We need to register is checks and helpers for checking
           // assignments to fields.
-          // TODO(ngeoffray): This should really move to the backend. 
+          // TODO(ngeoffray): This should really move to the backend.
           cls.localMembers.forEach((Element member) {
             if (!member.isInstanceMember() && !member.isField()) return;
             DartType type = member.computeType(compiler);

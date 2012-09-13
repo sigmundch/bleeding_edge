@@ -416,7 +416,7 @@ class NativeImplementationGenerator(systembase.BaseGenerator):
 
   def _AddGetter(self, attr, html_name):
     type_info = self._TypeInfo(attr.type.id)
-    dart_declaration = '%s get %s()' % (self._DartType(attr.type.id), html_name)
+    dart_declaration = '%s get %s' % (self._DartType(attr.type.id), html_name)
     is_custom = 'Custom' in attr.ext_attrs or 'CustomGetter' in attr.ext_attrs
     cpp_callback_name = self._GenerateNativeBinding(attr.id, 1,
         dart_declaration, 'Getter', is_custom)
@@ -484,7 +484,7 @@ class NativeImplementationGenerator(systembase.BaseGenerator):
   def AddIndexer(self, element_type):
     """Adds all the methods required to complete implementation of List."""
     # We would like to simply inherit the implementation of everything except
-    # get length(), [], and maybe []=.  It is possible to extend from a base
+    # length, [], and maybe []=.  It is possible to extend from a base
     # array implementation class only when there is no other implementation
     # inheritance.  There might be no implementation inheritance other than
     # DOMBaseWrapper for many classes, but there might be some where the
@@ -582,18 +582,12 @@ class NativeImplementationGenerator(systembase.BaseGenerator):
     has_optional_arguments = any(self._IsArgumentOptionalInWebCore(operation, argument) for argument in operation.arguments)
     needs_dispatcher = not is_custom and (len(info.operations) > 1 or has_optional_arguments)
 
-    if not needs_dispatcher:
-      type_renamer = self._DartType
-      default_value = 'null'
-    else:
-      type_renamer = lambda x: 'Dynamic'
-      default_value = '_null'
-
     dart_declaration = '%s%s %s(%s)' % (
         'static ' if info.IsStatic() else '',
         self._DartType(info.type_name),
         html_name,
-        info.ParametersImplementationDeclaration(type_renamer, default_value))
+        info.ParametersImplementationDeclaration(
+            (lambda x: 'Dynamic') if needs_dispatcher else self._DartType))
 
     if not needs_dispatcher:
       # Bind directly to native implementation
@@ -642,7 +636,7 @@ class NativeImplementationGenerator(systembase.BaseGenerator):
       self._GenerateOperationNativeCallback(operation, operation.arguments[:argument_count], cpp_callback_name)
 
     def GenerateChecksAndCall(operation, argument_count):
-      checks = ['%s === _null' % name for name in argument_names]
+      checks = ['!?%s' % name for name in argument_names]
       for i in range(0, argument_count):
         argument = operation.arguments[i]
         argument_name = argument_names[i]
@@ -663,14 +657,14 @@ class NativeImplementationGenerator(systembase.BaseGenerator):
       argument_count = len(operation.arguments)
       for position, argument in list(enumerate(operation.arguments))[::-1]:
         if self._IsArgumentOptionalInWebCore(operation, argument):
-          check = '%s !== _null' % argument_names[position]
+          check = '?%s' % argument_names[position]
           # argument_count instead of position + 1 is used here to cover one
           # complicated case with the effectively optional argument in the middle.
           # Consider foo(x, [Optional] y, [Optional=DefaultIsNullString] z)
           # (as of now it's modelled after HTMLMediaElement.webkitAddKey).
           # y is optional in WebCore, while z is not.
-          # In this case, if y !== _null, we'd like to emit foo(x, y, z) invocation, not
-          # foo(x, y).
+          # In this case, if y was actually passed, we'd like to emit foo(x, y, z) invocation,
+          # not foo(x, y).
           GenerateCall(operation, argument_count, [check])
           argument_count = position
       GenerateCall(operation, argument_count, [])

@@ -328,7 +328,8 @@ class ArgumentTypesRegistry {
   HTypeList parameterTypes(FunctionElement element,
                            OptionalParameterTypes defaultValueTypes) {
     // Handle static functions separately.
-    if (Elements.isStaticOrTopLevelFunction(element)) {
+    if (Elements.isStaticOrTopLevelFunction(element) ||
+        element.kind == ElementKind.GENERATIVE_CONSTRUCTOR) {
       HTypeList types = staticTypeMap[element];
       if (types !== null) {
         if (!optimizedStaticFunctions.contains(element)) {
@@ -387,12 +388,22 @@ class ArgumentTypesRegistry {
       optimizedDefaultValueTypes[element] = defaultValueTypes;
     }
   }
+
+  void dump() {
+    optimizedFunctions.forEach((Element element) {
+      HTypeList types = optimizedTypes[element];
+      print("Inferred $element has argument types ${types.types}");
+    });
+  }
 }
 
 class JavaScriptItemCompilationContext extends ItemCompilationContext {
   final HTypeMap types;
+  final Set<HInstruction> boundsChecked;
 
-  JavaScriptItemCompilationContext() : types = new HTypeMap();
+  JavaScriptItemCompilationContext()
+      : types = new HTypeMap(),
+        boundsChecked = new Set<HInstruction>();
 }
 
 class JavaScriptBackend extends Backend {
@@ -448,7 +459,6 @@ class JavaScriptBackend extends Backend {
 
   void enqueueHelpers(Enqueuer world) {
     enqueueAllTopLevelFunctions(compiler.jsHelperLibrary, world);
-    enqueueAllTopLevelFunctions(compiler.interceptorsLibrary, world);
 
     jsIndexingBehaviorInterface =
         compiler.findHelper(const SourceString('JavaScriptIndexingBehavior'));
@@ -642,6 +652,7 @@ class JavaScriptBackend extends Backend {
   HTypeList optimisticParameterTypes(
       FunctionElement element,
       OptionalParameterTypes defaultValueTypes) {
+    if (element.parameterCount(compiler) == 0) return HTypeList.ALL_UNKNOWN;
     return argumentTypes.parameterTypes(element, defaultValueTypes);
   }
 
@@ -656,6 +667,7 @@ class JavaScriptBackend extends Backend {
       FunctionElement element,
       HTypeList parameterTypes,
       OptionalParameterTypes defaultValueTypes) {
+    if (element.parameterCount(compiler) == 0) return;
     argumentTypes.registerOptimization(
         element, parameterTypes, defaultValueTypes);
   }
@@ -684,6 +696,14 @@ class JavaScriptBackend extends Backend {
       info.addCompiledFunction(caller);
     }
     return info.returnType;
+  }
+
+  void dumpReturnTypes() {
+    returnInfo.forEach((Element element, ReturnInfo info) {
+      if (info.returnType != HType.UNKNOWN) {
+        print("Inferred $element has return type ${info.returnType}");
+      }
+    });
   }
 
   SourceString getCheckedModeHelper(DartType type) {

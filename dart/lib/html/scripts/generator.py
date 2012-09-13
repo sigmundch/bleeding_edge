@@ -91,21 +91,14 @@ def ListImplementationInfo(interface, database):
   return (None, None)
 
 
-def MaybeListElementTypeName(type_name):
-  """Returns the List element type T from string of form "List<T>", or None."""
-  match = re.match(r'sequence<(\w*)>$', type_name)
-  if match:
-    return match.group(1)
-  return None
-
 def MaybeListElementType(interface):
   """Returns the List element type T, or None in interface does not implement
   List<T>.
   """
   for parent in interface.parents:
-    element_type = MaybeListElementTypeName(parent.type.id)
-    if element_type:
-      return element_type
+    match = re.match(r'sequence<(\w*)>$', parent.type.id)
+    if match:
+      return match.group(1)
   return None
 
 def MaybeTypedArrayElementType(interface):
@@ -177,8 +170,18 @@ class ParamInfo(object):
     return '<ParamInfo(%s)>' % content
 
 
-# Given a list of overloaded arguments, render a dart argument.
-def _DartArg(args, interface, constructor=False):
+# Given a list of overloaded arguments, render dart arguments.
+def _BuildArguments(args, interface, constructor=False):
+  def IsOptional(argument):
+    if 'Callback' in argument.ext_attrs:
+      # Callbacks with 'Optional=XXX' are treated as optional arguments.
+      return 'Optional' in argument.ext_attrs
+    if constructor:
+      # FIXME: Constructors with 'Optional=XXX' shouldn't be treated as
+      # optional arguments.
+      return 'Optional' in argument.ext_attrs
+    return False
+
   # Given a list of overloaded arguments, choose a suitable name.
   def OverloadedName(args):
     return '_OR_'.join(sorted(set(arg.id for arg in args)))
@@ -195,23 +198,18 @@ def _DartArg(args, interface, constructor=False):
     else:
       return (None, TypeName(type_ids, interface))
 
-  def IsOptional(argument):
-    if not argument:
-      return True
-    if 'Callback' in argument.ext_attrs:
-      # Callbacks with 'Optional=XXX' are treated as optional arguments.
-      return 'Optional' in argument.ext_attrs
-    if constructor:
-      # FIXME: Constructors with 'Optional=XXX' shouldn't be treated as
-      # optional arguments.
-      return 'Optional' in argument.ext_attrs
-    return False
+  result = []
 
-  filtered = filter(None, args)
-  is_optional = any(IsOptional(arg) for arg in args)
-  (type_id, dart_type) = OverloadedType(filtered)
-  name = OverloadedName(filtered)
-  return ParamInfo(name, type_id, dart_type, is_optional)
+  is_optional = False
+  for arg_tuple in map(lambda *x: x, *args):
+    is_optional = is_optional or any(arg is None or IsOptional(arg) for arg in arg_tuple)
+
+    filtered = filter(None, arg_tuple)
+    (type_id, dart_type) = OverloadedType(filtered)
+    name = OverloadedName(filtered)
+    result.append(ParamInfo(name, type_id, dart_type, is_optional))
+
+  return result
 
 def IsOptional(argument):
   return ('Optional' in argument.ext_attrs and
@@ -235,9 +233,6 @@ def AnalyzeOperation(interface, operations):
 
   # Zip together arguments from each overload by position, then convert
   # to a dart argument.
-  args = map(lambda *args: _DartArg(args, interface),
-             *(op.arguments for op in split_operations))
-
   info = OperationInfo()
   info.operations = operations
   info.overloads = split_operations
@@ -246,7 +241,7 @@ def AnalyzeOperation(interface, operations):
   info.constructor_name = None
   info.js_name = info.declared_name
   info.type_name = operations[0].type.id   # TODO: widen.
-  info.param_infos = args
+  info.param_infos = _BuildArguments([op.arguments for op in split_operations], interface)
   return info
 
 
@@ -255,28 +250,21 @@ def AnalyzeConstructor(interface):
 
   Returns None if the interface has no Constructor.
   """
-  def GetArgs(func_value):
-    return map(lambda arg: _DartArg([arg], interface, True),
-               func_value.arguments)
-
   if 'Constructor' in interface.ext_attrs:
     name = None
     func_value = interface.ext_attrs.get('Constructor')
-    if func_value:
-      # [Constructor(param,...)]
-      args = GetArgs(func_value)
-      idl_args = func_value.arguments
-    else: # [Constructor]
+    if not func_value:
       args = []
       idl_args = []
-  else:
+  elif 'NamedConstructor' in interface.ext_attrs:
     func_value = interface.ext_attrs.get('NamedConstructor')
-    if func_value:
-      name = func_value.id
-      args = GetArgs(func_value)
-      idl_args = func_value.arguments
-    else:
-      return None
+    name = func_value.id
+  else:
+    return None
+
+  if func_value:
+    idl_args = func_value.arguments
+    args =_BuildArguments([idl_args], interface, True)
 
   info = OperationInfo()
   info.overloads = None
@@ -362,8 +350,7 @@ class OperationInfo(object):
         self.param_infos, None,
         lambda param: TypeOrNothing(rename_type(param.dart_type), param.type_id))
 
-  def ParametersImplementationDeclaration(
-      self, rename_type, default_value='null'):
+  def ParametersImplementationDeclaration(self, rename_type):
     """Returns a formatted string declaring the parameters for the
     implementation.
 
@@ -372,7 +359,7 @@ class OperationInfo(object):
         The function is applied to the parameter's dart_type.
     """
     return self._FormatParams(
-        self.param_infos, default_value,
+        self.param_infos, 'null',
         lambda param: TypeOrNothing(rename_type(param.dart_type)))
 
   def ParametersAsArgumentList(self):
@@ -779,7 +766,7 @@ _idl_type_registry = {
     'float': TypeData(clazz='Primitive', dart_type='num', native_type='double'),
     'double': TypeData(clazz='Primitive', dart_type='num'),
 
-    'any': TypeData(clazz='Primitive', dart_type='Object'),
+    'any': TypeData(clazz='Primitive', dart_type='Object', native_type='ScriptValue', requires_v8_scope=True),
     'Array': TypeData(clazz='Primitive', dart_type='List'),
     'custom': TypeData(clazz='Primitive', dart_type='Dynamic'),
     'Date': TypeData(clazz='Primitive', dart_type='Date', native_type='double'),

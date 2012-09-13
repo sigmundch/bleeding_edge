@@ -23,6 +23,8 @@ public class TestAll {
     TestSuite suite = new ExtendedTestSuite("Tests in " + TestAll.class.getPackage().getName());
     suite.addTest(com.google.dart.engine.internal.builder.TestAll.suite());
     suite.addTest(com.google.dart.engine.internal.element.TestAll.suite());
+    suite.addTest(com.google.dart.engine.internal.sdk.TestAll.suite());
+//    suite.addTest(com.google.dart.engine.internal.type.TestAll.suite());
     return suite;
   }
 }

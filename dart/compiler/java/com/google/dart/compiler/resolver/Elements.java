@@ -28,6 +28,7 @@ import com.google.dart.compiler.ast.DartParameter;
 import com.google.dart.compiler.ast.DartSuperExpression;
 import com.google.dart.compiler.ast.DartTypeNode;
 import com.google.dart.compiler.ast.DartTypeParameter;
+import com.google.dart.compiler.ast.DartUnaryExpression;
 import com.google.dart.compiler.ast.DartVariable;
 import com.google.dart.compiler.ast.LibraryUnit;
 import com.google.dart.compiler.ast.Modifiers;
@@ -35,6 +36,7 @@ import com.google.dart.compiler.common.SourceInfo;
 import com.google.dart.compiler.parser.Token;
 import com.google.dart.compiler.resolver.LabelElement.LabeledStatementType;
 import com.google.dart.compiler.type.InterfaceType;
+import com.google.dart.compiler.type.InterfaceType.Member;
 import com.google.dart.compiler.type.Type;
 import com.google.dart.compiler.type.TypeVariable;
 import com.google.dart.compiler.util.Paths;
@@ -703,16 +705,30 @@ static FieldElementImplementation fieldFromNode(DartField node,
   /**
    * @return <code>true</code> if given {@link Source} represents library with given name.
    */
-  public static boolean isLibrarySource(Source source, String name) {
+  private static boolean isLibrarySource(Source source, String name) {
     if (source instanceof DartSource) {
       DartSource dartSource = (DartSource) source;
       LibrarySource library = dartSource.getLibrary();
       if (library != null) {
         String libraryName = library.getName();
-        return libraryName.endsWith("/core/" + name);
+        return libraryName.endsWith(name);
       }
     }
     return false;
+  }
+
+  /**
+   * @return <code>true</code> if given {@link Source} represents code library declaration or
+   *         implementation.
+   */
+  public static boolean isCoreLibrarySource(Source source) {
+    // TODO (danrubel) remove these when dartc libraries are removed
+    // Old core library file names
+    return Elements.isLibrarySource(source, "/core/corelib.dart")
+        || Elements.isLibrarySource(source, "/core/corelib_impl.dart")
+        // New core library file names
+        || Elements.isLibrarySource(source, "/core/core.dart")
+        || Elements.isLibrarySource(source, "/core/coreimpl.dart");
   }
 
   /**
@@ -764,6 +780,12 @@ static FieldElementImplementation fieldFromNode(DartField node,
    * expression. Other types of assignments also read the value and require a getter access.
    */
   public static boolean inSetterContext(DartNode node) {
+    if (node.getParent() instanceof DartUnaryExpression) {
+      DartUnaryExpression expr = (DartUnaryExpression) node.getParent();
+      if (expr.getArg() == node && expr.getOperator().isCountOperator()) {
+        return true;
+      }
+    }
     if (node.getParent() instanceof DartBinaryExpression) {
       DartBinaryExpression expr = (DartBinaryExpression) node.getParent();
       if (ASSIGN_OPERATORS.contains(expr.getOperator()) && expr.getArg1() == node) {
@@ -828,6 +850,18 @@ static FieldElementImplementation fieldFromNode(DartField node,
    */
   public static boolean isStaticField(FieldElement field) {
     Modifiers modifiers = field.getModifiers();
-    return modifiers.isStatic() || modifiers.isConstant();
+    return modifiers.isStatic();
+  }
+
+  /**
+   * @return <code>true</code> if given {@link InterfaceType} overrides "noSuchMethod".
+   */
+  public static boolean handlesNoSuchMethod(InterfaceType type) {
+    Member member = type.lookupMember("noSuchMethod");
+    if (member == null) {
+      return false;
+    }
+    Source source = member.getElement().getSourceInfo().getSource();
+    return !isCoreLibrarySource(source);
   }
 }

@@ -32,6 +32,8 @@ DEFINE_FLAG(bool, deoptimize_alot, false,
 DEFINE_FLAG(bool, inline_cache, true, "Enable inline caches");
 DEFINE_FLAG(bool, trace_deopt, false, "Trace deoptimization");
 DEFINE_FLAG(bool, trace_ic, false, "Trace IC handling");
+DEFINE_FLAG(bool, trace_ic_miss_in_optimized, false,
+    "Trace IC miss in optimized code");
 DEFINE_FLAG(bool, trace_patching, false, "Trace patching of code.");
 DEFINE_FLAG(bool, trace_runtime_calls, false, "Trace runtime calls");
 DEFINE_FLAG(int, optimization_counter_threshold, 2000,
@@ -920,6 +922,14 @@ static RawFunction* InlineCacheMissHandler(
     }
     ic_data.AddCheck(class_ids, target_function);
   }
+  if (FLAG_trace_ic_miss_in_optimized) {
+    const Code& caller = Code::Handle(Code::LookupCode(caller_frame->pc()));
+    if (caller.is_optimized()) {
+      OS::Print("IC miss in optimized code; call %s -> %s\n",
+          Function::Handle(caller.function()).ToCString(),
+          target_function.ToCString());
+    }
+  }
   if (FLAG_trace_ic) {
     OS::Print("InlineCacheMissHandler %d call at %#"Px"' "
               "adding <%s> id:%"Pd" -> <%s>\n",
@@ -964,6 +974,29 @@ DEFINE_RUNTIME_ENTRY(InlineCacheMissHandlerTwoArgs, 2) {
   GrowableArray<const Instance*> args(2);
   args.Add(&receiver);
   args.Add(&other);
+  const Function& result =
+      Function::Handle(InlineCacheMissHandler(isolate, args));
+  arguments.SetReturn(result);
+}
+
+
+// Handles inline cache misses by updating the IC data array of the call
+// site.
+//   Arg0: Receiver object.
+//   Arg1: Argument after receiver.
+//   Arg2: Second argument after receiver.
+//   Returns: target function with compiled code or null.
+// Modifies the instance call to hold the updated IC data array.
+DEFINE_RUNTIME_ENTRY(InlineCacheMissHandlerThreeArgs, 3) {
+  ASSERT(arguments.Count() ==
+      kInlineCacheMissHandlerThreeArgsRuntimeEntry.argument_count());
+  const Instance& receiver = Instance::CheckedHandle(arguments.At(0));
+  const Instance& arg1 = Instance::CheckedHandle(arguments.At(1));
+  const Instance& arg2 = Instance::CheckedHandle(arguments.At(2));
+  GrowableArray<const Instance*> args(3);
+  args.Add(&receiver);
+  args.Add(&arg1);
+  args.Add(&arg2);
   const Function& result =
       Function::Handle(InlineCacheMissHandler(isolate, args));
   arguments.SetReturn(result);

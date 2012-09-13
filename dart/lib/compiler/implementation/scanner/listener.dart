@@ -493,6 +493,11 @@ class Listener {
     return skipToEof(token);
   }
 
+  Token unmatched(Token token) {
+    error("unmatched '${token.slowToString()}'", token);
+    return skipToEof(token);
+  }
+
   skipToEof(Token token) {
     while (token.info !== EOF_INFO) {
       token = token.next;
@@ -608,6 +613,16 @@ class ElementListener extends Listener {
         name.source, beginToken, endToken, compilationUnitElement, id);
     element.nativeName = nativeName;
     pushElement(element);
+    rejectBuiltInIdentifier(name);
+  }
+
+  void rejectBuiltInIdentifier(Identifier name) {
+    if (name.source is Keyword) {
+      Keyword keyword = name.source;
+      if (!keyword.isPseudo) {
+        recoverableError('illegal name ${keyword.syntax}', node: name);
+      }
+    }
   }
 
   void endDefaultClause(Token defaultKeyword) {
@@ -631,6 +646,7 @@ class ElementListener extends Listener {
     int id = idGenerator();
     pushElement(new PartialClassElement(
         name.source, interfaceKeyword, endToken, compilationUnitElement, id));
+    rejectBuiltInIdentifier(name);
   }
 
   void endFunctionTypeAlias(Token typedefKeyword, Token endToken) {
@@ -639,6 +655,7 @@ class ElementListener extends Listener {
     TypeAnnotation returnType = popNode();
     pushElement(new PartialTypedefElement(name.source, compilationUnitElement,
                                           typedefKeyword));
+    rejectBuiltInIdentifier(name);
   }
 
   void handleVoidKeyword(Token token) {
@@ -647,6 +664,7 @@ class ElementListener extends Listener {
 
   void endTopLevelMethod(Token beginToken, Token getOrSet, Token endToken) {
     Identifier name = popNode();
+    TypeAnnotation type = popNode();
     Modifiers modifiers = popNode();
     ElementKind kind;
     if (getOrSet === null) {
@@ -667,6 +685,7 @@ class ElementListener extends Listener {
           name, fields, ElementKind.FIELD, compilationUnitElement));
     }
     NodeList variables = makeNodeList(count, null, null, ",");
+    TypeAnnotation type = popNode();
     Modifiers modifiers = popNode();
     buildFieldElements(modifiers, variables, compilationUnitElement,
                        buildFieldElement,
@@ -810,6 +829,11 @@ class ElementListener extends Listener {
     } else {
       return unexpected(token);
     }
+  }
+
+  Token unmatched(Token token) {
+    listener.cancel("unmatched '${token.slowToString()}'", token: token);
+    return skipToEof(token);
   }
 
   void recoverableError(String message, [Token token, Node node]) {
@@ -1288,8 +1312,9 @@ class NodeListener extends ElementListener {
 
   void endFields(int count, Token beginToken, Token endToken) {
     NodeList variables = makeNodeList(count, null, null, ",");
+    TypeAnnotation type = popNode();
     Modifiers modifiers = popNode();
-    pushNode(new VariableDefinitions(null, modifiers, variables, endToken));
+    pushNode(new VariableDefinitions(type, modifiers, variables, endToken));
   }
 
   void endMethod(Token getOrSet, Token beginToken, Token endToken) {
@@ -1297,8 +1322,9 @@ class NodeListener extends ElementListener {
     NodeList initializers = popNode();
     NodeList formalParameters = popNode();
     Expression name = popNode();
+    TypeAnnotation returnType = popNode();
     Modifiers modifiers = popNode();
-    pushNode(new FunctionExpression(name, formalParameters, body, null,
+    pushNode(new FunctionExpression(name, formalParameters, body, returnType,
                                     modifiers, initializers, getOrSet));
   }
 
@@ -1403,8 +1429,8 @@ class NodeListener extends ElementListener {
 
   void handleCatchBlock(Token onKeyword, Token catchKeyword) {
     Block block = popNode();
-    NodeList formals = popNode();
-    TypeAnnotation type = onKeyword != null ? popNode() : null;
+    NodeList formals = catchKeyword !== null? popNode(): null;
+    TypeAnnotation type = onKeyword !== null ? popNode() : null;
     pushNode(new CatchBlock(type, formals, block, onKeyword, catchKeyword));
   }
 

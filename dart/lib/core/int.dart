@@ -4,7 +4,7 @@
 
 // Dart core library.
 
-interface int extends num {
+abstract class int implements num {
   // Bit-operations.
   int operator &(int other);
   int operator |(int other);
@@ -18,7 +18,7 @@ interface int extends num {
   bool isOdd();
 
   // Specializations of super-interface.
-  int operator negate();
+  int operator -();
   int abs();
   int round();
   int floor();

@@ -163,10 +163,10 @@ static bool CompileParsedFunctionHelper(const ParsedFunction& parsed_function,
 
       // Build the flow graph.
       FlowGraphBuilder builder(parsed_function);
-      flow_graph = builder.BuildGraph();
+      flow_graph = builder.BuildGraph(FlowGraphBuilder::kNotInlining);
 
       // Transform to SSA.
-      if (optimized) flow_graph->ComputeSSA();
+      if (optimized) flow_graph->ComputeSSA(0);  // Start at virtual register 0.
 
       if (FLAG_print_flow_graph) {
         OS::Print("Before Optimizations\n");
@@ -197,11 +197,14 @@ static bool CompileParsedFunctionHelper(const ParsedFunction& parsed_function,
         }
 
         // Propagate types and eliminate more type tests.
-        FlowGraphTypePropagator propagator(*flow_graph);
+        FlowGraphTypePropagator propagator(flow_graph);
         propagator.PropagateTypes();
 
         // Verify that the use lists are still valid.
         DEBUG_ASSERT(flow_graph->ValidateUseLists());
+
+        // Propagate sminess from CheckSmi to phis.
+        optimizer.PropagateSminess();
 
         // Do optimizations that depend on the propagated type information.
         optimizer.OptimizeComputations();
@@ -544,8 +547,7 @@ RawObject* Compiler::ExecuteOnce(SequenceNode* fragment) {
 
     func.set_result_type(Type::Handle(Type::DynamicType()));
     func.set_num_fixed_parameters(0);
-    func.set_num_optional_positional_parameters(0);
-    func.set_num_optional_named_parameters(0);
+    func.SetNumOptionalParameters(0, true);
     // Manually generated AST, do not recompile.
     func.set_is_optimizable(false);
 

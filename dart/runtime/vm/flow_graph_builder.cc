@@ -66,6 +66,7 @@ void EffectGraphVisitor::Append(const EffectGraphVisitor& other_fragment) {
 
 Value* EffectGraphVisitor::Bind(Definition* definition) {
   ASSERT(is_open());
+  ASSERT(!owner()->InInliningContext() || !definition->CanDeoptimize());
   DeallocateTempIndex(definition->InputCount());
   definition->set_use_kind(Definition::kValue);
   definition->set_temp_index(AllocateTempIndex());
@@ -81,6 +82,7 @@ Value* EffectGraphVisitor::Bind(Definition* definition) {
 
 void EffectGraphVisitor::Do(Definition* definition) {
   ASSERT(is_open());
+  ASSERT(!owner()->InInliningContext() || !definition->CanDeoptimize());
   DeallocateTempIndex(definition->InputCount());
   definition->set_use_kind(Definition::kEffect);
   if (is_empty()) {
@@ -208,22 +210,52 @@ PushArgumentInstr* EffectGraphVisitor::PushArgument(Value* value) {
 }
 
 
+Definition* EffectGraphVisitor::BuildStoreTemp(const LocalVariable& local,
+                                               Value* value) {
+  ASSERT(!local.is_captured());
+  return new StoreLocalInstr(local, value, owner()->context_level());
+}
+
+
+Definition* EffectGraphVisitor::BuildStoreExprTemp(Value* value) {
+  return BuildStoreTemp(*owner()->parsed_function().expression_temp_var(),
+                        value);
+}
+
+
+Definition* EffectGraphVisitor::BuildLoadExprTemp() {
+  return BuildLoadLocal(*owner()->parsed_function().expression_temp_var());
+}
+
+
 Definition* EffectGraphVisitor::BuildStoreLocal(
-    const LocalVariable& local, Value* value) {
+    const LocalVariable& local, Value* value, bool result_is_needed) {
   if (local.is_captured()) {
+    InlineBailout("EffectGraphVisitor::BuildStoreLocal (context)");
+    if (result_is_needed) {
+      value = Bind(BuildStoreExprTemp(value));
+    }
+
     intptr_t delta =
         owner()->context_level() - local.owner()->context_level();
     ASSERT(delta >= 0);
     Value* context = Bind(new CurrentContextInstr());
     while (delta-- > 0) {
-      context = Bind(new LoadVMFieldInstr(
+      context = Bind(new LoadFieldInstr(
           context, Context::parent_offset(), Type::ZoneHandle()));
     }
-    return new StoreVMFieldInstr(
-        context,
-        Context::variable_offset(local.index()),
-        value,
-        local.type());
+
+    StoreVMFieldInstr* store =
+        new StoreVMFieldInstr(context,
+                              Context::variable_offset(local.index()),
+                              value,
+                              local.type());
+    if (result_is_needed) {
+      Do(store);
+      return BuildLoadExprTemp();
+    } else {
+      return store;
+    }
   } else {
     return new StoreLocalInstr(local, value, owner()->context_level());
   }
@@ -232,17 +264,18 @@ Definition* EffectGraphVisitor::BuildStoreLocal(
 
 Definition* EffectGraphVisitor::BuildLoadLocal(const LocalVariable& local) {
   if (local.is_captured()) {
+    InlineBailout("EffectGraphVisitor::BuildLoadLocal (context)");
     intptr_t delta =
         owner()->context_level() - local.owner()->context_level();
     ASSERT(delta >= 0);
     Value* context = Bind(new CurrentContextInstr());
     while (delta-- > 0) {
-      context = Bind(new LoadVMFieldInstr(
+      context = Bind(new LoadFieldInstr(
           context, Context::parent_offset(), Type::ZoneHandle()));
     }
-    return new LoadVMFieldInstr(context,
-                                Context::variable_offset(local.index()),
-                                local.type());
+    return new LoadFieldInstr(context,
+                              Context::variable_offset(local.index()),
+                              local.type());
   } else {
     return new LoadLocalInstr(local, owner()->context_level());
   }
@@ -252,7 +285,7 @@ Definition* EffectGraphVisitor::BuildLoadLocal(const LocalVariable& local) {
 // Stores current context into the 'variable'
 void EffectGraphVisitor::BuildStoreContext(const LocalVariable& variable) {
   Value* context = Bind(new CurrentContextInstr());
-  Do(BuildStoreLocal(variable, context));
+  Do(BuildStoreLocal(variable, context, kResultNotNeeded));
 }
 
 
@@ -447,7 +480,6 @@ void EffectGraphVisitor::VisitReturnNode(ReturnNode* node) {
 
   Value* return_value = for_value.value();
   if (FLAG_enable_type_checks) {
-    InlineBailout("EffectGraphVisitor::VisitReturnNode (type check)");
     const Function& function = owner()->parsed_function().function();
     const bool is_implicit_dynamic_getter =
         (!function.is_static() &&
@@ -512,7 +544,6 @@ bool EffectGraphVisitor::CanSkipTypeCheck(intptr_t token_pos,
                                           Value* value,
                                           const AbstractType& dst_type,
                                           const String& dst_name) {
-  InlineBailout("EffectGraphVisitor::CanSkipTypeCheck");
   ASSERT(!dst_type.IsNull());
   ASSERT(dst_type.IsFinalized());
 
@@ -560,13 +591,11 @@ bool EffectGraphVisitor::CanSkipTypeCheck(intptr_t token_pos,
 //                              type:     AbstractType
 //                              dst_name: String }
 void EffectGraphVisitor::VisitAssignableNode(AssignableNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitAssignableNode");
   UNREACHABLE();
 }
 
 
 void ValueGraphVisitor::VisitAssignableNode(AssignableNode* node) {
-  InlineBailout("ValueGraphVisitor::VisitAssignableNode");
   ValueGraphVisitor for_value(owner(), temp_index());
   node->expr()->Visit(&for_value);
   Append(for_value);
@@ -581,7 +610,6 @@ void ValueGraphVisitor::VisitAssignableNode(AssignableNode* node) {
 //                            left:  <Expression>
 //                            right: <Expression> }
 void EffectGraphVisitor::VisitBinaryOpNode(BinaryOpNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitBinaryOpNode");
   // Operators "&&" and "||" cannot be overloaded therefore do not call
   // operator.
   if ((node->kind() == Token::kAND) || (node->kind() == Token::kOR)) {
@@ -600,6 +628,7 @@ void EffectGraphVisitor::VisitBinaryOpNode(BinaryOpNode* node) {
     }
     return;
   }
+  InlineBailout("EffectGraphVisitor::VisitBinaryOpNode (deopt)");
   ValueGraphVisitor for_left_value(owner(), temp_index());
   node->left()->Visit(&for_left_value);
   Append(for_left_value);
@@ -627,7 +656,6 @@ void EffectGraphVisitor::VisitBinaryOpNode(BinaryOpNode* node) {
 
 // Special handling for AND/OR.
 void ValueGraphVisitor::VisitBinaryOpNode(BinaryOpNode* node) {
-  InlineBailout("ValueGraphVisitor::VisitBinaryOpNode");
   // Operators "&&" and "||" cannot be overloaded therefore do not call
   // operator.
   if ((node->kind() == Token::kAND) || (node->kind() == Token::kOR)) {
@@ -647,6 +675,7 @@ void ValueGraphVisitor::VisitBinaryOpNode(BinaryOpNode* node) {
     node->right()->Visit(&for_right);
     Value* right_value = for_right.value();
     if (FLAG_enable_type_checks) {
+      InlineBailout("ValueGraphVisitor::VisitBinaryOpNode (type check)");
       right_value =
           for_right.Bind(new AssertBooleanInstr(node->right()->token_pos(),
                                                 right_value));
@@ -656,28 +685,21 @@ void ValueGraphVisitor::VisitBinaryOpNode(BinaryOpNode* node) {
         for_right.Bind(new StrictCompareInstr(Token::kEQ_STRICT,
                                               right_value,
                                               constant_true));
-    for_right.Do(BuildStoreLocal(
-        *owner()->parsed_function().expression_temp_var(),
-        compare));
+    for_right.Do(BuildStoreExprTemp(compare));
 
     if (node->kind() == Token::kAND) {
       ValueGraphVisitor for_false(owner(), temp_index());
       Value* constant_false = for_false.Bind(new ConstantInstr(bool_false));
-      for_false.Do(BuildStoreLocal(
-          *owner()->parsed_function().expression_temp_var(),
-          constant_false));
+      for_false.Do(BuildStoreExprTemp(constant_false));
       Join(for_test, for_right, for_false);
     } else {
       ASSERT(node->kind() == Token::kOR);
       ValueGraphVisitor for_true(owner(), temp_index());
       Value* constant_true = for_true.Bind(new ConstantInstr(bool_true));
-      for_true.Do(BuildStoreLocal(
-          *owner()->parsed_function().expression_temp_var(),
-          constant_true));
+      for_true.Do(BuildStoreExprTemp(constant_true));
       Join(for_test, for_true, for_right);
     }
-    ReturnDefinition(
-        BuildLoadLocal(*owner()->parsed_function().expression_temp_var()));
+    ReturnDefinition(BuildLoadExprTemp());
     return;
   }
   EffectGraphVisitor::VisitBinaryOpNode(node);
@@ -688,7 +710,6 @@ void EffectGraphVisitor::BuildTypecheckArguments(
     intptr_t token_pos,
     Value** instantiator_result,
     Value** instantiator_type_arguments_result) {
-  InlineBailout("EffectGraphVisitor::VisitBinaryOpNode");
   Value* instantiator = NULL;
   Value* instantiator_type_arguments = NULL;
   const Class& instantiator_class = Class::Handle(
@@ -703,10 +724,8 @@ void EffectGraphVisitor::BuildTypecheckArguments(
         BuildInstantiatorTypeArguments(token_pos, NULL);
   } else {
     // Preserve instantiator.
-    const LocalVariable& expr_temp =
-        *owner()->parsed_function().expression_temp_var();
-    instantiator = Bind(BuildStoreLocal(expr_temp, instantiator));
-    Value* loaded = Bind(BuildLoadLocal(expr_temp));
+    instantiator = Bind(BuildStoreExprTemp(instantiator));
+    Value* loaded = Bind(BuildLoadExprTemp());
     instantiator_type_arguments =
         BuildInstantiatorTypeArguments(token_pos, loaded);
   }
@@ -716,7 +735,6 @@ void EffectGraphVisitor::BuildTypecheckArguments(
 
 
 Value* EffectGraphVisitor::BuildNullValue() {
-  InlineBailout("EffectGraphVisitor::BuildNullValue");
   return Bind(new ConstantInstr(Object::ZoneHandle()));
 }
 
@@ -727,7 +745,7 @@ AssertAssignableInstr* EffectGraphVisitor::BuildAssertAssignable(
     Value* value,
     const AbstractType& dst_type,
     const String& dst_name) {
-  InlineBailout("EffectGraphVisitor::BuildAssertAssignable");
+  InlineBailout("EffectGraphVisitor::BuildAssertAssignable (deopt)");
   // Build the type check computation.
   Value* instantiator = NULL;
   Value* instantiator_type_arguments = NULL;
@@ -753,7 +771,6 @@ Value* EffectGraphVisitor::BuildAssignableValue(intptr_t token_pos,
                                                 Value* value,
                                                 const AbstractType& dst_type,
                                                 const String& dst_name) {
-  InlineBailout("EffectGraphVisitor::BuildAssignableValue");
   if (CanSkipTypeCheck(token_pos, value, dst_type, dst_name)) {
     return value;
   }
@@ -762,7 +779,6 @@ Value* EffectGraphVisitor::BuildAssignableValue(intptr_t token_pos,
 
 
 void EffectGraphVisitor::BuildTypeTest(ComparisonNode* node) {
-  InlineBailout("EffectGraphVisitor::BuildTypeTest");
   ASSERT(Token::IsTypeTestOperator(node->kind()));
   EffectGraphVisitor for_left_value(owner(), temp_index());
   node->left()->Visit(&for_left_value);
@@ -771,7 +787,6 @@ void EffectGraphVisitor::BuildTypeTest(ComparisonNode* node) {
 
 
 void EffectGraphVisitor::BuildTypeCast(ComparisonNode* node) {
-  InlineBailout("EffectGraphVisitor::BuildTypeCast");
   ASSERT(Token::IsTypeCastOperator(node->kind()));
   const AbstractType& type = node->right()->AsTypeNode()->type();
   ASSERT(type.IsFinalized());  // The type in a type cast may be malformed.
@@ -788,7 +803,6 @@ void EffectGraphVisitor::BuildTypeCast(ComparisonNode* node) {
 
 
 void ValueGraphVisitor::BuildTypeTest(ComparisonNode* node) {
-  InlineBailout("ValueGraphVisitor::BuildTypeTest");
   ASSERT(Token::IsTypeTestOperator(node->kind()));
   const Bool& bool_true = Bool::ZoneHandle(Bool::True());
   const Bool& bool_false = Bool::ZoneHandle(Bool::False());
@@ -829,6 +843,7 @@ void ValueGraphVisitor::BuildTypeTest(ComparisonNode* node) {
     ReturnDefinition(result);
     return;
   }
+  InlineBailout("ValueGraphVisitor::BuildTypeTest (deopt)");
 
   ValueGraphVisitor for_left_value(owner(), temp_index());
   node->left()->Visit(&for_left_value);
@@ -855,7 +870,6 @@ void ValueGraphVisitor::BuildTypeTest(ComparisonNode* node) {
 
 
 void ValueGraphVisitor::BuildTypeCast(ComparisonNode* node) {
-  InlineBailout("ValueGraphVisitor::BuildTypeCast");
   ASSERT(Token::IsTypeCastOperator(node->kind()));
   const AbstractType& type = node->right()->AsTypeNode()->type();
   ASSERT(type.IsFinalized());  // The type in a type cast may be malformed.
@@ -876,7 +890,6 @@ void ValueGraphVisitor::BuildTypeCast(ComparisonNode* node) {
 //                              right: <Expression> }
 // TODO(srdjan): Implement new equality.
 void EffectGraphVisitor::VisitComparisonNode(ComparisonNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitComparisonNode");
   if (Token::IsTypeTestOperator(node->kind())) {
     BuildTypeTest(node);
     return;
@@ -898,6 +911,7 @@ void EffectGraphVisitor::VisitComparisonNode(ComparisonNode* node) {
     ReturnDefinition(comp);
     return;
   }
+  InlineBailout("EffectGraphVisitor::VisitComparisonNode (deopt)");
 
   if ((node->kind() == Token::kEQ) || (node->kind() == Token::kNE)) {
     ValueGraphVisitor for_left_value(owner(), temp_index());
@@ -945,7 +959,6 @@ void EffectGraphVisitor::VisitComparisonNode(ComparisonNode* node) {
 
 
 void EffectGraphVisitor::VisitUnaryOpNode(UnaryOpNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitUnaryOpNode");
   // "!" cannot be overloaded, therefore do not call operator.
   if (node->kind() == Token::kNOT) {
     ValueGraphVisitor for_value(owner(), temp_index());
@@ -960,6 +973,8 @@ void EffectGraphVisitor::VisitUnaryOpNode(UnaryOpNode* node) {
     ReturnDefinition(negate);
     return;
   }
+  InlineBailout("EffectGraphVisitor::VisitUnaryOpNode (deopt)");
+
   ValueGraphVisitor for_value(owner(), temp_index());
   node->operand()->Visit(&for_value);
   Append(for_value);
@@ -967,21 +982,25 @@ void EffectGraphVisitor::VisitUnaryOpNode(UnaryOpNode* node) {
   ZoneGrowableArray<PushArgumentInstr*>* arguments =
       new ZoneGrowableArray<PushArgumentInstr*>(1);
   arguments->Add(push_value);
-  String& name = String::ZoneHandle();
-  if (node->kind() == Token::kSUB) {
-    name = Symbols::New("unary-");
-  } else {
-    name = Symbols::New(Token::Str(node->kind()));
-  }
-  InstanceCallInstr* call = new InstanceCallInstr(
-      node->token_pos(), name, node->kind(),
-      arguments, Array::ZoneHandle(), 1);
+  InstanceCallInstr* call = (node->kind() == Token::kSUB)
+      ? new InstanceCallInstr(node->token_pos(),
+                              String::ZoneHandle(Symbols::New("unary-")),
+                              Token::kNEGATE,
+                              arguments,
+                              Array::ZoneHandle(),
+                              1)
+      : new InstanceCallInstr(node->token_pos(),
+                              String::ZoneHandle(
+                                  Symbols::New(Token::Str(node->kind()))),
+                              node->kind(),
+                              arguments,
+                              Array::ZoneHandle(),
+                              1);
   ReturnDefinition(call);
 }
 
 
 void EffectGraphVisitor::VisitConditionalExprNode(ConditionalExprNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitConditionalExprNode");
   TestGraphVisitor for_test(owner(),
                             temp_index(),
                             node->condition()->token_pos());
@@ -998,7 +1017,6 @@ void EffectGraphVisitor::VisitConditionalExprNode(ConditionalExprNode* node) {
 
 
 void ValueGraphVisitor::VisitConditionalExprNode(ConditionalExprNode* node) {
-  InlineBailout("ValueGraphVisitor::VisitConditionalExprNode");
   TestGraphVisitor for_test(owner(),
                             temp_index(),
                             node->condition()->token_pos());
@@ -1007,18 +1025,15 @@ void ValueGraphVisitor::VisitConditionalExprNode(ConditionalExprNode* node) {
   ValueGraphVisitor for_true(owner(), temp_index());
   node->true_expr()->Visit(&for_true);
   ASSERT(for_true.is_open());
-  for_true.Do(BuildStoreLocal(
-      *owner()->parsed_function().expression_temp_var(), for_true.value()));
+  for_true.Do(BuildStoreExprTemp(for_true.value()));
 
   ValueGraphVisitor for_false(owner(), temp_index());
   node->false_expr()->Visit(&for_false);
   ASSERT(for_false.is_open());
-  for_false.Do(BuildStoreLocal(
-      *owner()->parsed_function().expression_temp_var(), for_false.value()));
+  for_false.Do(BuildStoreExprTemp(for_false.value()));
 
   Join(for_test, for_true, for_false);
-  ReturnDefinition(
-      BuildLoadLocal(*owner()->parsed_function().expression_temp_var()));
+  ReturnDefinition(BuildLoadExprTemp());
 }
 
 
@@ -1043,7 +1058,6 @@ void EffectGraphVisitor::VisitIfNode(IfNode* node) {
 
 
 void EffectGraphVisitor::VisitSwitchNode(SwitchNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitSwitchNode");
   EffectGraphVisitor switch_body(owner(), temp_index());
   node->body()->Visit(&switch_body);
   Append(switch_body);
@@ -1388,7 +1402,6 @@ void EffectGraphVisitor::VisitJumpNode(JumpNode* node) {
 
 
 void EffectGraphVisitor::VisitArgumentListNode(ArgumentListNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitArgumentListNode");
   UNREACHABLE();
 }
 
@@ -1404,7 +1417,6 @@ void EffectGraphVisitor::VisitArgumentDefinitionTestNode(
 
 
 void EffectGraphVisitor::VisitArrayNode(ArrayNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitArrayNode");
   // Translate the array elements and collect their values.
   ZoneGrowableArray<PushArgumentInstr*>* arguments =
       new ZoneGrowableArray<PushArgumentInstr*>(node->length());
@@ -1427,7 +1439,6 @@ void EffectGraphVisitor::VisitArrayNode(ArrayNode* node) {
 
 
 void EffectGraphVisitor::VisitClosureNode(ClosureNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitClosureNode");
   const Function& function = node->function();
 
   Value* receiver = NULL;
@@ -1478,7 +1489,6 @@ void EffectGraphVisitor::VisitClosureNode(ClosureNode* node) {
 void EffectGraphVisitor::TranslateArgumentList(
     const ArgumentListNode& node,
     ZoneGrowableArray<Value*>* values) {
-  InlineBailout("EffectGraphVisitor::TranslateArgumentList");
   for (intptr_t i = 0; i < node.length(); ++i) {
     ValueGraphVisitor for_argument(owner(), temp_index());
     node.NodeAt(i)->Visit(&for_argument);
@@ -1491,7 +1501,6 @@ void EffectGraphVisitor::TranslateArgumentList(
 void EffectGraphVisitor::BuildPushArguments(
     const ArgumentListNode& node,
     ZoneGrowableArray<PushArgumentInstr*>* values) {
-  InlineBailout("EffectGraphVisitor::BuildPushArguments");
   for (intptr_t i = 0; i < node.length(); ++i) {
     ValueGraphVisitor for_argument(owner(), temp_index());
     node.NodeAt(i)->Visit(&for_argument);
@@ -1503,7 +1512,7 @@ void EffectGraphVisitor::BuildPushArguments(
 
 
 void EffectGraphVisitor::VisitInstanceCallNode(InstanceCallNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitInstanceCallNode");
+  InlineBailout("EffectGraphVisitor::VisitInstanceCallNode (deopt)");
   ValueGraphVisitor for_receiver(owner(), temp_index());
   node->receiver()->Visit(&for_receiver);
   Append(for_receiver);
@@ -1525,7 +1534,7 @@ void EffectGraphVisitor::VisitInstanceCallNode(InstanceCallNode* node) {
 // <Expression> ::= StaticCall { function: Function
 //                               arguments: <ArgumentList> }
 void EffectGraphVisitor::VisitStaticCallNode(StaticCallNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitStaticCallNode");
+  InlineBailout("EffectGraphVisitor::VisitStaticCallNode (deopt)");
   ZoneGrowableArray<PushArgumentInstr*>* arguments =
       new ZoneGrowableArray<PushArgumentInstr*>(node->arguments()->length());
   BuildPushArguments(*node->arguments(), arguments);
@@ -1540,7 +1549,7 @@ void EffectGraphVisitor::VisitStaticCallNode(StaticCallNode* node) {
 
 ClosureCallInstr* EffectGraphVisitor::BuildClosureCall(
     ClosureCallNode* node) {
-  InlineBailout("EffectGraphVisitor::BuildClosureCall");
+  InlineBailout("EffectGraphVisitor::BuildClosureCall (deopt)");
   ValueGraphVisitor for_closure(owner(), temp_index());
   node->closure()->Visit(&for_closure);
   Append(for_closure);
@@ -1558,7 +1567,6 @@ ClosureCallInstr* EffectGraphVisitor::BuildClosureCall(
 
 
 void EffectGraphVisitor::VisitClosureCallNode(ClosureCallNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitClosureCallNode");
   Do(BuildClosureCall(node));
   // Restore context from saved location.
   BuildLoadContext(*owner()->parsed_function().expression_temp_var());
@@ -1566,7 +1574,6 @@ void EffectGraphVisitor::VisitClosureCallNode(ClosureCallNode* node) {
 
 
 void ValueGraphVisitor::VisitClosureCallNode(ClosureCallNode* node) {
-  InlineBailout("ValueGraphVisitor::VisitClosureCallNode");
   Value* result = Bind(BuildClosureCall(node));
   // Restore context from temp.
   BuildLoadContext(*owner()->parsed_function().expression_temp_var());
@@ -1575,7 +1582,7 @@ void ValueGraphVisitor::VisitClosureCallNode(ClosureCallNode* node) {
 
 
 void EffectGraphVisitor::VisitCloneContextNode(CloneContextNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitCloneContextNode");
+  InlineBailout("EffectGraphVisitor::VisitCloneContextNode (deopt)");
   Value* context = Bind(new CurrentContextInstr());
   Value* clone = Bind(new CloneContextInstr(node->token_pos(), context));
   ReturnDefinition(new StoreContextInstr(clone));
@@ -1584,7 +1591,6 @@ void EffectGraphVisitor::VisitCloneContextNode(CloneContextNode* node) {
 
 Value* EffectGraphVisitor::BuildObjectAllocation(
     ConstructorCallNode* node) {
-  InlineBailout("EffectGraphVisitor::BuildObjectAllocation");
   const Class& cls = Class::ZoneHandle(node->constructor().Owner());
   const bool requires_type_arguments = cls.HasTypeArguments();
 
@@ -1607,6 +1613,7 @@ Value* EffectGraphVisitor::BuildObjectAllocation(
     // Although the type arguments may be uninstantiated at compile time, they
     // may represent the identity vector and may be replaced by the instantiated
     // type arguments of the instantiator at run time.
+    InlineBailout("EffectGraphVisitor::BuildObjectAllocation (deopt)");
     allocate_comp = new AllocateObjectWithBoundsCheckInstr(node,
                                                            type_arguments,
                                                            instantiator);
@@ -1627,7 +1634,7 @@ Value* EffectGraphVisitor::BuildObjectAllocation(
 void EffectGraphVisitor::BuildConstructorCall(
     ConstructorCallNode* node,
     PushArgumentInstr* push_alloc_value) {
-  InlineBailout("EffectGraphVisitor::BuildConstructorCall");
+  InlineBailout("EffectGraphVisitor::BuildConstructorCall (deopt)");
   Value* ctor_arg = Bind(
       new ConstantInstr(Smi::ZoneHandle(Smi::New(Function::kCtorPhaseAll))));
   PushArgumentInstr* push_ctor_arg = PushArgument(ctor_arg);
@@ -1645,9 +1652,32 @@ void EffectGraphVisitor::BuildConstructorCall(
 }
 
 
-void EffectGraphVisitor::VisitConstructorCallNode(ConstructorCallNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitConstructorCallNode");
+static intptr_t GetResultCidOfConstructor(ConstructorCallNode* node) {
   if (node->constructor().IsFactory()) {
+    const Function& function = node->constructor();
+    const Library& core_impl_lib = Library::Handle(Library::CoreImplLibrary());
+    const Class& function_class = Class::Handle(function.Owner());
+
+    if (function_class.library() == core_impl_lib.raw()) {
+      if (function_class.Name() == Symbols::ListImplementation()) {
+        if (function.name() == Symbols::ListFactory()) {
+          if (node->arguments()->length() == 0) {
+            return kGrowableObjectArrayCid;
+          } else {
+            ASSERT(node->arguments()->length() == 1);
+            return kArrayCid;
+          }
+        }
+      }
+    }
+  }
+  return kDynamicCid;   // Result cid not known.
+}
+
+
+void EffectGraphVisitor::VisitConstructorCallNode(ConstructorCallNode* node) {
+  if (node->constructor().IsFactory()) {
+  InlineBailout("EffectGraphVisitor::VisitConstructorCallNode (deopt)");
     ZoneGrowableArray<PushArgumentInstr*>* arguments =
         new ZoneGrowableArray<PushArgumentInstr*>();
     PushArgumentInstr* push_type_arguments = PushArgument(
@@ -1661,6 +1691,8 @@ void EffectGraphVisitor::VisitConstructorCallNode(ConstructorCallNode* node) {
                             node->constructor(),
                             node->arguments()->names(),
                             arguments);
+    // List factories return kArrayCid or kGrowableObjectArrayCid.
+    call->set_result_cid(GetResultCidOfConstructor(node));
     ReturnDefinition(call);
     return;
   }
@@ -1677,7 +1709,6 @@ void EffectGraphVisitor::VisitConstructorCallNode(ConstructorCallNode* node) {
 
 
 Value* EffectGraphVisitor::BuildInstantiator() {
-  InlineBailout("EffectGraphVisitor::BuildInstantiator");
   const Class& instantiator_class = Class::Handle(
       owner()->parsed_function().function().Owner());
   if (instantiator_class.NumTypeParameters() == 0) {
@@ -1704,7 +1735,6 @@ Value* EffectGraphVisitor::BuildInstantiator() {
 // is not NULL.
 Value* EffectGraphVisitor::BuildInstantiatorTypeArguments(
     intptr_t token_pos, Value* instantiator) {
-  InlineBailout("EffectGraphVisitor::BuildInstantiatorTypeArguments");
   const Class& instantiator_class = Class::Handle(
       owner()->parsed_function().function().Owner());
   if (instantiator_class.NumTypeParameters() == 0) {
@@ -1745,7 +1775,8 @@ Value* EffectGraphVisitor::BuildInstantiatorTypeArguments(
       instantiator_class.type_arguments_instance_field_offset();
   ASSERT(type_arguments_instance_field_offset != Class::kNoTypeArguments);
 
-  return Bind(new LoadVMFieldInstr(
+  InlineBailout("EffectGraphVisitor::BuildInstantiatorTypeArguments (deopt)");
+  return Bind(new LoadFieldInstr(
       instantiator,
       type_arguments_instance_field_offset,
       Type::ZoneHandle()));  // Not an instance, no type.
@@ -1755,10 +1786,10 @@ Value* EffectGraphVisitor::BuildInstantiatorTypeArguments(
 Value* EffectGraphVisitor::BuildInstantiatedTypeArguments(
     intptr_t token_pos,
     const AbstractTypeArguments& type_arguments) {
-  InlineBailout("EffectGraphVisitor::BuildInstantiatedTypeArguments");
   if (type_arguments.IsNull() || type_arguments.IsInstantiated()) {
     return Bind(new ConstantInstr(type_arguments));
   }
+  InlineBailout("EffectGraphVisitor::BuildInstantiatedTypeArguments (deopt)");
   // The type arguments are uninstantiated.
   Value* instantiator_value =
       BuildInstantiatorTypeArguments(token_pos, NULL);
@@ -1773,7 +1804,6 @@ void EffectGraphVisitor::BuildConstructorTypeArguments(
     Value** type_arguments,
     Value** instantiator,
     ZoneGrowableArray<PushArgumentInstr*>* call_arguments) {
-  InlineBailout("EffectGraphVisitor::BuildConstructorTypeArguments");
   const Class& cls = Class::ZoneHandle(node->constructor().Owner());
   ASSERT(cls.HasTypeArguments() && !node->constructor().IsFactory());
   if (node->type_arguments().IsNull() ||
@@ -1813,7 +1843,7 @@ void EffectGraphVisitor::BuildConstructorTypeArguments(
   Value* instantiator_type_arguments = BuildInstantiatorTypeArguments(
       node->token_pos(), NULL);
   Value* stored_instantiator =
-      Bind(BuildStoreLocal(t1, instantiator_type_arguments));
+      Bind(BuildStoreTemp(t1, instantiator_type_arguments));
   // t1: instantiator type arguments.
 
   Value* extract_type_arguments = Bind(
@@ -1822,13 +1852,13 @@ void EffectGraphVisitor::BuildConstructorTypeArguments(
           node->type_arguments(),
           stored_instantiator));
 
-  Do(BuildStoreLocal(t2, extract_type_arguments));
+  Do(BuildStoreTemp(t2, extract_type_arguments));
   // t2: extracted constructor type arguments.
   Value* load_instantiator = Bind(BuildLoadLocal(t1));
 
   Value* extract_instantiator =
       Bind(new ExtractConstructorInstantiatorInstr(node, load_instantiator));
-  Do(BuildStoreLocal(t1, extract_instantiator));
+  Do(BuildStoreTemp(t1, extract_instantiator));
   // t2: extracted constructor type arguments.
   // t1: extracted constructor instantiator.
   Value* type_arguments_val = Bind(BuildLoadLocal(t2));
@@ -1852,7 +1882,6 @@ void EffectGraphVisitor::BuildConstructorTypeArguments(
 
 
 void ValueGraphVisitor::VisitConstructorCallNode(ConstructorCallNode* node) {
-  InlineBailout("ValueGraphVisitor::VisitConstructorCallNode");
   if (node->constructor().IsFactory()) {
     EffectGraphVisitor::VisitConstructorCallNode(node);
     return;
@@ -1867,10 +1896,9 @@ void ValueGraphVisitor::VisitConstructorCallNode(ConstructorCallNode* node) {
   //   tn       <- LoadLocal(temp)
 
   Value* allocate = BuildObjectAllocation(node);
-  Definition* store_allocated = BuildStoreLocal(
+  Value* allocated_value = Bind(BuildStoreTemp(
       node->allocated_object_var(),
-      allocate);
-  Value* allocated_value = Bind(store_allocated);
+      allocate));
   PushArgumentInstr* push_allocated_value = PushArgument(allocated_value);
   BuildConstructorCall(node, push_allocated_value);
   Definition* load_allocated = BuildLoadLocal(
@@ -1881,7 +1909,7 @@ void ValueGraphVisitor::VisitConstructorCallNode(ConstructorCallNode* node) {
 
 
 void EffectGraphVisitor::VisitInstanceGetterNode(InstanceGetterNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitConstructorCallNode");
+  InlineBailout("EffectGraphVisitor::VisitInstanceGetterNode (deopt)");
   ValueGraphVisitor for_receiver(owner(), temp_index());
   node->receiver()->Visit(&for_receiver);
   Append(for_receiver);
@@ -1902,7 +1930,6 @@ void EffectGraphVisitor::BuildInstanceSetterArguments(
     InstanceSetterNode* node,
     ZoneGrowableArray<PushArgumentInstr*>* arguments,
     bool result_is_needed) {
-  InlineBailout("EffectGraphVisitor::BuildInstanceSetterArguments");
   ValueGraphVisitor for_receiver(owner(), temp_index());
   node->receiver()->Visit(&for_receiver);
   Append(for_receiver);
@@ -1914,9 +1941,7 @@ void EffectGraphVisitor::BuildInstanceSetterArguments(
 
   Value* value = NULL;
   if (result_is_needed) {
-    value = Bind(
-        BuildStoreLocal(*owner()->parsed_function().expression_temp_var(),
-                        for_value.value()));
+    value = Bind(BuildStoreExprTemp(for_value.value()));
   } else {
     value = for_value.value();
   }
@@ -1925,10 +1950,10 @@ void EffectGraphVisitor::BuildInstanceSetterArguments(
 
 
 void EffectGraphVisitor::VisitInstanceSetterNode(InstanceSetterNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitInstanceSetterNode");
+  InlineBailout("EffectGraphVisitor::VisitInstanceSetterNode (deopt)");
   ZoneGrowableArray<PushArgumentInstr*>* arguments =
       new ZoneGrowableArray<PushArgumentInstr*>(2);
-  BuildInstanceSetterArguments(node, arguments, false);  // Value not used.
+  BuildInstanceSetterArguments(node, arguments, kResultNotNeeded);
   const String& name =
       String::ZoneHandle(Field::SetterSymbol(node->field_name()));
   InstanceCallInstr* call = new InstanceCallInstr(node->token_pos(),
@@ -1936,16 +1961,16 @@ void EffectGraphVisitor::VisitInstanceSetterNode(InstanceSetterNode* node) {
                                                   Token::kSET,
                                                   arguments,
                                                   Array::ZoneHandle(),
-                                                  1);  // Checked arg count.
+                                                  2);  // Checked arg count.
   ReturnDefinition(call);
 }
 
 
 void ValueGraphVisitor::VisitInstanceSetterNode(InstanceSetterNode* node) {
-  InlineBailout("ValueGraphVisitor::VisitInstanceSetterNode");
+  InlineBailout("ValueGraphVisitor::VisitInstanceSetterNode (deopt)");
   ZoneGrowableArray<PushArgumentInstr*>* arguments =
       new ZoneGrowableArray<PushArgumentInstr*>(2);
-  BuildInstanceSetterArguments(node, arguments, true);  // Value used.
+  BuildInstanceSetterArguments(node, arguments, kResultNeeded);
   const String& name =
       String::ZoneHandle(Field::SetterSymbol(node->field_name()));
   Do(new InstanceCallInstr(node->token_pos(),
@@ -1953,14 +1978,13 @@ void ValueGraphVisitor::VisitInstanceSetterNode(InstanceSetterNode* node) {
                            Token::kSET,
                            arguments,
                            Array::ZoneHandle(),
-                           1));  // Checked argument count.
-  ReturnDefinition(
-       BuildLoadLocal(*owner()->parsed_function().expression_temp_var()));
+                           2));  // Checked argument count.
+  ReturnDefinition(BuildLoadExprTemp());
 }
 
 
 void EffectGraphVisitor::VisitStaticGetterNode(StaticGetterNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitStaticGetterNode");
+  InlineBailout("EffectGraphVisitor::VisitStaticGetterNode (deopt)");
   const String& getter_name =
       String::Handle(Field::GetterName(node->field_name()));
   ZoneGrowableArray<PushArgumentInstr*>* arguments =
@@ -1990,7 +2014,7 @@ void EffectGraphVisitor::VisitStaticGetterNode(StaticGetterNode* node) {
 
 void EffectGraphVisitor::BuildStaticSetter(StaticSetterNode* node,
                                            bool result_is_needed) {
-  InlineBailout("EffectGraphVisitor::BuildStaticSetter");
+  InlineBailout("EffectGraphVisitor::VisitStaticSetter (deopt)");
   const String& setter_name =
       String::Handle(Field::SetterName(node->field_name()));
   // A super setter is an instance setter whose setter function is
@@ -2017,9 +2041,7 @@ void EffectGraphVisitor::BuildStaticSetter(StaticSetterNode* node,
   Append(for_value);
   Value* value = NULL;
   if (result_is_needed) {
-    value = Bind(
-        BuildStoreLocal(*owner()->parsed_function().expression_temp_var(),
-                        for_value.value()));
+    value = Bind(BuildStoreExprTemp(for_value.value()));
   } else {
     value = for_value.value();
   }
@@ -2031,8 +2053,7 @@ void EffectGraphVisitor::BuildStaticSetter(StaticSetterNode* node,
                                               arguments);
   if (result_is_needed) {
     Do(call);
-    ReturnDefinition(
-         BuildLoadLocal(*owner()->parsed_function().expression_temp_var()));
+    ReturnDefinition(BuildLoadExprTemp());
   } else {
     ReturnDefinition(call);
   }
@@ -2040,13 +2061,11 @@ void EffectGraphVisitor::BuildStaticSetter(StaticSetterNode* node,
 
 
 void EffectGraphVisitor::VisitStaticSetterNode(StaticSetterNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitStaticSetterNode");
   BuildStaticSetter(node, false);  // Result not needed.
 }
 
 
 void ValueGraphVisitor::VisitStaticSetterNode(StaticSetterNode* node) {
-  InlineBailout("ValueGraphVisitor::VisitStaticSetterNode");
   BuildStaticSetter(node, true);  // Result needed.
 }
 
@@ -2059,7 +2078,6 @@ void EffectGraphVisitor::VisitNativeBodyNode(NativeBodyNode* node) {
 
 
 void EffectGraphVisitor::VisitPrimaryNode(PrimaryNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitPrimaryNode");
   // PrimaryNodes are temporary during parsing.
   UNREACHABLE();
 }
@@ -2067,7 +2085,6 @@ void EffectGraphVisitor::VisitPrimaryNode(PrimaryNode* node) {
 
 // <Expression> ::= LoadLocal { local: LocalVariable }
 void EffectGraphVisitor::VisitLoadLocalNode(LoadLocalNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitLoadLocalNode");
   if (node->HasPseudo()) {
     EffectGraphVisitor for_pseudo(owner(), temp_index());
     node->pseudo()->Visit(&for_pseudo);
@@ -2077,7 +2094,6 @@ void EffectGraphVisitor::VisitLoadLocalNode(LoadLocalNode* node) {
 
 
 void ValueGraphVisitor::VisitLoadLocalNode(LoadLocalNode* node) {
-  InlineBailout("ValueGraphVisitor::VisitLoadLocalNode");
   EffectGraphVisitor::VisitLoadLocalNode(node);
   Definition* load = BuildLoadLocal(node->local());
   ReturnDefinition(load);
@@ -2086,8 +2102,8 @@ void ValueGraphVisitor::VisitLoadLocalNode(LoadLocalNode* node) {
 
 // <Expression> ::= StoreLocal { local: LocalVariable
 //                               value: <Expression> }
-void EffectGraphVisitor::VisitStoreLocalNode(StoreLocalNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitStoreLocalNode");
+void EffectGraphVisitor::HandleStoreLocal(StoreLocalNode* node,
+                                          bool result_is_needed) {
   ValueGraphVisitor for_value(owner(), temp_index());
   node->value()->Visit(&for_value);
   Append(for_value);
@@ -2098,26 +2114,38 @@ void EffectGraphVisitor::VisitStoreLocalNode(StoreLocalNode* node) {
                                        node->local().type(),
                                        node->local().name());
   }
-  Definition* store = BuildStoreLocal(node->local(), store_value);
+  Definition* store = BuildStoreLocal(node->local(),
+                                      store_value,
+                                      result_is_needed);
   ReturnDefinition(store);
+}
+
+
+void EffectGraphVisitor::VisitStoreLocalNode(StoreLocalNode* node) {
+  HandleStoreLocal(node, kResultNotNeeded);
+}
+
+
+void ValueGraphVisitor::VisitStoreLocalNode(StoreLocalNode* node) {
+  HandleStoreLocal(node, kResultNeeded);
 }
 
 
 void EffectGraphVisitor::VisitLoadInstanceFieldNode(
     LoadInstanceFieldNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitLoadInstanceFieldNode");
   ValueGraphVisitor for_instance(owner(), temp_index());
   node->instance()->Visit(&for_instance);
   Append(for_instance);
-  LoadInstanceFieldInstr* load = new LoadInstanceFieldInstr(
-      node->field(), for_instance.value());
+  LoadFieldInstr* load = new LoadFieldInstr(
+      for_instance.value(),
+      node->field().Offset(),
+      AbstractType::ZoneHandle(node->field().type()));
   ReturnDefinition(load);
 }
 
 
 void EffectGraphVisitor::VisitStoreInstanceFieldNode(
     StoreInstanceFieldNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitStoreInstanceFieldNode");
   ValueGraphVisitor for_instance(owner(), temp_index());
   node->instance()->Visit(&for_instance);
   Append(for_instance);
@@ -2133,8 +2161,9 @@ void EffectGraphVisitor::VisitStoreInstanceFieldNode(
                                        type,
                                        dst_name);
   }
+  const bool kEmitStoreBarrier = true;
   StoreInstanceFieldInstr* store = new StoreInstanceFieldInstr(
-      node->field(), for_instance.value(), store_value);
+      node->field(), for_instance.value(), store_value, kEmitStoreBarrier);
   ReturnDefinition(store);
 }
 
@@ -2142,24 +2171,27 @@ void EffectGraphVisitor::VisitStoreInstanceFieldNode(
 // StoreInstanceFieldNode does not return result.
 void ValueGraphVisitor::VisitStoreInstanceFieldNode(
     StoreInstanceFieldNode* node) {
-  InlineBailout("ValueGraphVisitor::VisitStoreInstanceFieldNode");
   UNIMPLEMENTED();
 }
 
 
 void EffectGraphVisitor::VisitLoadStaticFieldNode(LoadStaticFieldNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitLoadStaticFieldNode");
   LoadStaticFieldInstr* load = new LoadStaticFieldInstr(node->field());
   ReturnDefinition(load);
 }
 
 
-void EffectGraphVisitor::VisitStoreStaticFieldNode(StoreStaticFieldNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitStoreStaticFieldNode");
+Definition* EffectGraphVisitor::BuildStoreStaticField(
+  StoreStaticFieldNode* node, bool result_is_needed) {
   ValueGraphVisitor for_value(owner(), temp_index());
   node->value()->Visit(&for_value);
   Append(for_value);
-  Value* store_value = for_value.value();
+  Value* store_value = NULL;
+  if (result_is_needed) {
+    store_value = Bind(BuildStoreExprTemp(for_value.value()));
+  } else {
+    store_value = for_value.value();
+  }
   if (FLAG_enable_type_checks) {
     const AbstractType& type = AbstractType::ZoneHandle(node->field().type());
     const String& dst_name = String::ZoneHandle(node->field().name());
@@ -2170,12 +2202,28 @@ void EffectGraphVisitor::VisitStoreStaticFieldNode(StoreStaticFieldNode* node) {
   }
   StoreStaticFieldInstr* store =
       new StoreStaticFieldInstr(node->field(), store_value);
-  ReturnDefinition(store);
+
+  if (result_is_needed) {
+    Do(store);
+    return BuildLoadExprTemp();
+  } else {
+    return store;
+  }
+}
+
+
+void EffectGraphVisitor::VisitStoreStaticFieldNode(StoreStaticFieldNode* node) {
+  ReturnDefinition(BuildStoreStaticField(node, kResultNotNeeded));
+}
+
+
+void ValueGraphVisitor::VisitStoreStaticFieldNode(StoreStaticFieldNode* node) {
+  ReturnDefinition(BuildStoreStaticField(node, kResultNeeded));
 }
 
 
 void EffectGraphVisitor::VisitLoadIndexedNode(LoadIndexedNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitLoadIndexedNode");
+  InlineBailout("EffectGraphVisitor::VisitLoadIndexedNode (deopt)");
   ZoneGrowableArray<PushArgumentInstr*>* arguments =
       new ZoneGrowableArray<PushArgumentInstr*>(2);
   ValueGraphVisitor for_array(owner(), temp_index());
@@ -2204,7 +2252,7 @@ void EffectGraphVisitor::VisitLoadIndexedNode(LoadIndexedNode* node) {
 Definition* EffectGraphVisitor::BuildStoreIndexedValues(
     StoreIndexedNode* node,
     bool result_is_needed) {
-  InlineBailout("EffectGraphVisitor::BuildStoreIndexedValues");
+  InlineBailout("EffectGraphVisitor::BuildStoreIndexedValues (deopt)");
   ZoneGrowableArray<PushArgumentInstr*>* arguments =
       new ZoneGrowableArray<PushArgumentInstr*>(3);
   ValueGraphVisitor for_array(owner(), temp_index());
@@ -2222,15 +2270,13 @@ Definition* EffectGraphVisitor::BuildStoreIndexedValues(
   Append(for_value);
   Value* value = NULL;
   if (result_is_needed) {
-    value = Bind(
-        BuildStoreLocal(*owner()->parsed_function().expression_temp_var(),
-                        for_value.value()));
+    value = Bind(BuildStoreExprTemp(for_value.value()));
   } else {
     value = for_value.value();
   }
   arguments->Add(PushArgument(value));
 
-  const intptr_t checked_argument_count = 1;
+  const intptr_t checked_argument_count = 3;
   const String& name =
       String::ZoneHandle(Symbols::New(Token::Str(Token::kASSIGN_INDEX)));
   InstanceCallInstr* store = new InstanceCallInstr(node->token_pos(),
@@ -2241,7 +2287,7 @@ Definition* EffectGraphVisitor::BuildStoreIndexedValues(
                                                    checked_argument_count);
   if (result_is_needed) {
     Do(store);
-    return BuildLoadLocal(*owner()->parsed_function().expression_temp_var());
+    return BuildLoadExprTemp();
   } else {
     return store;
   }
@@ -2249,16 +2295,12 @@ Definition* EffectGraphVisitor::BuildStoreIndexedValues(
 
 
 void EffectGraphVisitor::VisitStoreIndexedNode(StoreIndexedNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitStoreIndexedNode");
-  ReturnDefinition(BuildStoreIndexedValues(node,
-                                           false));  // Result not needed.
+  ReturnDefinition(BuildStoreIndexedValues(node, kResultNotNeeded));
 }
 
 
 void ValueGraphVisitor::VisitStoreIndexedNode(StoreIndexedNode* node) {
-  InlineBailout("ValueGraphVisitor::VisitStoreIndexedNode");
-  ReturnDefinition(BuildStoreIndexedValues(node,
-                                           true));  // Result is needed.
+  ReturnDefinition(BuildStoreIndexedValues(node, kResultNeeded));
 }
 
 
@@ -2269,12 +2311,12 @@ bool EffectGraphVisitor::MustSaveRestoreContext(SequenceNode* node) const {
 
 
 void EffectGraphVisitor::UnchainContext() {
-  InlineBailout("EffectGraphVisitor::UnchainContext");
+  InlineBailout("EffectGraphVisitor::UnchainContext (deopt)");
   Value* context = Bind(new CurrentContextInstr());
   Value* parent = Bind(
-      new LoadVMFieldInstr(context,
-                           Context::parent_offset(),
-                           Type::ZoneHandle()));  // Not an instance, no type.
+      new LoadFieldInstr(context,
+                         Context::parent_offset(),
+                         Type::ZoneHandle()));  // Not an instance, no type.
   Do(new StoreContextInstr(parent));
 }
 
@@ -2288,7 +2330,7 @@ void EffectGraphVisitor::VisitSequenceNode(SequenceNode* node) {
       (scope != NULL) ? scope->num_context_variables() : 0;
   int previous_context_level = owner()->context_level();
   if (num_context_variables > 0) {
-    InlineBailout("EffectGraphVisitor::VisitSequenceNode (captured vars)");
+    InlineBailout("EffectGraphVisitor::VisitSequenceNode (deopt)");
     // The loop local scope declares variables that are captured.
     // Allocate and chain a new context.
     // Allocate context computation (uses current CTX)
@@ -2302,8 +2344,8 @@ void EffectGraphVisitor::VisitSequenceNode(SequenceNode* node) {
     // save it in a pre-allocated variable and restore it on exit.
     if (MustSaveRestoreContext(node)) {
       Value* current_context = Bind(new CurrentContextInstr());
-      Do(BuildStoreLocal(*owner()->parsed_function().saved_context_var(),
-                         current_context));
+      Do(BuildStoreTemp(*owner()->parsed_function().saved_context_var(),
+                        current_context));
       Value* null_context = Bind(new ConstantInstr(Object::ZoneHandle()));
       Do(new StoreContextInstr(null_context));
     }
@@ -2316,7 +2358,7 @@ void EffectGraphVisitor::VisitSequenceNode(SequenceNode* node) {
     if (node == owner()->parsed_function().node_sequence()) {
       ASSERT(scope->context_level() == 1);
       const Function& function = owner()->parsed_function().function();
-      int num_params = function.NumberOfParameters();
+      int num_params = function.NumParameters();
       int param_frame_index = (num_params == function.num_fixed_parameters()) ?
           (1 + num_params) : ParsedFunction::kFirstLocalSlotIndex;
       // Handle the saved arguments descriptor as an additional parameter.
@@ -2339,13 +2381,13 @@ void EffectGraphVisitor::VisitSequenceNode(SequenceNode* node) {
 
           // Copy parameter from local frame to current context.
           Value* load = Bind(BuildLoadLocal(*temp_local));
-          Do(BuildStoreLocal(parameter, load));
+          Do(BuildStoreLocal(parameter, load, kResultNotNeeded));
           // Write NULL to the source location to detect buggy accesses and
           // allow GC of passed value if it gets overwritten by a new value in
           // the function.
           Value* null_constant =
               Bind(new ConstantInstr(Object::ZoneHandle()));
-          Do(BuildStoreLocal(*temp_local, null_constant));
+          Do(BuildStoreLocal(*temp_local, null_constant, kResultNotNeeded));
         }
       }
     }
@@ -2353,9 +2395,8 @@ void EffectGraphVisitor::VisitSequenceNode(SequenceNode* node) {
 
   if (FLAG_enable_type_checks &&
       (node == owner()->parsed_function().node_sequence())) {
-    InlineBailout("EffectGraphVisitor::VisitSequenceNode (type check)");
     const Function& function = owner()->parsed_function().function();
-    const int num_params = function.NumberOfParameters();
+    const int num_params = function.NumParameters();
     int pos = 0;
     if (function.IsConstructor()) {
       // Skip type checking of receiver and phase for constructor functions.
@@ -2382,7 +2423,7 @@ void EffectGraphVisitor::VisitSequenceNode(SequenceNode* node) {
         // Store the type checked argument back to its corresponding local
         // variable so that ssa renaming detects the dependency and makes use
         // of the checked type in type propagation.
-        Do(BuildStoreLocal(parameter, parameter_value));
+        Do(BuildStoreLocal(parameter, parameter_value, kResultNotNeeded));
       }
       pos++;
     }
@@ -2499,7 +2540,6 @@ void EffectGraphVisitor::VisitTryCatchNode(TryCatchNode* node) {
 
 
 void EffectGraphVisitor::BuildThrowNode(ThrowNode* node) {
-  InlineBailout("EffectGraphVisitor::BuildThrowNode");
   ValueGraphVisitor for_exception(owner(), temp_index());
   node->exception()->Visit(&for_exception);
   Append(for_exception);
@@ -2519,7 +2559,6 @@ void EffectGraphVisitor::BuildThrowNode(ThrowNode* node) {
 
 
 void EffectGraphVisitor::VisitThrowNode(ThrowNode* node) {
-  InlineBailout("EffectGraphVisitor::VisitThrowNode");
   BuildThrowNode(node);
   CloseFragment();
 }
@@ -2529,7 +2568,6 @@ void EffectGraphVisitor::VisitThrowNode(ThrowNode* node) {
 // certain expression nodes with a throw. In that case generate a literal null
 // so that the fragment is not closed in the middle of an expression.
 void ValueGraphVisitor::VisitThrowNode(ThrowNode* node) {
-  InlineBailout("ValueGraphVisitor::VisitThrowNode");
   BuildThrowNode(node);
   ReturnDefinition(new ConstantInstr(Instance::ZoneHandle()));
 }
@@ -2566,11 +2604,15 @@ void EffectGraphVisitor::VisitInlinedFinallyNode(InlinedFinallyNode* node) {
 }
 
 
-FlowGraph* FlowGraphBuilder::BuildGraph() {
+FlowGraph* FlowGraphBuilder::BuildGraph(InliningContext context) {
   if (FLAG_print_ast) {
     // Print the function ast before IL generation.
     AstPrinter::PrintFunctionNodes(parsed_function());
   }
+  // Set the inlining context.
+  ASSERT(inlining_context_ == kNotInlining);
+  inlining_context_ = context;
+  if (InInliningContext()) exits_ = new ZoneGrowableArray<ReturnInstr*>();
   // Compilation can be nested, preserve the computation-id.
   const Function& function = parsed_function().function();
   TargetEntryInstr* normal_entry = new TargetEntryInstr(
@@ -2584,23 +2626,8 @@ FlowGraph* FlowGraphBuilder::BuildGraph() {
   AppendFragment(normal_entry, for_effect);
   // Check that the graph is properly terminated.
   ASSERT(!for_effect.is_open());
-  return new FlowGraph(*this, graph_entry_);
-}
-
-
-FlowGraph* FlowGraphBuilder::BuildGraphForInlining(InliningContext context) {
-  ASSERT(inlining_context_ == kNotInlining);
-  inlining_context_ = context;
-  exits_ = new ZoneGrowableArray<ReturnInstr*>();
-  TargetEntryInstr* normal_entry = new TargetEntryInstr(
-      CatchClauseNode::kInvalidTryIndex);
-  graph_entry_ = new GraphEntryInstr(normal_entry);
-  EffectGraphVisitor for_effect(this, 0);
-  parsed_function().node_sequence()->Visit(&for_effect);
-  AppendFragment(normal_entry, for_effect);
-  ASSERT(!for_effect.is_open());
   FlowGraph* graph = new FlowGraph(*this, graph_entry_);
-  graph->set_exits(exits_);
+  if (InInliningContext()) graph->set_exits(exits_);
   return graph;
 }
 

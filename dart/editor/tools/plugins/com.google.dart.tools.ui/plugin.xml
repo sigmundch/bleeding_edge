@@ -248,6 +248,13 @@
             id="com.google.dart.tools.ui.generateJavascript"
             name="%command.generateJavascript.name">
       </command>
+      <command
+            categoryId="org.eclipse.ui.category.window"
+            defaultHandler="com.google.dart.tools.ui.internal.handlers.GenerateDartdocHandler"
+            description="%command.generateDartdoc.name"
+            id="com.google.dart.tools.ui.generateDartdoc"
+            name="%command.generateDartdoc.name">
+      </command>
    </extension>
    
    <extension
@@ -818,6 +825,13 @@
                 id="com.google.dart.tools.ui.actions.Inline">
             </action>
             <action
+                definitionId="com.google.dart.tools.ui.edit.text.dart.convertMethodToGetter"
+                label="%Refactoring.convertMethodToGetterAction.label"
+                retarget="true"
+                menubarPath="edit/endEdit"
+                id="com.google.dart.tools.ui.actions.ConvertMethodToGetter">
+            </action>
+            <action
                 definitionId="com.google.dart.tools.ui.edit.text.dart.rename.element"
                 label="%Refactoring.renameAction.label"
                 retarget="true"
@@ -922,6 +936,13 @@
                retarget="true"
                menubarPath="com.google.dart.tools.ui.refactoring.menu/codingGroup"
                id="com.google.dart.tools.ui.actions.Inline">
+         </action>
+         <action
+             definitionId="com.google.dart.tools.ui.edit.text.dart.convertMethodToGetter"
+               label="%Refactoring.convertMethodToGetterAction.label"
+               retarget="true"
+               menubarPath="com.google.dart.tools.ui.refactoring.menu/codingGroup"
+               id="com.google.dart.tools.ui.actions.ConvertMethodToGetter">
          </action>
           <!--<action
                definitionId="org.eclipse.wst.jsdt.ui.edit.text.java.extract.constant"
@@ -1827,6 +1848,12 @@
             id="com.google.dart.tools.ui.edit.text.dart.inline">
       </command>
       <command
+            name="%ActionDefinition.convertMethodToGetter.name"
+            description="%ActionDefinition.convertMethodToGetter.description"
+            categoryId="com.google.dart.tools.ui.category.refactoring"
+            id="com.google.dart.tools.ui.edit.text.dart.convertMethodToGetter">
+      </command>
+      <command
             name="%ActionDefinition.extractMethod.name"
             description="%ActionDefinition.extractMethod.description"
             categoryId="com.google.dart.tools.ui.category.refactoring"
@@ -2038,23 +2065,6 @@
     </extension>
 
    <extension point="org.eclipse.ui.decorators">
-      <decorator
-         class="com.google.dart.tools.ui.internal.libraryview.DartLightweightDecorator"
-         id="com.google.dart.tools.ui.navigator.lightweightDecorator"
-         label="Dart"
-         lightweight="true"
-         location="BOTTOM_LEFT"
-         state="true">
-
-         <enablement>
-            <or>
-               <objectClass name="org.eclipse.core.resources.IResource">
-               </objectClass>
-               <objectClass name="com.google.dart.tools.core.model.DartElement">
-               </objectClass>
-            </or>
-         </enablement>
-      </decorator>
       <decorator
          class="com.google.dart.tools.ui.internal.filesview.FilesViewLightweightDecorator"
          id="com.google.dart.tools.ui.filesview.lightweightDecorator"

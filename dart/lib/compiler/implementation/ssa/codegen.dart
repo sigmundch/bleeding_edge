@@ -18,13 +18,24 @@ class SsaCodeGeneratorTask extends CompilerTask {
                                  js.Block body) {
     FunctionExpression expression = element.cachedNode;
     js.Fun result = new js.Fun(parameters, body);
-    result.sourcePosition = expression.getBeginToken();
-    result.endSourcePosition = expression.getEndToken();
+    // TODO(johnniwinther): remove the 'element.patch' hack.
+    Element sourceElement = element.patch == null ? element : element.patch;
+    SourceFile sourceFile = sourceElement.getCompilationUnit().script.file;
+    // TODO(podivilov): find the right sourceFile here and remove offset checks
+    // below.
+    if (expression.getBeginToken().charOffset < sourceFile.text.length) {
+      result.sourcePosition = new SourceFileLocation(
+          sourceFile, expression.getBeginToken());
+    }
+    if (expression.getEndToken().charOffset < sourceFile.text.length) {
+      result.endSourcePosition = new SourceFileLocation(
+          sourceFile, expression.getEndToken());
+    }
     return result;
   }
 
-  CodeBuffer prettyPrint(js.Node node, Element positionElement) {
-    return js.prettyPrint(node, compiler, positionElement);
+  CodeBuffer prettyPrint(js.Node node) {
+    return js.prettyPrint(node, compiler);
   }
 
   CodeBuffer generateCode(WorkItem work, HGraph graph) {
@@ -43,9 +54,8 @@ class SsaCodeGeneratorTask extends CompilerTask {
           backend, work, parameters, new Map<Element, String>());
       codegen.visitGraph(graph);
       js.Block body = codegen.body;
-      Element element = work.element;
       js.Fun fun = new js.Fun(parameters, body);
-      return prettyPrint(fun, element);
+      return prettyPrint(fun);
     });
   }
 
@@ -88,7 +98,7 @@ class SsaCodeGeneratorTask extends CompilerTask {
         // and needs to know if the method is overridden.
         nativeEmitter.overriddenMethods.add(element);
         StringBuffer buffer = new StringBuffer();
-        String codeString = prettyPrint(codegen.body, work.element).toString();
+        String codeString = prettyPrint(codegen.body).toString();
         native.generateMethodWithPrototypeCheckForElement(
             compiler, buffer, element, codeString, parametersString);
         js.Node nativeCode = new js.LiteralStatement(buffer.toString());
@@ -97,7 +107,7 @@ class SsaCodeGeneratorTask extends CompilerTask {
         body = codegen.body;
       }
       js.Fun fun = buildJavaScriptFunction(element, parameters, body);
-      return prettyPrint(fun, work.element);
+      return prettyPrint(fun);
     });
   }
 
@@ -140,7 +150,7 @@ class SsaCodeGeneratorTask extends CompilerTask {
       body.statements.add(codegen.body);
       js.Fun fun =
           buildJavaScriptFunction(work.element, codegen.newParameters, body);
-      return prettyPrint(fun, work.element);
+      return prettyPrint(fun);
     });
   }
 
@@ -338,15 +348,15 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
   }
 
   js.Node attachLocation(js.Node jsNode, HInstruction instruction) {
-    if (instruction.sourcePosition !== null) {
-      jsNode.sourcePosition = instruction.sourcePosition;
-    }
+    jsNode.sourcePosition = instruction.sourcePosition;
     return jsNode;
   }
 
-  js.Node attachLocationRange(js.Node jsNode, Node node) {
-    jsNode.sourcePosition = node.getBeginToken();
-    jsNode.endSourcePosition = node.getEndToken();
+  js.Node attachLocationRange(js.Node jsNode,
+                              SourceFileLocation sourcePosition,
+                              SourceFileLocation endSourcePosition) {
+    jsNode.sourcePosition = sourcePosition;
+    jsNode.endSourcePosition = endSourcePosition;
     return jsNode;
   }
 
@@ -930,7 +940,7 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
           'Unexpected loop kind: ${info.kind}',
           instruction: condition.conditionExpression);
     }
-    attachLocationRange(loop, info.sourcePosition);
+    attachLocationRange(loop, info.sourcePosition, info.endSourcePosition);
     pushStatement(wrapIntoLabels(loop, info.labels));
     return true;
   }
@@ -1551,8 +1561,6 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
   visitInvokeSuper(HInvokeSuper node) {
     Element superMethod = node.element;
     Element superClass = superMethod.getEnclosingClass();
-    // Remove the element and 'this'.
-    int argumentCount = node.inputs.length - 2;
     if (superMethod.kind == ElementKind.FIELD) {
       ClassElement currentClass = work.element.getEnclosingClass();
       if (currentClass.isClosure()) {
@@ -1580,8 +1588,7 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
       String methodName;
       if (superMethod.kind == ElementKind.FUNCTION ||
           superMethod.kind == ElementKind.GENERATIVE_CONSTRUCTOR) {
-        methodName = backend.namer.instanceMethodName(
-            currentLibrary, superMethod.name, argumentCount);
+        methodName = backend.namer.instanceMethodName(superMethod);
       } else if (superMethod.kind == ElementKind.GETTER) {
         methodName =
             backend.namer.getterName(currentLibrary, superMethod.name);
@@ -2091,12 +2098,11 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
 
     if (interceptor.isLengthGetterOnStringOrArray(types)) {
       return 'length';
+    } else if (interceptor.isPopCall(types)) {
+      return 'pop';
     } else if (receiver.isExtendableArray(types) && isCall) {
       if (name == const SourceString('add') && arity == 1) {
         return 'push';
-      }
-      if (name == const SourceString('removeLast') && arity == 0) {
-        return 'pop';
       }
     } else if (receiver.isString(types) && isCall) {
       if (name == const SourceString('concat') &&
@@ -2368,7 +2374,11 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
             new js.PropertyAccess.field(pop(), typeVariable.toString());
         js.Expression genericName = new js.LiteralString("'${arguments.head}'");
         js.Binary eqTest = new js.Binary('===', field, genericName);
-        result = new js.Binary('&&', result, eqTest);
+        // Also test for 'undefined' in case the object does not have
+        // any type variable.
+        js.Prefix undefinedTest = new js.Prefix('!', field);
+        result = new js.Binary(
+            '&&', result, new js.Binary('||', undefinedTest, eqTest));
       }
       push(result, node);
     }
@@ -2434,18 +2444,23 @@ class SsaCodeGenerator implements HVisitor, HBlockInformationVisitor {
         pushStatement(new js.If.noElse(test, body), node);
         return;
       }
-
       assert(node.isCheckedModeCheck || node.isCastTypeCheck);
-      SourceString helper = backend.getCheckedModeHelper(type);
-      String additionalArgument = backend.namer.operatorIs(element);
-      if (node.isCastTypeCheck) {
-        helper = castNames[helper.stringValue];
+
+      SourceString helper;
+      if (node.isBooleanConversionCheck) {
+        helper = const SourceString('boolConversionCheck');
+      } else {
+        helper = backend.getCheckedModeHelper(type);
+        if (node.isCastTypeCheck) {
+          helper = castNames[helper.stringValue];
+        }
       }
       Element helperElement = compiler.findHelper(helper);
       world.registerStaticUse(helperElement);
       List<js.Expression> arguments = <js.Expression>[];
       use(node.checkedInput);
       arguments.add(pop());
+      String additionalArgument = backend.namer.operatorIs(element);
       arguments.add(new js.LiteralString("'$additionalArgument'"));
       String helperName = backend.namer.isolateAccess(helperElement);
       push(new js.Call(new js.VariableUse(helperName), arguments));
@@ -2619,7 +2634,9 @@ class SsaOptimizedCodeGenerator extends SsaCodeGenerator {
     js.While loop = new js.While(new js.LiteralBool(true), body);
 
     HLoopInformation info = block.loopInformation;
-    attachLocationRange(loop, info.loopBlockInformation.sourcePosition);
+    attachLocationRange(loop,
+                        info.loopBlockInformation.sourcePosition,
+                        info.loopBlockInformation.endSourcePosition);
     pushStatement(wrapIntoLabels(loop, info.labels));
   }
 
@@ -2873,7 +2890,9 @@ class SsaUnoptimizedCodeGenerator extends SsaCodeGenerator {
     currentContainer = oldContainerStack.removeLast();
 
     js.Statement result = new js.While(new js.LiteralBool(true), body);
-    attachLocationRange(result, info.loopBlockInformation.sourcePosition);
+    attachLocationRange(result,
+                        info.loopBlockInformation.sourcePosition,
+                        info.loopBlockInformation.endSourcePosition);
     result = new js.LabeledStatement(loopLabel, result);
     result = wrapIntoLabels(result, info.labels);
     pushStatement(result);

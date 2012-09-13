@@ -1527,10 +1527,11 @@ void Assembler::Drop(intptr_t stack_elements) {
 
 
 void Assembler::LoadObject(Register dst, const Object& object) {
-  if (object.IsSmi()) {
+  if (object.IsSmi() || object.IsNull()) {
     movq(dst, Immediate(reinterpret_cast<int64_t>(object.raw())));
   } else {
     ASSERT(object.IsZoneHandle());
+    ASSERT(object.IsOld());
     AssemblerBuffer::EnsureCapacity ensured(&buffer_);
     EmitRegisterREX(dst, REX_W);
     EmitUint8(0xB8 | (dst & 7));
@@ -1540,9 +1541,11 @@ void Assembler::LoadObject(Register dst, const Object& object) {
 
 
 void Assembler::StoreObject(const Address& dst, const Object& object) {
-  if (object.IsSmi()) {
+  if (object.IsSmi() || object.IsNull()) {
     movq(dst, Immediate(reinterpret_cast<int64_t>(object.raw())));
   } else {
+    ASSERT(object.IsZoneHandle());
+    ASSERT(object.IsOld());
     LoadObject(TMP, object);
     movq(dst, TMP);
   }
@@ -1550,7 +1553,7 @@ void Assembler::StoreObject(const Address& dst, const Object& object) {
 
 
 void Assembler::PushObject(const Object& object) {
-  if (object.IsSmi()) {
+  if (object.IsSmi() || object.IsNull()) {
     pushq(Immediate(reinterpret_cast<int64_t>(object.raw())));
   } else {
     LoadObject(TMP, object);
@@ -1560,7 +1563,7 @@ void Assembler::PushObject(const Object& object) {
 
 
 void Assembler::CompareObject(Register reg, const Object& object) {
-  if (object.IsSmi()) {
+  if (object.IsSmi() || object.IsNull()) {
     cmpq(reg, Immediate(reinterpret_cast<int64_t>(object.raw())));
   } else {
     ASSERT(reg != TMP);
@@ -1594,11 +1597,9 @@ void Assembler::StoreIntoObjectFilter(Register object,
 void Assembler::StoreIntoObject(Register object,
                                 const FieldAddress& dest,
                                 Register value) {
-  // TODO(kmillikin): pass temp registers to avoid pushing registers.
+  ASSERT(object != value);
   movq(dest, value);
-
   Label done;
-  pushq(value);
   StoreIntoObjectFilter(object, value, &done);
   // A store buffer update is required.
   if (value != RAX) pushq(RAX);
@@ -1606,7 +1607,6 @@ void Assembler::StoreIntoObject(Register object,
   call(&StubCode::UpdateStoreBufferLabel());
   if (value != RAX) popq(RAX);
   Bind(&done);
-  popq(value);
 }
 
 
