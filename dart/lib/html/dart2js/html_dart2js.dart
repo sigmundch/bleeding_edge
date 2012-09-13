@@ -9309,11 +9309,11 @@ class MediaElementImpl extends ElementImpl implements MediaElement native "*HTML
 
   void play() native;
 
-  void webkitAddKey(String keySystem, Uint8ArrayImpl key, [_Uint8ArrayImpl initData, String sessionId]) native;
+  void webkitAddKey(String keySystem, Uint8ArrayImpl key, [Uint8ArrayImpl initData, String sessionId]) native;
 
   void webkitCancelKeyRequest(String keySystem, String sessionId) native;
 
-  void webkitGenerateKeyRequest(String keySystem, [_Uint8ArrayImpl initData]) native;
+  void webkitGenerateKeyRequest(String keySystem, [Uint8ArrayImpl initData]) native;
 }
 
 class MediaElementEventsImpl extends ElementEventsImpl implements MediaElementEvents {
