@@ -35,7 +35,7 @@ void main() {
   var model = new Todos();
   var list = query('div[is=x-todo-list]');
   list.model = model;
-  
+
   var header = query('div[is=x-todo-header]');
   header.model = model;
 }
@@ -45,7 +45,7 @@ class Todos {
   List<Todo> _todos;
   int remaining;
   TodoCallbacks on;
- 
+
   Todos()
     : remaining = 0,
       _todos = <Todo>[],
@@ -85,9 +85,9 @@ class Todos {
   }
 }
 
-/** 
+/**
  * Wrapper for callbacks from the Todo model to the components.
- * This is separated into its own class so we can support the 
+ * This is separated into its own class so we can support the
  * model.on.event.add(callback) style.
  */
 class TodoCallbacks {

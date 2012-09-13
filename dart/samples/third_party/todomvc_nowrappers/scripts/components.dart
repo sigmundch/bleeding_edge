@@ -85,13 +85,13 @@ class TodoListElement extends LIElementImpl implements WebComponent {
       }
     });
     // TODO(samhop): This event listener should only be attached when the todo
-    // is in editing mode. 
+    // is in editing mode.
     _input.on.keyPress.add((event) {
       if (event.keyCode == ENTER_KEY) { _saveTodo(); }
     });
     _input.on.blur.add((event) => _saveTodo());
     // TODO(samhop): These listeners should be detached when the component is
-    // removed; otherwise presumably it won't get gc'd. 
+    // removed; otherwise presumably it won't get gc'd.
     model.on.completed.add((todo) {
       if (todo == this.todo) {
         complete();
@@ -144,7 +144,7 @@ class TodoList extends DivElementImpl implements WebComponent {
     rewirePrototypeChain(t1, _$constr, 'TodoList');
     return t1;
   }
- 
+
   factory TodoList() {
     return manager.expandHtml('<div is="x-todo-list"></div>');
   }
@@ -224,7 +224,7 @@ class NewTodo extends DivElementImpl implements WebComponent {
   ShadowRoot _shadowRoot;
   Todos model;
 
-  
+
   static ComponentConstructorThunk _$constr;
   factory NewTodo.component() {
     if (_$constr == null) {
@@ -235,14 +235,14 @@ class NewTodo extends DivElementImpl implements WebComponent {
     rewirePrototypeChain(t1, _$constr, 'NewTodo');
     return t1;
   }
-  
+
   factory NewTodo() {
     return manager.expandHtml('<div is="x-new-todo"></div>');
   }
 
   NewTodo._internal();
 
-  void created(ShadowRoot shadowRoot) { 
+  void created(ShadowRoot shadowRoot) {
     _shadowRoot = shadowRoot;
   }
   void inserted() {
@@ -275,7 +275,7 @@ class TodoFooter extends DivElementImpl implements WebComponent {
     rewirePrototypeChain(t1, _$constr, 'TodoFooter');
     return t1;
   }
-  
+
   factory TodoFooter() {
     return manager.expandHtml('<div is="x-todo-footer"></div>');
   }
@@ -307,7 +307,7 @@ class TodoHeader extends DivElementImpl implements WebComponent {
     rewirePrototypeChain(t1, _$constr, 'TodoHeader');
     return t1;
   }
-  
+
   factory TodoHeader() {
     return manager.expandHtml('<div is="x-todo-header"></div>');
   }
