@@ -84,8 +84,8 @@
               model.uncomplete(todo);
             }
           });
-          // TODO(samhop): This event listener should only be attached when the todo
-          // is in editing mode. 
+          // TODO(samhop): This event listener should only be attached when the
+          // todo is in editing mode. 
           _input.on.keyPress.add((event) {
             if (event.keyCode == ENTER_KEY) { _saveTodo(); }
           });
@@ -204,8 +204,8 @@
           });
         }
 
-        // TODO(samhop): Expose current todo list as a data attribute of the TodoList
-        // component.
+        // TODO(samhop): Expose current todo list as a data attribute of the
+        // TodoList component.
         void attributeChanged(String name, String oldValue, String newValue) { }
 
         void removed() { }
