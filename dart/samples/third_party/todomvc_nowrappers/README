@@ -2,4 +2,23 @@ TodoMVC
 -------
 
 This directory contains a port of the TodoMVC app (www.todomvc.com) to Dart
-using our webcomponents polyfill.
+using our webcomponents polyfill and the no-wrappers dart2js prototype swizzling
+webcomponents implementation. To compile this app, you will need the
+experimental branch of dart2js located here:
+
+https://github.com/samhopkins/bleeding_edge
+
+but soon to be located at
+
+https://github.com/sigmundch/bleeding_edge
+
+Once you have the compiler, run
+
+pub install
+
+to pull down necessary packages, and then run
+
+dart2js app.dart -oapp.js
+
+to compile the app. Now open index.html in a browser and you're off to the
+races.
