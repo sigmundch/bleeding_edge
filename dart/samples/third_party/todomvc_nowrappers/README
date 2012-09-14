@@ -5,15 +5,15 @@ This directory contains a port of the TodoMVC app (www.todomvc.com) to Dart
 using our webcomponents polyfill and the no-wrappers dart2js prototype swizzling
 webcomponents implementation. 
 
-Once you have the compiler, run
+To pull down necessary packages, run
 
 pub install
 
-to pull down necessary packages, and then run
+and then to compile, run
 
 dart2js app.dart -oapp.js
 
-to compile the app (where dart2js is the version of the compiler in THIS repo --
+(where dart2js is the version of the compiler in THIS repo --
 we need the experimental web components support that lives here).
 Now open index.html in a browser and you're off to the
 races.

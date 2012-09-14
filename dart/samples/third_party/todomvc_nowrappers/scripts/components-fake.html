@@ -90,8 +90,8 @@
             if (event.keyCode == ENTER_KEY) { _saveTodo(); }
           });
           _input.on.blur.add((event) => _saveTodo());
-          // TODO(samhop): These listeners should be detached when the component is
-          // removed; otherwise presumably it won't get gc'd. 
+          // TODO(samhop): These listeners should be detached when the component
+          // is removed; otherwise presumably it won't get gc'd. 
           model.on.completed.add((todo) {
             if (todo == this.todo) {
               complete();
